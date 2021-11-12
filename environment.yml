@@ -1,12 +1,9 @@
-name: environment
+name: dashboard
 channels:
-  - conda-forge
+- conda-forge
 dependencies:
-  - logging
-  - matplotlib
-  - numpy
-  - python
-  - pip
-  - pip:
-    - pandas
-    - matplotlib
+- logging
+- matplotlib
+- pandas
+- python
+- numpy
