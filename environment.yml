@@ -3,6 +3,7 @@ channels:
   - conda-forge
 dependencies:
   - logging
+  - matplotlib
   - numpy
   - python
   - pip
