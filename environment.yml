@@ -1,0 +1,11 @@
+name: environment
+channels:
+  - conda-forge
+dependencies:
+  - logging
+  - numpy
+  - python
+  - pip
+  - pip:
+    - pandas
+    - matplotlib
