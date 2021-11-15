@@ -13183,6 +13183,534 @@ div#notebook {
 
 <div class="inner_cell">
     <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">panel</span> <span class="k">as</span> <span class="nn">pn</span>
+<span class="kn">import</span> <span class="nn">panel.widgets</span> <span class="k">as</span> <span class="nn">pnw</span>
+
+<span class="n">pn</span><span class="o">.</span><span class="n">extension</span><span class="p">()</span>
+
+<span class="k">def</span> <span class="nf">gen_plot_xy</span><span class="p">():</span>
+    <span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">1234</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">)]</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="p">[</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">)]</span>
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">fig</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">fig</span>
+
+<span class="k">def</span> <span class="nf">plot_xy_update</span><span class="p">(</span><span class="n">event</span><span class="p">):</span>
+    <span class="n">dash</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">gen_plot</span><span class="p">()</span>
+
+<span class="n">n</span> <span class="o">=</span> <span class="n">pn</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">pnw</span><span class="o">.</span><span class="n">FloatInput</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;n&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">100</span><span class="p">))</span>
+<span class="n">plot</span> <span class="o">=</span> <span class="n">gen_plot_xy</span><span class="p">()</span>
+
+<span class="n">watch_vars</span> <span class="o">=</span> <span class="n">n</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">param</span><span class="o">.</span><span class="n">watch</span><span class="p">(</span><span class="n">plot_xy_update</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">],</span> <span class="n">onlychanged</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">dash</span> <span class="o">=</span> <span class="n">pn</span><span class="o">.</span><span class="n">Row</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">plot</span><span class="p">)</span>
+<span class="n">display</span><span class="p">(</span><span class="n">dash</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    
+
+
+
+
+<div id="81b8de09-af2e-4c6b-ab89-9e89b38d6725"></div>
+<div class="output_subarea output_javascript ">
+<script type="text/javascript">
+var element = $('#81b8de09-af2e-4c6b-ab89-9e89b38d6725');
+
+(function(root) {
+  function now() {
+    return new Date();
+  }
+
+  var force = true;
+
+  if (typeof root._bokeh_onload_callbacks === "undefined" || force === true) {
+    root._bokeh_onload_callbacks = [];
+    root._bokeh_is_loading = undefined;
+  }
+
+  if (typeof (root._bokeh_timeout) === "undefined" || force === true) {
+    root._bokeh_timeout = Date.now() + 5000;
+    root._bokeh_failed_load = false;
+  }
+
+  function run_callbacks() {
+    try {
+      root._bokeh_onload_callbacks.forEach(function(callback) {
+        if (callback != null)
+          callback();
+      });
+    } finally {
+      delete root._bokeh_onload_callbacks
+    }
+    console.debug("Bokeh: all callbacks have finished");
+  }
+
+  function load_libs(css_urls, js_urls, js_modules, callback) {
+    if (css_urls == null) css_urls = [];
+    if (js_urls == null) js_urls = [];
+    if (js_modules == null) js_modules = [];
+
+    root._bokeh_onload_callbacks.push(callback);
+    if (root._bokeh_is_loading > 0) {
+      console.debug("Bokeh: BokehJS is being loaded, scheduling callback at", now());
+      return null;
+    }
+    if (js_urls.length === 0 && js_modules.length === 0) {
+      run_callbacks();
+      return null;
+    }
+    console.debug("Bokeh: BokehJS not loaded, scheduling load and callback at", now());
+    root._bokeh_is_loading = css_urls.length + js_urls.length + js_modules.length;
+
+    function on_load() {
+      root._bokeh_is_loading--;
+      if (root._bokeh_is_loading === 0) {
+        console.debug("Bokeh: all BokehJS libraries/stylesheets loaded");
+        run_callbacks()
+      }
+    }
+
+    function on_error() {
+      console.error("failed to load " + url);
+    }
+
+    for (var i = 0; i < css_urls.length; i++) {
+      var url = css_urls[i];
+      const element = document.createElement("link");
+      element.onload = on_load;
+      element.onerror = on_error;
+      element.rel = "stylesheet";
+      element.type = "text/css";
+      element.href = url;
+      console.debug("Bokeh: injecting link tag for BokehJS stylesheet: ", url);
+      document.body.appendChild(element);
+    }
+
+    var skip = [];
+    if (window.requirejs) {
+      window.requirejs.config({'packages': {}, 'paths': {}, 'shim': {}});
+      
+    }
+    for (var i = 0; i < js_urls.length; i++) {
+      var url = js_urls[i];
+      if (skip.indexOf(url) >= 0) { on_load(); continue; }
+      var element = document.createElement('script');
+      element.onload = on_load;
+      element.onerror = on_error;
+      element.async = false;
+      element.src = url;
+      console.debug("Bokeh: injecting script tag for BokehJS library: ", url);
+      document.head.appendChild(element);
+    }
+    for (var i = 0; i < js_modules.length; i++) {
+      var url = js_modules[i];
+      if (skip.indexOf(url) >= 0) { on_load(); continue; }
+      var element = document.createElement('script');
+      element.onload = on_load;
+      element.onerror = on_error;
+      element.async = false;
+      element.src = url;
+      element.type = "module";
+      console.debug("Bokeh: injecting script tag for BokehJS library: ", url);
+      document.head.appendChild(element);
+    }
+    if (!js_urls.length && !js_modules.length) {
+      on_load()
+    }
+  };
+
+  function inject_raw_css(css) {
+    const element = document.createElement("style");
+    element.appendChild(document.createTextNode(css));
+    document.body.appendChild(element);
+  }
+
+  var js_urls = ["https://cdn.bokeh.org/bokeh/release/bokeh-2.4.1.min.js", "https://cdn.bokeh.org/bokeh/release/bokeh-gl-2.4.1.min.js", "https://cdn.bokeh.org/bokeh/release/bokeh-widgets-2.4.1.min.js", "https://cdn.bokeh.org/bokeh/release/bokeh-tables-2.4.1.min.js", "https://cdn.bokeh.org/bokeh/release/bokeh-mathjax-2.4.1.min.js", "https://unpkg.com/@holoviz/panel@0.12.4/dist/panel.min.js"];
+  var js_modules = [];
+  var css_urls = ["https://unpkg.com/@holoviz/panel@0.12.4/dist/css/card.css", "https://unpkg.com/@holoviz/panel@0.12.4/dist/css/json.css", "https://unpkg.com/@holoviz/panel@0.12.4/dist/css/alerts.css", "https://unpkg.com/@holoviz/panel@0.12.4/dist/css/widgets.css", "https://unpkg.com/@holoviz/panel@0.12.4/dist/css/markdown.css", "https://unpkg.com/@holoviz/panel@0.12.4/dist/css/dataframe.css", "https://unpkg.com/@holoviz/panel@0.12.4/dist/css/loading.css"];
+  var inline_js = [
+    function(Bokeh) {
+      inject_raw_css("\n    .bk.pn-loading.arcs:before {\n      background-image: url(\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiBzdHlsZT0ibWFyZ2luOiBhdXRvOyBiYWNrZ3JvdW5kOiBub25lOyBkaXNwbGF5OiBibG9jazsgc2hhcGUtcmVuZGVyaW5nOiBhdXRvOyIgdmlld0JveD0iMCAwIDEwMCAxMDAiIHByZXNlcnZlQXNwZWN0UmF0aW89InhNaWRZTWlkIj4gIDxjaXJjbGUgY3g9IjUwIiBjeT0iNTAiIHI9IjMyIiBzdHJva2Utd2lkdGg9IjgiIHN0cm9rZT0iI2MzYzNjMyIgc3Ryb2tlLWRhc2hhcnJheT0iNTAuMjY1NDgyNDU3NDM2NjkgNTAuMjY1NDgyNDU3NDM2NjkiIGZpbGw9Im5vbmUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCI+ICAgIDxhbmltYXRlVHJhbnNmb3JtIGF0dHJpYnV0ZU5hbWU9InRyYW5zZm9ybSIgdHlwZT0icm90YXRlIiByZXBlYXRDb3VudD0iaW5kZWZpbml0ZSIgZHVyPSIxcyIga2V5VGltZXM9IjA7MSIgdmFsdWVzPSIwIDUwIDUwOzM2MCA1MCA1MCI+PC9hbmltYXRlVHJhbnNmb3JtPiAgPC9jaXJjbGU+PC9zdmc+\")\n    }\n    ");
+    },
+    function(Bokeh) {
+      Bokeh.set_log_level("info");
+    },
+    function(Bokeh) {} // ensure no trailing comma for IE
+  ];
+
+  function run_inline_js() {
+    if ((root.Bokeh !== undefined) || (force === true)) {
+      for (var i = 0; i < inline_js.length; i++) {
+        inline_js[i].call(root, root.Bokeh);
+      }} else if (Date.now() < root._bokeh_timeout) {
+      setTimeout(run_inline_js, 100);
+    } else if (!root._bokeh_failed_load) {
+      console.log("Bokeh: BokehJS failed to load within specified timeout.");
+      root._bokeh_failed_load = true;
+    }
+  }
+
+  if (root._bokeh_is_loading === 0) {
+    console.debug("Bokeh: BokehJS loaded, going straight to plotting");
+    run_inline_js();
+  } else {
+    load_libs(css_urls, js_urls, js_modules, function() {
+      console.debug("Bokeh: BokehJS plotting callback run at", now());
+      run_inline_js();
+    });
+  }
+}(window));
+</script>
+</div>
+
+</div>
+
+<div class="output_area">
+
+    
+
+
+
+
+<div id="33101636-59a3-46c6-83d8-9c1c6a7a315e"></div>
+<div class="output_subarea output_javascript ">
+<script type="text/javascript">
+var element = $('#33101636-59a3-46c6-83d8-9c1c6a7a315e');
+
+if ((window.PyViz === undefined) || (window.PyViz instanceof HTMLElement)) {
+  window.PyViz = {comms: {}, comm_status:{}, kernels:{}, receivers: {}, plot_index: []}
+}
+
+
+    function JupyterCommManager() {
+    }
+
+    JupyterCommManager.prototype.register_target = function(plot_id, comm_id, msg_handler) {
+      if (window.comm_manager || ((window.Jupyter !== undefined) && (Jupyter.notebook.kernel != null))) {
+        var comm_manager = window.comm_manager || Jupyter.notebook.kernel.comm_manager;
+        comm_manager.register_target(comm_id, function(comm) {
+          comm.on_msg(msg_handler);
+        });
+      } else if ((plot_id in window.PyViz.kernels) && (window.PyViz.kernels[plot_id])) {
+        window.PyViz.kernels[plot_id].registerCommTarget(comm_id, function(comm) {
+          comm.onMsg = msg_handler;
+        });
+      } else if (typeof google != 'undefined' && google.colab.kernel != null) {
+        google.colab.kernel.comms.registerTarget(comm_id, (comm) => {
+          var messages = comm.messages[Symbol.asyncIterator]();
+          function processIteratorResult(result) {
+            var message = result.value;
+            console.log(message)
+            var content = {data: message.data, comm_id};
+            var buffers = []
+            for (var buffer of message.buffers || []) {
+              buffers.push(new DataView(buffer))
+            }
+            var metadata = message.metadata || {};
+            var msg = {content, buffers, metadata}
+            msg_handler(msg);
+            return messages.next().then(processIteratorResult);
+          }
+          return messages.next().then(processIteratorResult);
+        })
+      }
+    }
+
+    JupyterCommManager.prototype.get_client_comm = function(plot_id, comm_id, msg_handler) {
+      if (comm_id in window.PyViz.comms) {
+        return window.PyViz.comms[comm_id];
+      } else if (window.comm_manager || ((window.Jupyter !== undefined) && (Jupyter.notebook.kernel != null))) {
+        var comm_manager = window.comm_manager || Jupyter.notebook.kernel.comm_manager;
+        var comm = comm_manager.new_comm(comm_id, {}, {}, {}, comm_id);
+        if (msg_handler) {
+          comm.on_msg(msg_handler);
+        }
+      } else if ((plot_id in window.PyViz.kernels) && (window.PyViz.kernels[plot_id])) {
+        var comm = window.PyViz.kernels[plot_id].connectToComm(comm_id);
+        comm.open();
+        if (msg_handler) {
+          comm.onMsg = msg_handler;
+        }
+      } else if (typeof google != 'undefined' && google.colab.kernel != null) {
+        var comm_promise = google.colab.kernel.comms.open(comm_id)
+        comm_promise.then((comm) => {
+          window.PyViz.comms[comm_id] = comm;
+          if (msg_handler) {
+            var messages = comm.messages[Symbol.asyncIterator]();
+            function processIteratorResult(result) {
+              var message = result.value;
+              var content = {data: message.data};
+              var metadata = message.metadata || {comm_id};
+              var msg = {content, metadata}
+              msg_handler(msg);
+              return messages.next().then(processIteratorResult);
+            }
+            return messages.next().then(processIteratorResult);
+          }
+        }) 
+        var sendClosure = (data, metadata, buffers, disposeOnDone) => {
+          return comm_promise.then((comm) => {
+            comm.send(data, metadata, buffers, disposeOnDone);
+          });
+        };
+        var comm = {
+          send: sendClosure
+        };
+      }
+      window.PyViz.comms[comm_id] = comm;
+      return comm;
+    }
+    window.PyViz.comm_manager = new JupyterCommManager();
+    
+
+
+var JS_MIME_TYPE = 'application/javascript';
+var HTML_MIME_TYPE = 'text/html';
+var EXEC_MIME_TYPE = 'application/vnd.holoviews_exec.v0+json';
+var CLASS_NAME = 'output';
+
+/**
+ * Render data to the DOM node
+ */
+function render(props, node) {
+  var div = document.createElement("div");
+  var script = document.createElement("script");
+  node.appendChild(div);
+  node.appendChild(script);
+}
+
+/**
+ * Handle when a new output is added
+ */
+function handle_add_output(event, handle) {
+  var output_area = handle.output_area;
+  var output = handle.output;
+  if ((output.data == undefined) || (!output.data.hasOwnProperty(EXEC_MIME_TYPE))) {
+    return
+  }
+  var id = output.metadata[EXEC_MIME_TYPE]["id"];
+  var toinsert = output_area.element.find("." + CLASS_NAME.split(' ')[0]);
+  if (id !== undefined) {
+    var nchildren = toinsert.length;
+    var html_node = toinsert[nchildren-1].children[0];
+    html_node.innerHTML = output.data[HTML_MIME_TYPE];
+    var scripts = [];
+    var nodelist = html_node.querySelectorAll("script");
+    for (var i in nodelist) {
+      if (nodelist.hasOwnProperty(i)) {
+        scripts.push(nodelist[i])
+      }
+    }
+
+    scripts.forEach( function (oldScript) {
+      var newScript = document.createElement("script");
+      var attrs = [];
+      var nodemap = oldScript.attributes;
+      for (var j in nodemap) {
+        if (nodemap.hasOwnProperty(j)) {
+          attrs.push(nodemap[j])
+        }
+      }
+      attrs.forEach(function(attr) { newScript.setAttribute(attr.name, attr.value) });
+      newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+      oldScript.parentNode.replaceChild(newScript, oldScript);
+    });
+    if (JS_MIME_TYPE in output.data) {
+      toinsert[nchildren-1].children[1].textContent = output.data[JS_MIME_TYPE];
+    }
+    output_area._hv_plot_id = id;
+    if ((window.Bokeh !== undefined) && (id in Bokeh.index)) {
+      window.PyViz.plot_index[id] = Bokeh.index[id];
+    } else {
+      window.PyViz.plot_index[id] = null;
+    }
+  } else if (output.metadata[EXEC_MIME_TYPE]["server_id"] !== undefined) {
+    var bk_div = document.createElement("div");
+    bk_div.innerHTML = output.data[HTML_MIME_TYPE];
+    var script_attrs = bk_div.children[0].attributes;
+    for (var i = 0; i < script_attrs.length; i++) {
+      toinsert[toinsert.length - 1].childNodes[1].setAttribute(script_attrs[i].name, script_attrs[i].value);
+    }
+    // store reference to server id on output_area
+    output_area._bokeh_server_id = output.metadata[EXEC_MIME_TYPE]["server_id"];
+  }
+}
+
+/**
+ * Handle when an output is cleared or removed
+ */
+function handle_clear_output(event, handle) {
+  var id = handle.cell.output_area._hv_plot_id;
+  var server_id = handle.cell.output_area._bokeh_server_id;
+  if (((id === undefined) || !(id in PyViz.plot_index)) && (server_id !== undefined)) { return; }
+  var comm = window.PyViz.comm_manager.get_client_comm("hv-extension-comm", "hv-extension-comm", function () {});
+  if (server_id !== null) {
+    comm.send({event_type: 'server_delete', 'id': server_id});
+    return;
+  } else if (comm !== null) {
+    comm.send({event_type: 'delete', 'id': id});
+  }
+  delete PyViz.plot_index[id];
+  if ((window.Bokeh !== undefined) & (id in window.Bokeh.index)) {
+    var doc = window.Bokeh.index[id].model.document
+    doc.clear();
+    const i = window.Bokeh.documents.indexOf(doc);
+    if (i > -1) {
+      window.Bokeh.documents.splice(i, 1);
+    }
+  }
+}
+
+/**
+ * Handle kernel restart event
+ */
+function handle_kernel_cleanup(event, handle) {
+  delete PyViz.comms["hv-extension-comm"];
+  window.PyViz.plot_index = {}
+}
+
+/**
+ * Handle update_display_data messages
+ */
+function handle_update_output(event, handle) {
+  handle_clear_output(event, {cell: {output_area: handle.output_area}})
+  handle_add_output(event, handle)
+}
+
+function register_renderer(events, OutputArea) {
+  function append_mime(data, metadata, element) {
+    // create a DOM node to render to
+    var toinsert = this.create_output_subarea(
+    metadata,
+    CLASS_NAME,
+    EXEC_MIME_TYPE
+    );
+    this.keyboard_manager.register_events(toinsert);
+    // Render to node
+    var props = {data: data, metadata: metadata[EXEC_MIME_TYPE]};
+    render(props, toinsert[0]);
+    element.append(toinsert);
+    return toinsert
+  }
+
+  events.on('output_added.OutputArea', handle_add_output);
+  events.on('output_updated.OutputArea', handle_update_output);
+  events.on('clear_output.CodeCell', handle_clear_output);
+  events.on('delete.Cell', handle_clear_output);
+  events.on('kernel_ready.Kernel', handle_kernel_cleanup);
+
+  OutputArea.prototype.register_mime_type(EXEC_MIME_TYPE, append_mime, {
+    safe: true,
+    index: 0
+  });
+}
+
+if (window.Jupyter !== undefined) {
+  try {
+    var events = require('base/js/events');
+    var OutputArea = require('notebook/js/outputarea').OutputArea;
+    if (OutputArea.prototype.mime_types().indexOf(EXEC_MIME_TYPE) == -1) {
+      register_renderer(events, OutputArea);
+    }
+  } catch(err) {
+  }
+}
+
+</script>
+</div>
+
+</div>
+
+<div class="output_area">
+
+    
+
+<div class="output_subarea output_text output_error">
+<pre>
+<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
+<span class="ansi-red-fg">TypeError</span>                                 Traceback (most recent call last)
+<span class="ansi-green-fg">/tmp/ipykernel_784983/2165959343.py</span> in <span class="ansi-cyan-fg">&lt;module&gt;</span>
+<span class="ansi-green-intense-fg ansi-bold">     17</span> 
+<span class="ansi-green-intense-fg ansi-bold">     18</span> n <span class="ansi-blue-fg">=</span> pn<span class="ansi-blue-fg">.</span>Column<span class="ansi-blue-fg">(</span>pnw<span class="ansi-blue-fg">.</span>FloatInput<span class="ansi-blue-fg">(</span>name<span class="ansi-blue-fg">=</span><span class="ansi-blue-fg">&#34;n&#34;</span><span class="ansi-blue-fg">,</span> value<span class="ansi-blue-fg">=</span><span class="ansi-cyan-fg">10</span><span class="ansi-blue-fg">,</span> step<span class="ansi-blue-fg">=</span><span class="ansi-cyan-fg">1</span><span class="ansi-blue-fg">,</span> start<span class="ansi-blue-fg">=</span><span class="ansi-cyan-fg">1</span><span class="ansi-blue-fg">,</span> end<span class="ansi-blue-fg">=</span><span class="ansi-cyan-fg">20</span><span class="ansi-blue-fg">,</span> width<span class="ansi-blue-fg">=</span><span class="ansi-cyan-fg">100</span><span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">)</span>
+<span class="ansi-green-fg">---&gt; 19</span><span class="ansi-red-fg"> </span>plot <span class="ansi-blue-fg">=</span> gen_plot_xy<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">)</span>
+<span class="ansi-green-intense-fg ansi-bold">     20</span> 
+<span class="ansi-green-intense-fg ansi-bold">     21</span> watch_vars <span class="ansi-blue-fg">=</span> n<span class="ansi-blue-fg">[</span><span class="ansi-cyan-fg">0</span><span class="ansi-blue-fg">]</span><span class="ansi-blue-fg">.</span>param<span class="ansi-blue-fg">.</span>watch<span class="ansi-blue-fg">(</span>plot_xy_update<span class="ansi-blue-fg">,</span> <span class="ansi-blue-fg">[</span><span class="ansi-blue-fg">&#34;value&#34;</span><span class="ansi-blue-fg">]</span><span class="ansi-blue-fg">,</span> onlychanged<span class="ansi-blue-fg">=</span><span class="ansi-green-fg">True</span><span class="ansi-blue-fg">)</span>
+
+<span class="ansi-green-fg">/tmp/ipykernel_784983/2165959343.py</span> in <span class="ansi-cyan-fg">gen_plot_xy</span><span class="ansi-blue-fg">()</span>
+<span class="ansi-green-intense-fg ansi-bold">     10</span>     y <span class="ansi-blue-fg">=</span> <span class="ansi-blue-fg">[</span>random<span class="ansi-blue-fg">.</span>random<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">)</span> <span class="ansi-green-fg">for</span> _ <span class="ansi-green-fg">in</span> range<span class="ansi-blue-fg">(</span>n<span class="ansi-blue-fg">[</span><span class="ansi-cyan-fg">0</span><span class="ansi-blue-fg">]</span><span class="ansi-blue-fg">.</span>value<span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">]</span>
+<span class="ansi-green-intense-fg ansi-bold">     11</span>     fig <span class="ansi-blue-fg">=</span> plt<span class="ansi-blue-fg">.</span>scatter<span class="ansi-blue-fg">(</span>x<span class="ansi-blue-fg">,</span> y<span class="ansi-blue-fg">)</span>
+<span class="ansi-green-fg">---&gt; 12</span><span class="ansi-red-fg">     </span>plt<span class="ansi-blue-fg">.</span>close<span class="ansi-blue-fg">(</span>fig<span class="ansi-blue-fg">)</span>
+<span class="ansi-green-intense-fg ansi-bold">     13</span>     <span class="ansi-green-fg">return</span> fig
+<span class="ansi-green-intense-fg ansi-bold">     14</span> 
+
+<span class="ansi-green-fg">~/anaconda3/envs/xclim-dev/lib/python3.7/site-packages/matplotlib/pyplot.py</span> in <span class="ansi-cyan-fg">close</span><span class="ansi-blue-fg">(fig)</span>
+<span class="ansi-green-intense-fg ansi-bold">    938</span>     <span class="ansi-green-fg">else</span><span class="ansi-blue-fg">:</span>
+<span class="ansi-green-intense-fg ansi-bold">    939</span>         raise TypeError(&#34;close() argument must be a Figure, an int, a string, &#34;
+<span class="ansi-green-fg">--&gt; 940</span><span class="ansi-red-fg">                         &#34;or None, not %s&#34; % type(fig))
+</span><span class="ansi-green-intense-fg ansi-bold">    941</span> 
+<span class="ansi-green-intense-fg ansi-bold">    942</span> 
+
+<span class="ansi-red-fg">TypeError</span>: close() argument must be a Figure, an int, a string, or None, not &lt;class &#39;matplotlib.collections.PathCollection&#39;&gt;</pre>
+</div>
+</div>
+
+<div class="output_area">
+
+    
+
+
+
+<div class="output_png output_subarea ">
+<img src="data:image/png;base64,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
+"
+>
+</div>
+
+</div>
+
+</div>
+</div>
+
+  </div>
+
+  
+
+  <div class="
+      cell border-box-sizing code_cell rendered">
+    <div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span> 
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+  </div>
+
+  
+
+  <div class="
+      cell border-box-sizing code_cell rendered">
+    <div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span> 
 </pre></div>
 
