@@ -1,4 +1,3 @@
-logging
 matplotlib
 numpy
 pandas
