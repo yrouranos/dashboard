@@ -1,9 +1,0 @@
-name: dashboard
-channels:
-- conda-forge
-dependencies:
-- logging
-- matplotlib
-- pandas
-- python
-- numpy
