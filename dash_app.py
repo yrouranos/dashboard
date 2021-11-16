@@ -218,6 +218,7 @@ def views_update(event):
 
 view_list = ["Série temporelle", "Tableau", "Carte"]
 cols = {"rcp26": "blue", "rcp45": "green", "rcp85": "red"}
+back_menu = "WhiteSmoke"
 logo_oura = pn.Column(pn.pane.PNG("./data/ouranos.png", height=50))
 
 tab_ts  = None
@@ -242,19 +243,13 @@ if output_mode == "jupyter_notebook":
                                vars, "Under development"))
     tab_map = pn.Row(pn.Column(pn.pane.Markdown("<b>Variable</b>"),
                                vars, "Under development"))
-    
-    back_menu = "WhiteSmoke"
     menu = pn.Column(logo_oura,
                      pn.pane.Markdown("<b>Select view</b>"),
                      views,
                      pn.Spacer(background=back_menu, sizing_mode="stretch_both"),
                      background=back_menu,
                      width=200)
-    
     dash = pn.Row(menu, tab_ts)
-
-    dash = dash
-    display(dash)
 
 # streamlit:
 else:
