@@ -226,7 +226,7 @@ tab_tbl = None
 tab_map = None
 
 # notebook:
-output_mode = "jupyter_notebook"
+output_mode = "streamlit"
 if output_mode == "jupyter_notebook":
     
     views = pnw.RadioBoxGroup(name="RadioBoxGroup", options=view_list, inline=False)
