@@ -4,7 +4,6 @@ import pandas as pd
 import panel as pn
 import panel.widgets as pnw
 import streamlit as st
-from vega_datasets import data
 
 alt.renderers.enable("default")
 pn.extension("vega")
