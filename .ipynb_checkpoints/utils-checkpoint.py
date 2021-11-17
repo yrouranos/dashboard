@@ -14,7 +14,7 @@ d_data       = "./data/"
 d_ts         = d_data + "ts/"
 d_tbl        = d_data + "tbl/"
 d_map        = d_data + "map/"
-p_logo       = d_data + "ouranos.png"
+p_logo       = d_data + "ouranos_transparent.png"
 
 
 def get_var_or_idx_list(view: str) -> List[str]:
