@@ -6,7 +6,8 @@ import pandas as pd
 import panel as pn
 import panel.widgets as pnw
 import streamlit as st
-from typing import List
+from PIL import Image
+from typing import List, Optional
 
 alt.renderers.enable("default")
 pn.extension("vega")
@@ -21,7 +22,7 @@ def get_var_or_idx_list(view: str) -> List[str]:
     Parameters
     ----------
     view : str
-        {"ts", "tbl", "map"}
+        View = {"ts", "tbl", "map"}
         
     Returns
     -------
@@ -30,15 +31,21 @@ def get_var_or_idx_list(view: str) -> List[str]:
     """
     
     var_or_idx_list = []
-    f_list = list(glob.glob("./data/" + view + "/*.csv"))
-    for f in f_list:
-        var_or_idx_list.append(os.path.basename(f).replace(".csv", ""))
-    var_or_idx_list.sort()
+    
+    if view in ["ts", "tbl"]:
+        f_list = list(glob.glob("./data/" + view + "/*.csv"))
+        for f in f_list:
+            var_or_idx_list.append(os.path.basename(f).replace(".csv", ""))
+        var_or_idx_list.sort()
+    
+    else:
+        p = "./data/" + view + "/"
+        var_or_idx_list = os.listdir(p)
     
     return var_or_idx_list
 
 
-def get_rcp_list(var_or_idx: str, view: str) -> List[str]:
+def get_rcp_list(var_or_idx: str, view: str, hor: Optional[str] = "") -> List[str]:
     
     """
     Get RCP list.
@@ -48,7 +55,9 @@ def get_rcp_list(var_or_idx: str, view: str) -> List[str]:
     var_or_idx : str
         Climate variable or index.
     view : str
-        {"ts", "tbl", "map"}
+        View = {"ts", "tbl", "map"}
+    hor : Optional[str]
+        Horizon (ex: "1981-2010")
         
     Returns
     -------
@@ -56,15 +65,33 @@ def get_rcp_list(var_or_idx: str, view: str) -> List[str]:
         RCP list.
     """
     
-    # Load data.
-    p = "./data/" + view + "/<var_or_idx>.csv"
-    df = pd.read_csv(p.replace("<var_or_idx>", var_or_idx))
-    
-    # Extract rcp.
     rcp_list = []
-    for col in df.columns:
-        if "rcp" in col:
-            rcp = col.replace("_min", "").replace("_max", "").replace("_moy", "")
+        
+    if view in ["ts", "tbl"]:
+        
+        # Load data. 
+        p = "./data/<view>/<var_or_idx>.csv"
+        p = p.replace("<view>", view)
+        p = p.replace("<var_or_idx>", var_or_idx)
+        df = pd.read_csv(p)
+        if view == "ts":
+            items = list(df.columns)
+        else:
+            items = df["rcp"]
+    
+    else:
+        
+        # List files.
+        p = "./data/<view>/<var_or_idx>/<hor>/*.csv"
+        p = p.replace("<view>", view)
+        p = p.replace("<var_or_idx>", var_or_idx)
+        p = p.replace("<hor>", hor)
+        items = list(glob.glob(p))
+    
+    # Extract RCPs.
+    for item in items:
+        if "rcp" in item:
+            rcp = item.split("_")[0 if view in ["ts", "tbl"] else 1]
             if rcp not in rcp_list:
                 rcp_list.append(rcp)
     rcp_list.sort()
@@ -103,7 +130,8 @@ def get_var_or_idx_desc(var_or_idx: str) -> str:
     return var_desc
 
 
-def load_data(var_or_idx: str, view: str) -> pd.DataFrame:
+def load_data(var_or_idx: str, view: str, rcp: str = "", hor: str = "",
+              stat: str="", delta: bool = False) -> pd.DataFrame:
 
     """
     Load data.
@@ -113,7 +141,15 @@ def load_data(var_or_idx: str, view: str) -> pd.DataFrame:
     var_or_idx : str
         Climate variable or index.
     view : str
-        {"ts", "tbl", "map"}
+        View = {"ts", "tbl", "map"}
+    rcp : Optional[str]
+        RCP = {"rcp26", "rcp45", "rcp85"}
+    hor : Optional[str]
+        Horizon (ex: "1981-2010")
+    stat : Optional[str]
+        Statistic = {"q10", "mean", "q90"}
+    delta : Optional[bool]
+        If True, return delta.
     
     Returns
     -------
@@ -122,13 +158,28 @@ def load_data(var_or_idx: str, view: str) -> pd.DataFrame:
     """
     
     # Load data.
-    p = "./data/" + view + "/<var_or_idx>.csv"
-    df = pd.read_csv(p.replace("<var_or_idx>", var_or_idx))
+    if view in ["ts", "tbl"]:
+        p = "./data/<view>/<var_or_idx>.csv"    
+    else:
+        p = "./data/<view>/<var_or_idx>/<hor>/<var_or_idx>_<rcp>_<hor_>_<stat>_<delta>.csv"        
+    p = p.replace("<view>", view)
+    p = p.replace("<var_or_idx>", var_or_idx)
+    p = p.replace("<rcp>", rcp)
+    p = p.replace("<hor_>", hor.replace("-", "_"))
+    p = p.replace("<hor>", hor)
+    p = p.replace("<stat>", stat)
+    p = p.replace("_<delta>", "" if delta is False else "_delta")        
+    df = pd.read_csv(p)
     
     # Round values.
     n_dec = 1 if (var_or_idx in ["tasmin", "tasmax"]) else 0
-    for col in df.columns:
-        df[col] = df[col].round(decimals=n_dec)
+    if view == "ts":
+        for col in df.columns:
+            df[col] = df[col].round(decimals=n_dec)
+    elif view == "tbl":
+        df["val"] = df["val"].round(decimals=n_dec)
+    else:
+        df[var_or_idx] = df[var_or_idx].round(decimals=n_dec)
 
     return df
 
@@ -191,6 +242,29 @@ def plot_ts(var_or_idx: str) -> alt.Chart:
     return plot.configure_axis(grid=False)
 
 
+def build_tbl(var_or_idx: str) -> pd.DataFrame:
+    
+    """
+    Build a table.
+    
+    Parameters
+    ----------
+    var_or_idx : str
+        Climate variable or index.
+        
+    Returns
+    -------
+    pd.DataFrame :
+        Dataframe.
+    """
+    
+    # Load data.
+    df = load_data(var_or_idx, "tbl")
+    df = df.drop(df.columns[0:3], axis=1)
+    
+    return df
+
+
 def vars_update(event):
     
     """
@@ -200,7 +274,8 @@ def vars_update(event):
     
     if views.value == view_list[0]:
         tab_ts[0][2] = plot_ts(vars.value)
-
+    elif views.value == view_list[1]:
+        tab_tbl[0][2] = build_tbl(vars.value)
     
 def views_update(event):
     
@@ -216,10 +291,10 @@ def views_update(event):
     else:
         dash[1] = tab_map
 
+        
 view_list = ["Série temporelle", "Tableau", "Carte"]
 cols = {"rcp26": "blue", "rcp45": "green", "rcp85": "red"}
 back_menu = "WhiteSmoke"
-logo_oura = pn.Column(pn.pane.PNG("./data/ouranos.png", height=50))
 
 tab_ts  = None
 tab_tbl = None
@@ -228,6 +303,8 @@ tab_map = None
 # notebook:
 output_mode = "streamlit"
 if output_mode == "jupyter_notebook":
+
+    logo_oura = pn.Column(pn.pane.PNG("./data/ouranos.png", height=50))
     
     views = pnw.RadioBoxGroup(name="RadioBoxGroup", options=view_list, inline=False)
     views.param.watch(views_update, ["value"], onlychanged=True)
@@ -236,11 +313,12 @@ if output_mode == "jupyter_notebook":
     vars.param.watch(vars_update, ["value"], onlychanged=True)
     
     plot = plot_ts(vars.value)
+    tbl = build_tbl(vars.value)
 
     tab_ts  = pn.Row(pn.Column(pn.pane.Markdown("<b>Variable</b>"),
                                vars, plot))
     tab_tbl = pn.Row(pn.Column(pn.pane.Markdown("<b>Variable</b>"),
-                               vars, "Under development"))
+                               vars, tab))
     tab_map = pn.Row(pn.Column(pn.pane.Markdown("<b>Variable</b>"),
                                vars, "Under development"))
     menu = pn.Column(logo_oura,
@@ -253,11 +331,17 @@ if output_mode == "jupyter_notebook":
 
 # streamlit:
 else:
+    
+    logo_oura = Image.open("./data/ouranos.png")
+    st.sidebar.image(logo_oura, width=150)
+    
     views = st.sidebar.radio("Select view", view_list)
+    
     if views == view_list[0]:
         vars = st.selectbox("Variable", options=get_var_or_idx_list("ts"))
         st.write(plot_ts(vars))
     elif views == view_list[1]:
         vars = st.selectbox("Variable", options=get_var_or_idx_list("tbl"))
+        st.table(build_tbl(vars))
     else:
         vars = st.selectbox("Variable", options=get_var_or_idx_list("map"))
