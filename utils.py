@@ -1,17 +1,20 @@
-import altair as alt
 import glob
 import numpy as np
 import os
 import pandas as pd
+from matplotlib.lines import Line2D
 from typing import List, Optional
 
-
-view_list    = ["Série temporelle", "Tableau", "Carte"]
-cols         = {"rcp26": "blue", "rcp45": "green", "rcp85": "red"}
+ref          = "ref"
+rcp26        = "rcp26"
+rcp45        = "rcp45"
+rcp85        = "rcp85"
 back_sidebar = "WhiteSmoke"
-p_logo       = "./data/ouranos.png"
-
-alt.renderers.enable("default")
+d_data       = "./data/"
+d_ts         = d_data + "ts/"
+d_tbl        = d_data + "tbl/"
+d_map        = d_data + "map/"
+p_logo       = d_data + "ouranos.png"
 
 
 def get_var_or_idx_list(view: str) -> List[str]:
@@ -34,13 +37,16 @@ def get_var_or_idx_list(view: str) -> List[str]:
     var_or_idx_list = []
     
     if view in ["ts", "tbl"]:
-        f_list = list(glob.glob("./data/" + view + "/*.csv"))
+        p = d_data + "<view>/*.csv"
+        p = p.replace("<view>", view)
+        f_list = list(glob.glob(p))
         for f in f_list:
             var_or_idx_list.append(os.path.basename(f).replace(".csv", ""))
         var_or_idx_list.sort()
     
     else:
-        p = "./data/" + view + "/"
+        p = d_data + "<view>/"
+        p = p.replace("<view>", view)
         var_or_idx_list = os.listdir(p)
     
     return var_or_idx_list
@@ -71,7 +77,7 @@ def get_rcp_list(var_or_idx: str, view: str, hor: Optional[str] = "") -> List[st
     if view in ["ts", "tbl"]:
         
         # Load data. 
-        p = "./data/<view>/<var_or_idx>.csv"
+        p = d_data + "<view>/<var_or_idx>.csv"
         p = p.replace("<view>", view)
         p = p.replace("<var_or_idx>", var_or_idx)
         df = pd.read_csv(p)
@@ -83,7 +89,7 @@ def get_rcp_list(var_or_idx: str, view: str, hor: Optional[str] = "") -> List[st
     else:
         
         # List files.
-        p = "./data/<view>/<var_or_idx>/<hor>/*.csv"
+        p = d_data + "<view>/<var_or_idx>/<hor>/*.csv"
         p = p.replace("<view>", view)
         p = p.replace("<var_or_idx>", var_or_idx)
         p = p.replace("<hor>", hor)
@@ -91,7 +97,7 @@ def get_rcp_list(var_or_idx: str, view: str, hor: Optional[str] = "") -> List[st
     
     # Extract RCPs.
     for item in items:
-        if "rcp" in item:
+        if ("rcp" in item) or (ref in item):
             rcp = item.split("_")[0 if view in ["ts", "tbl"] else 1]
             if rcp not in rcp_list:
                 rcp_list.append(rcp)
@@ -100,6 +106,60 @@ def get_rcp_list(var_or_idx: str, view: str, hor: Optional[str] = "") -> List[st
     return rcp_list
 
 
+def get_rcp_list_desc(rcp_list: List[str]) -> List[str]:
+    
+    """
+    Get a list of RCP descriptions.
+    
+    Parameters
+    ----------
+    rcp_list : List[str]
+        List of RCPs.
+    
+    Returns
+    -------
+    List[str]
+        List of RCP descriptions.
+    """
+    
+    rcp_list_desc = []
+    
+    for rcp in rcp_list:
+        rcp_list_desc.append(get_rcp_desc(rcp))
+    
+    return rcp_list_desc
+
+
+def get_rcp_desc(rcp: str) -> str:
+
+    """
+    Get RCP description.
+    
+    Parameters
+    ----------
+    rcp : str
+        RCP = {"rcp26", "rcp45", "rcp85"}
+    
+    Returns
+    -------
+    str
+        RCP description.
+    """
+    
+    rcp_desc = ""
+
+    if rcp == ref:
+        rcp_desc = "Référence"
+    elif rcp == rcp26:
+        rcp_desc = "RCP 2.6"
+    elif rcp == rcp45:
+        rcp_desc = "RCP 4.5"
+    elif rcp == rcp85:
+        rcp_desc = "RCP 8.5"
+
+    return rcp_desc
+    
+    
 def get_var_or_idx_desc(var_or_idx: str) -> str:
     
     """
@@ -131,6 +191,75 @@ def get_var_or_idx_desc(var_or_idx: str) -> str:
     return var_desc
 
 
+def get_var_or_idx_name(var_or_idx: str) -> str:
+    
+    """
+    Get title.
+    
+    Parameters
+    ----------
+    var_or_idx : str
+        Climate variable or index.
+    
+    Returns
+    -------
+    str
+        Title.
+    """
+        
+    title = ""
+    if var_or_idx == "tas":
+        title = "Température moyenne"
+    elif var_or_idx == "tasmin":
+        title = "Température minimale quotidienne"
+    elif var_or_idx == "tasmax":
+        title = "Température maximale quotidienne"
+    elif var_or_idx == "pr":
+        title = "Précipitation"
+    elif var_or_idx == "evspsbl":
+        title = "Évapotranspiration"
+    elif var_or_idx == "evspsblpot":
+        title = "Évapotranspiration potentielle"
+        
+    return title
+
+
+def get_hor_list(var_or_idx: str) -> List[str]:
+
+    """
+    Get title.
+    
+    Parameters
+    ----------
+    var_or_idx : str
+        Climate variable or index.
+    
+    Returns
+    -------
+    List[str]
+        Title.
+    """
+    
+    # List all horizons.
+    p = d_map + "<var_or_idx>/"
+    p = p.replace("<var_or_idx>", var_or_idx)
+    hor_list = os.listdir(p)
+    
+    # Remove hte horizon that includes all years.
+    min_hor, max_hor = None, None
+    for hor in hor_list:
+        tokens = hor.split("-")
+        if min_hor is None:
+            min_hor = tokens[0]
+            max_hor = tokens[1]
+        else:
+            min_hor = min(min_hor, tokens[0])
+            max_hor = max(max_hor, tokens[1])
+    hor_list.remove(min_hor + "-" + max_hor)
+
+    return hor_list
+    
+
 def load_data(var_or_idx: str, view: str, rcp: str = "", hor: str = "",
               stat: str="", delta: bool = False) -> pd.DataFrame:
 
@@ -160,9 +289,9 @@ def load_data(var_or_idx: str, view: str, rcp: str = "", hor: str = "",
     
     # Load data.
     if view in ["ts", "tbl"]:
-        p = "./data/<view>/<var_or_idx>.csv"    
+        p = d_data + "<view>/<var_or_idx>.csv"    
     else:
-        p = "./data/<view>/<var_or_idx>/<hor>/<var_or_idx>_<rcp>_<hor_>_<stat>_<delta>.csv"        
+        p = d_data + "<view>/<var_or_idx>/<hor>/<var_or_idx>_<rcp>_<hor_>_<stat>_<delta>.csv"        
     p = p.replace("<view>", view)
     p = p.replace("<var_or_idx>", var_or_idx)
     p = p.replace("<rcp>", rcp)
@@ -182,85 +311,4 @@ def load_data(var_or_idx: str, view: str, rcp: str = "", hor: str = "",
     else:
         df[var_or_idx] = df[var_or_idx].round(decimals=n_dec)
 
-    return df
-
-
-def gen_ts(var_or_idx: str) -> alt.Chart:
-
-    """
-    Generate a plot of time series.
-    
-    Parameters
-    ----------
-    var_or_idx : str
-        Climate variable or index.
-        
-    Returns
-    -------
-    alt.Chart :
-        Plot of time series.
-    """
-    
-    # Load data.
-    df = load_data(var_or_idx, "ts")
-
-    # Extract RCPs.
-    rcp_list = get_rcp_list(var_or_idx, "ts")
-    
-    # Extract minimum and maximum.
-    y_min = df["ref"].min()
-    y_max = df["ref"].max()
-    for rcp in rcp_list:
-        y_min = min(y_min, df[rcp + "_min"].min())
-        y_max = max(y_max, df[rcp + "_max"].max())
-    
-    # Add layers.
-    plot = None
-    for rcp in rcp_list:
-        
-        line = alt.Chart(df.reset_index()).mark_line().encode(
-            x=alt.X("year",
-                    axis=alt.Axis(title="Année", format="d")),
-            y=alt.Y(rcp + "_moy",
-                    scale=alt.Scale(domain=[y_min, y_max]),
-                    axis=alt.Axis(title=get_var_or_idx_desc(var_or_idx), format="d")),
-            color=alt.value(cols[rcp]),
-            tooltip=rcp + "_moy"
-        ).interactive()
-
-        band = alt.Chart(df).mark_area(opacity=0.3).encode(
-            x="year",
-            y=alt.Y(rcp + "_min", scale=alt.Scale(domain=[y_min, y_max])),
-            y2=rcp + "_max",
-            color=alt.value(cols[rcp])
-        )
-        
-        if rcp == rcp_list[0]:
-            plot = line + band
-        else:
-            plot = plot + line + band
-
-    return plot.configure_axis(grid=False)
-
-
-def gen_tbl(var_or_idx: str) -> pd.DataFrame:
-    
-    """
-    Generate a table.
-    
-    Parameters
-    ----------
-    var_or_idx : str
-        Climate variable or index.
-        
-    Returns
-    -------
-    pd.DataFrame :
-        Dataframe.
-    """
-    
-    # Load data.
-    df = load_data(var_or_idx, "tbl")
-    df = df.drop(df.columns[0:3], axis=1)
-    
     return df
