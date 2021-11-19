@@ -1,18 +1,45 @@
 import altair as alt
+import holoviews as hv
+import hvplot.pandas
+import logging
+import math
 import matplotlib
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import panel as pn
 import utils
+import warnings
 from matplotlib.lines import Line2D
-from typing import Union
+from typing import Union, List
 
 view_list = ["Série temporelle", "Tableau", "Carte"]
-plot_libs = ["altair", "matplotlib"]
+plot_libs = ["altair", "hvplot", "matplotlib"]
 cols      = {"ref": "black", "rcp26": "blue", "rcp45": "green", "rcp85": "red"}
 
 alt.renderers.enable("default")
+pn.extension("vega")
+hv.extension("bokeh", logo=False)
+
+
+def get_col_list(rcp_list: List[str]) -> List[str]:
+    
+    """
+    Extract color names associated with each one of the items in a RCP list.
+    
+    Parameters
+    ----------
+    rcp_list: List[str]
+        List of RCPs.
+    
+    """
+    
+    col_list = []
+    for rcp in rcp_list:
+        col_list.append(cols[rcp])
+        
+    return col_list
 
 
 def gen_ts(var_or_idx: str, lib: str = "altair") -> Union[alt.Chart, plt.figure]:
@@ -25,50 +52,25 @@ def gen_ts(var_or_idx: str, lib: str = "altair") -> Union[alt.Chart, plt.figure]
     var_or_idx : str
         Climate variable or index.
     lib : str
-        Plotting library = {"altair", "matplotlib"}
+        Plotting library = {"altair", "matplotlib", "hvplot"}
         
     Returns
     -------
     Union[alt.Chart, plt.figure] :
         Plot of time series.
     """
-        
-    if lib == "matplotlib":
-        ts = gen_ts_mat(var_or_idx)
-    else:
-        ts = gen_ts_alt(var_or_idx)
-    
-    return ts
-        
-        
-def gen_ts_alt(var_or_idx: str) -> alt.Chart:
-
-    """
-    Generate a plot of time series using altair.
-    
-    Parameters
-    ----------
-    var_or_idx : str
-        Climate variable or index.
-        
-    Returns
-    -------
-    alt.Chart :
-        Plot of time series.
-    """
-    
+       
     # Load data.
     df = utils.load_data(var_or_idx, "ts")
 
     # Extract RCPs.
     rcp_list = utils.get_rcp_list(var_or_idx, "ts")
     
-    # Extract list of colors.
-    col_list = []
-    for rcp in rcp_list:
-        col_list.append(cols[rcp])
-        
-    # Extract minimum and maximum.
+    # Extract minimum and maximum x-values (round to lower and upper decades).
+    x_min = math.floor(min(df["year"]) / 10) * 10
+    x_max = math.ceil(max(df["year"]) / 10) * 10
+    
+    # Extract minimum and maximum y-values.
     y_min = df[utils.ref].min()
     y_max = df[utils.ref].max()
     for rcp in rcp_list:
@@ -80,11 +82,56 @@ def gen_ts_alt(var_or_idx: str) -> alt.Chart:
             y_max = max(y_max, df[rcp + "_max"].max())
     
     # Plot components.
-    x_axis = alt.Axis(title="Année", format="d")
-    y_axis = alt.Axis(title=utils.get_var_or_idx_desc(var_or_idx), format="d")
-    y_scale = scale=alt.Scale(domain=[y_min, y_max])
-    col_scale = alt.Scale(range=col_list)
-    col_legend = alt.Legend(title="Scenarios")
+    title = utils.get_var_or_idx_name(var_or_idx)
+    x_label = "Année"
+    y_label = utils.get_var_or_idx_desc(var_or_idx)
+    
+    if lib == "matplotlib":
+        ts = gen_ts_mat(df, var_or_idx, rcp_list, title, x_label, y_label, [x_min, x_max], [y_min, y_max])
+    elif lib == "hvplot":
+        ts = gen_ts_hv(df, var_or_idx, rcp_list, title, x_label, y_label, [y_min, y_max])
+    else:
+        ts = gen_ts_alt(df, var_or_idx, rcp_list, title, x_label, y_label, [y_min, y_max])
+        
+    return ts
+
+
+def gen_ts_alt(df: pd.DataFrame, var_or_idx: str, rcp_list: List[str], title: str, x_label: str, y_label: str,
+               y_range: List[float]) -> alt.Chart:
+
+    """
+    Generate a plot of time series using altair.
+    
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Dataframe.
+    var_or_idx : str
+        Climate variable or index.
+    rcp_list: List[str]
+        List of RCPs.
+    title : str
+        Plot title.
+    x_label : str
+        X-label.
+    y_label : str
+        Y-label.
+    y_range : List[str]
+        Range of y_values to display [{y_min}, {y_max}].
+        
+    Returns
+    -------
+    alt.Chart :
+        Plot of time series.
+    """
+    
+    # Plot components.
+    x_axis = alt.Axis(title=x_label, format="d")
+    y_axis = alt.Axis(title=y_label, format="d")
+    y_scale = scale=alt.Scale(domain=y_range)
+    col_scale = alt.Scale(range=get_col_list(rcp_list))
+    # col_legend = alt.Legend(title="", direction="horizontal", orient="top", symbolType="stroke")
+    col_legend = alt.Legend(title="", orient="top-left", direction="horizontal", symbolType="stroke")
     
     # Add layers.
     plot = None
@@ -141,13 +188,14 @@ def gen_ts_alt(var_or_idx: str) -> alt.Chart:
                 else:
                     plot = plot + curve
 
-    return plot.configure_axis(grid=False).properties(width=700, title=utils.get_var_or_idx_name(var_or_idx))
+    return plot.configure_axis(grid=False).properties(height=365, width=705)
 
 
-def gen_ts_mat(var_or_idx: str) -> plt.figure:
+def gen_ts_hv(df: pd.DataFrame, var_or_idx: str, rcp_list: List[str], title: str, x_label: str, y_label: str,
+               y_range: List[float]) -> hvplot:
 
     """
-    Generate a plot of time series using matplotlib.
+    Generate a plot of time series using hvplot.
     
     Parameters
     ----------
@@ -156,110 +204,130 @@ def gen_ts_mat(var_or_idx: str) -> plt.figure:
         
     Returns
     -------
+    str :
+        Plot of time series.
+    """
+    
+    # Loop through RCPs.
+    plot = None
+    for item in ["area", "curve"]:
+        for rcp in rcp_list:
+
+            if (item == "area") and (rcp == utils.ref):
+                continue
+                
+            # Draw area.
+            area = None
+            curve = None
+            if item == "area":
+                area = df.hvplot.area(x="year", y=str(rcp + "_min"), y2=str(rcp + "_max"),
+                                      color=cols[rcp], alpha=0.3, line_alpha=0,
+                                      xlabel=x_label, ylabel=y_label)
+            
+            # Draw curve.
+            else:
+                curve = df.hvplot.line(x="year", y=utils.ref if rcp == utils.ref else str(rcp + "_moy"),
+                                       color=cols[rcp], alpha=0.7, label=utils.get_rcp_desc(rcp))
+
+            # Combine parts.
+            if plot is None:
+                if item == "area":
+                    plot = area
+                else:
+                    plot = curve
+            else:
+                if item == "area":
+                    plot = plot * area
+                else:
+                    plot = plot * curve 
+            
+    # Add legend.
+    plot = plot.opts(legend_position="top_left", legend_opts={"click_policy": "hide", "orientation": "horizontal"},
+                     frame_height=300, frame_width= 645, border_line_alpha=0.0, background_fill_alpha=0.0)
+    
+    return plot
+
+
+def gen_ts_mat(df: pd.DataFrame, var_or_idx: str, rcp_list: List[str], title: str, x_label: str, y_label: str,
+               x_range: List[float], y_range: List[float]) -> plt.figure:
+
+    """
+    Generate a plot of time series using matplotlib.
+    
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Dataframe.
+    var_or_idx : str
+        Climate variable or index.
+    rcp_list: List[str]
+        List of RCPs.
+    title : str
+        Plot title.
+    x_label : str
+        X-label.
+    y_label : str
+        Y-label.
+    x_range : List[str]
+        Range of x_values to display [{x_min}, {x_max}].
+    y_range : List[str]
+        Range of y_values to display [{y_min}, {y_max}].
+        
+    Returns
+    -------
     plt.figure :
         Plot of time series.
     """
-        
-    # Load data.
-    df = utils.load_data(var_or_idx, "ts")
-
-    # Extract RCPs.
-    rcp_list = utils.get_rcp_list(var_or_idx, "ts")
     
-    # Extract minimum and maximum.
-    y_min = df[utils.ref].min()
-    y_max = df[utils.ref].max()
-    for rcp in rcp_list:
-        if rcp == utils.ref:
-            y_min = min(y_min, df[utils.ref].min())
-            y_max = max(y_max, df[utils.ref].max())
-        else:
-            y_min = min(y_min, df[rcp + "_min"].min())
-            y_max = max(y_max, df[rcp + "_max"].max())
-        
-    # Extract data from CSV.
-    data_year = df.year
-    data_ref = []
-    if utils.ref in df.columns:
-        data_ref = df[utils.ref]
-    data_rcp26 = []
-    if str(utils.rcp26 + "_moy") in df.columns:
-        data_rcp26 = [df.rcp26_min, df.rcp26_moy, df.rcp26_max]
-    data_rcp45 = []
-    if str(utils.rcp45 + "_moy") in df.columns:
-        data_rcp45 = [df.rcp45_min, df.rcp45_moy, df.rcp45_max]
-    data_rcp85 = []
-    if str(utils.rcp85 + "_moy") in df.columns:
-        data_rcp85 = [df.rcp85_min, df.rcp85_moy, df.rcp85_max]
-
-    # Fonts.
-    fs_sup_title = 9
-    title = utils.get_var_or_idx_name(var_or_idx)
-    ylabel = utils.get_var_or_idx_desc(var_or_idx)
-
     # Initialize plot.
-    fig = plt.figure(constrained_layout=True, figsize=(9, 5))
+    fs = 9
+    fig = plt.figure(figsize=(9, 4.45))
     specs = gridspec.GridSpec(ncols=1, nrows=1, figure=fig)
     ax = fig.add_subplot(specs[:])
-    ax.set_title(title, fontsize=fs_sup_title)
-    ax.set_xlabel("Année")
-    ax.secondary_yaxis("right")
-    ax.get_yaxis().tick_right()
-    ax.axes.get_yaxis().set_visible(False)
-    secax = ax.secondary_yaxis("right")
-    secax.set_ylabel(ylabel)
-    plt.subplots_adjust(top=0.925, bottom=0.10, left=0.03, right=0.90, hspace=0.30, wspace=0.416)
+    ax.set_xlabel(x_label)
+    ax.set_ylabel(y_label)
+    ax.set_xticks(range(x_range[0], x_range[1] + 10, 10), minor=False)
+    ax.set_xticks(range(x_range[0], x_range[1] + 5, 5), minor=True)
+    plt.xlim(x_range[0], x_range[1])
+    plt.ylim(y_range[0], y_range[1])
 
     # Loop through RCPs.
+    leg_labels = []
+    leg_lines = []
     for rcp in rcp_list:
 
-        # Skip if no simulation is available for this RCP.
-        if ((rcp == utils.ref) and (len(data_ref) == 0)) or \
-           ((rcp == utils.rcp26) and (len(data_rcp26) == 0)) or \
-           ((rcp == utils.rcp45) and (len(data_rcp45) == 0)) or \
-           ((rcp == utils.rcp85) and (len(data_rcp85) == 0)):
+        # Extract columns.
+        data_year = df.year
+        data_rcp = []
+        if (rcp == utils.ref) and (utils.ref in df.columns):
+            data_rcp = df[utils.ref]
+        elif (rcp != utils.ref) and (str(rcp + "_moy") in df.columns):
+            data_rcp = [df[rcp + "_min"], df[rcp + "_moy"], df[rcp + "_max"]]
+                          
+        # Skip if no data is available for this RCP.
+        if len(data_rcp) == 0:
             continue
 
-        # Color.
+        # Add curves and areas.
         color = cols[rcp]
-
-        # Add data.
         if rcp == utils.ref:
-            ax.plot(data_year, data_ref, color=color, alpha=1.0)
+            ax.plot(data_year, data_rcp, color=color, alpha=1.0)
         else:
-            if rcp == utils.rcp26:
-                data_mean = data_rcp26[1]
-                data_min  = data_rcp26[0]
-                data_max  = data_rcp26[2]
-            elif rcp == utils.rcp45:
-                data_mean = data_rcp45[1]
-                data_min  = data_rcp45[0]
-                data_max  = data_rcp45[2]
-            elif rcp == utils.rcp85:
-                data_mean = data_rcp85[1]
-                data_min  = data_rcp85[0]
-                data_max  = data_rcp85[2]
-            ax.plot(data_year, data_mean, color=color, alpha=1.0)
-            ax.fill_between(np.array(data_year), data_min, data_max, color=color, alpha=0.25)
+            ax.plot(data_year, data_rcp[1], color=color, alpha=1.0)
+            ax.fill_between(np.array(data_year), data_rcp[0], data_rcp[2], color=color, alpha=0.25)
+        
+        # Collect legend label and line.
+        if rcp == utils.ref:
+            leg_labels.append("Référence")
+        else:
+            leg_labels.append(utils.get_rcp_desc(rcp))    
+        leg_lines.append(Line2D([0], [0], color=color, lw=2))
 
-    # Finalize plot.
-    legend_l = ["Référence"]
-    if utils.rcp26 in rcp_list:
-        legend_l.append("RCP 2.6")
-    if utils.rcp45 in rcp_list:
-        legend_l.append("RCP 4.5")
-    if utils.rcp85 in rcp_list:
-        legend_l.append("RCP 8.5")
-    custom_lines = [Line2D([0], [0], color=cols[utils.ref], lw=4)]
-    if utils.rcp26 in rcp_list:
-        custom_lines.append(Line2D([0], [0], color=cols[utils.rcp26], lw=4))
-    if utils.rcp45 in rcp_list:
-        custom_lines.append(Line2D([0], [0], color=cols[utils.rcp45], lw=4))
-    if utils.rcp85 in rcp_list:
-        custom_lines.append(Line2D([0], [0], color=cols[utils.rcp85], lw=4))
-    ax.legend(custom_lines, legend_l, loc="upper left", frameon=False)
-    plt.ylim(y_min, y_max)
+    # Build legend.
+    ax.legend(leg_lines, leg_labels, loc="upper left", ncol=len(leg_labels), mode="expland", frameon=False)
+    
     plt.close(fig)
+    
     return fig
 
 

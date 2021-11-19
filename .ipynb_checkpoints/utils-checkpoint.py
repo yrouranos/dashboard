@@ -258,7 +258,7 @@ def get_hor_list(var_or_idx: str) -> List[str]:
     hor_list.remove(min_hor + "-" + max_hor)
 
     return hor_list
-    
+
 
 def load_data(var_or_idx: str, view: str, rcp: str = "", hor: str = "",
               stat: str="", delta: bool = False) -> pd.DataFrame:
