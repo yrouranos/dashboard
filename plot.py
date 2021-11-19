@@ -1,5 +1,4 @@
 import altair as alt
-# import holoviews as hv
 import hvplot.pandas
 import logging
 import math
@@ -20,7 +19,6 @@ cols      = {"ref": "black", "rcp26": "blue", "rcp45": "green", "rcp85": "red"}
 
 alt.renderers.enable("default")
 pn.extension("vega")
-# hv.extension("bokeh", logo=False)
 
 
 def get_col_list(rcp_list: List[str]) -> List[str]:
