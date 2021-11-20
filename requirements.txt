@@ -1,5 +1,6 @@
 altair
 holoviews
+hvplot
 matplotlib
 numpy
 pandas
