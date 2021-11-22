@@ -15,6 +15,7 @@ d_ts         = d_data + "ts/"
 d_tbl        = d_data + "tbl/"
 d_map        = d_data + "map/"
 p_logo       = d_data + "ouranos_transparent.png"
+q_list       = [0.1, 0.9] 
 
 
 def get_var_or_idx_list(view: str) -> List[str]:
@@ -224,7 +225,7 @@ def get_var_or_idx_name(var_or_idx: str) -> str:
     return title
 
 
-def get_hor_list(var_or_idx: str) -> List[str]:
+def get_hor_list(var_or_idx: str, view: str, incl_ref: bool = True) -> List[str]:
 
     """
     Get title.
@@ -233,19 +234,33 @@ def get_hor_list(var_or_idx: str) -> List[str]:
     ----------
     var_or_idx : str
         Climate variable or index.
-    
+    view : str
+        View = {"tbl", "map"}
+    incl_ref : bool
+        If True, considers the reference period (when view="tbl").
+        
     Returns
     -------
     List[str]
         Title.
     """
     
-    # List all horizons.
-    p = d_map + "<var_or_idx>/"
-    p = p.replace("<var_or_idx>", var_or_idx)
-    hor_list = os.listdir(p)
+    hor_list = []
     
-    # Remove hte horizon that includes all years.
+    # List all horizons.
+    if view == "map":
+        p = d_map + "<var_or_idx>/"
+        p = p.replace("<var_or_idx>", var_or_idx)
+        hor_list = os.listdir(p)
+    elif view == "tbl":
+        df = load_data(var_or_idx, view)
+        hor_ref = df[df["rcp"] == ref]["hor"][0]
+        hor_list = list(dict.fromkeys(list(df["hor"])))
+        if (incl_ref is False) and (any(hor_ref == hor for hor in hor_list)):
+            hor_list.remove(hor_ref)
+    hor_list.sort()
+    
+    # Remove the horizon that includes all years.
     min_hor, max_hor = None, None
     for hor in hor_list:
         tokens = hor.split("-")
@@ -255,7 +270,9 @@ def get_hor_list(var_or_idx: str) -> List[str]:
         else:
             min_hor = min(min_hor, tokens[0])
             max_hor = max(max_hor, tokens[1])
-    hor_list.remove(min_hor + "-" + max_hor)
+    tot_hor = min_hor + "-" + max_hor
+    if tot_hor in hor_list:
+        hor_list.remove(tot_hor)
 
     return hor_list
 

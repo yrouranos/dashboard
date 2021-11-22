@@ -331,7 +331,7 @@ def gen_ts_mat(df: pd.DataFrame, var_or_idx: str, rcp_list: List[str], title: st
     return fig
 
 
-def gen_tbl(var_or_idx: str) -> pd.DataFrame:
+def gen_tbl(var_or_idx: str, hor: str) -> pd.DataFrame:
     
     """
     Generate a table.
@@ -340,6 +340,8 @@ def gen_tbl(var_or_idx: str) -> pd.DataFrame:
     ----------
     var_or_idx : str
         Climate variable or index.
+    hor : str
+        Horizon (ex: "1981-2010").
         
     Returns
     -------
@@ -349,6 +351,86 @@ def gen_tbl(var_or_idx: str) -> pd.DataFrame:
     
     # Load data.
     df = utils.load_data(var_or_idx, "tbl")
-    df = df.drop(df.columns[0:3], axis=1)
+
+    # Extract RCPs.
+    rcp_list = utils.get_rcp_list(var_or_idx, "tbl")
+
+    # Extract horizons.
+    hor_list = utils.get_hor_list(var_or_idx, "tbl", False)
+
+    # List of statistics (in a column).
+    stat_list = [["min", -1],
+                 ["quantile", utils.q_list[0]],
+                 ["quantile", 0.5],
+                 ["quantile", utils.q_list[1]],
+                 ["max", -1],
+                 ["mean", -1]]
+
+    # Initialize resulting dataframe.
+    df_res = pd.DataFrame()
+    df_res["Statistique"] =\
+        ["minimum",
+        str(math.ceil(utils.q_list[0] * 100)) + "e percentile",
+        "médiane",
+        str(math.ceil(utils.q_list[1] * 100)) + "e percentile",
+        "maximum",
+        "moyenne"]
+
+    # Loop through RCPs.
+    columns = []
+    for rcp in rcp_list:
+
+        if rcp == utils.ref:
+            continue
+
+        vals = []
+        for stat in stat_list:
+            df_cell = float(df[(df["rcp"] == rcp) &
+                               (df["hor"] == hor) &
+                               (df["stat"] == stat[0]) &
+                               (df["q"] == stat[1])]["val"])
+            val = df_cell            
+            vals.append(val)
+
+        df_res[rcp] = vals
+        if var_or_idx not in ["tasmin", "tasmax"]:
+            df_res[rcp] = df_res[rcp].astype(int)
+
+        if rcp != "rcpxx":
+            columns.append(utils.get_rcp_desc(rcp))
+        else:
+            columns.append("Tous")
+
+    df_res.columns = [df_res.columns[0]] + columns
+    df_res = df_res.set_index(df_res.columns[0])
     
-    return df
+    return df_res
+
+
+def get_ref_val(var_or_idx: str) -> Union[int, float]:
+    
+    """
+    Get the reference value.
+
+    Parameters
+    ----------
+    var_or_idx : str
+        Climate variable or index
+
+    Returns
+    -------
+    Union[int, float]
+        Reference value.
+    """
+    
+    val = 0
+    
+    # Load data.
+    df = utils.load_data(var_or_idx, "tbl")
+    
+    # Extract value.
+    val = df[df["rcp"] == utils.ref]["val"][0]
+    if var_or_idx not in ["tasmin", "tasmax"]:
+        val = int(val)
+    
+    return val

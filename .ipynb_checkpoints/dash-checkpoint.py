@@ -24,9 +24,18 @@ def main():
             st.write(hv.render(plot.gen_ts(vars, "hvplot")), backend="bokeh")
         else:
             st.write(plot.gen_ts(vars, "matplotlib"))
+            
     elif view == plot.view_list[1]:
         vars = st.selectbox("Variable", options=utils.get_var_or_idx_list("tbl"))
-        st.table(plot.gen_tbl(vars))
+        hors = st.selectbox("Horizon", options=utils.get_hor_list(vars, "tbl", False))
+        df_tbl = plot.gen_tbl(vars, hors)
+        ref = str(plot.get_ref_val(vars))
+        if vars in ["tasmin", "tasmax"]:
+            df_tbl = df_tbl.style.format("{:.1f}")
+            ref = "{:.1f}".format(float(ref))
+        st.table(df_tbl)
+        st.write("Valeur de référence : " + ref)
+        
     else:
         vars = st.selectbox("Variable", options=utils.get_var_or_idx_list("map"))
 
