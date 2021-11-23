@@ -16,7 +16,7 @@ def main():
     view = st.sidebar.radio("Choisir la vue", list(utils.views.values()))
     plot_lib = st.sidebar.radio("Choisir la librairie visuelle", plot.plot_libs)
         
-    if view == plot.views[0]:
+    if utils.get_view_code(view) == "ts":
         vars = st.selectbox("Variable", options=utils.get_var_or_idx_list("ts"))
         if plot_lib == "altair": 
             st.write(plot.gen_ts(vars, "altair"))
@@ -25,7 +25,7 @@ def main():
         else:
             st.write(plot.gen_ts(vars, "matplotlib"))
             
-    elif view == plot.views[1]:
+    elif utils.get_view_code(view) == "tbl":
         vars = st.selectbox("Variable", options=utils.get_var_or_idx_list("tbl"))
         hors = st.selectbox("Horizon", options=utils.get_hor_list(vars, "tbl"))
         tbl = plot.gen_tbl(vars, hors)
