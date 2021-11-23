@@ -12,16 +12,15 @@ import panel as pn
 import utils
 import warnings
 from matplotlib.lines import Line2D
-from typing import Union, List
+from typing import Union, List, Optional
 
-view_list = ["Série temporelle", "Tableau", "Carte"]
 plot_libs = ["altair", "hvplot", "matplotlib"]
 cols      = {"ref": "black", "rcp26": "blue", "rcp45": "green", "rcp85": "red"}
 
 alt.renderers.enable("default")
 pn.extension("vega")
 hv.extension("bokeh", logo=False)
-
+    
 
 def get_col_list(rcp_list: List[str]) -> List[str]:
     
@@ -356,7 +355,7 @@ def gen_tbl(var_or_idx: str, hor: str) -> pd.DataFrame:
     rcp_list = utils.get_rcp_list(var_or_idx, "tbl")
 
     # Extract horizons.
-    hor_list = utils.get_hor_list(var_or_idx, "tbl", False)
+    hor_list = utils.get_hor_list(var_or_idx, "tbl")
 
     # List of statistics (in a column).
     stat_list = [["min", -1],
@@ -416,7 +415,7 @@ def get_ref_val(var_or_idx: str) -> Union[int, float]:
     ----------
     var_or_idx : str
         Climate variable or index
-
+        
     Returns
     -------
     Union[int, float]
@@ -434,3 +433,38 @@ def get_ref_val(var_or_idx: str) -> Union[int, float]:
         val = int(val)
     
     return val
+
+
+def gen_map(var_or_idx: str, hor: str, rcp: str, stat: str, q: Optional[float] = -1):
+
+    """
+    Generate a plot of time series.
+    
+    Parameters
+    ----------
+    var_or_idx : str
+        Climate variable or index.
+    hor : str
+        Horizon (ex: "1981-2010")
+    rcp : str
+        RCP (ex: "rcp45").
+    stat : str
+        Statistic = {"quantile", "mean"}
+    q : Optional[float]
+        Quantile (ex: 0.1).
+    """
+       
+    # Load data.
+    df = utils.load_data(var_or_idx, "map", hor, rcp, stat, q)
+
+    # Extract horizons.
+    hor_list = utils.get_hor_list(var_or_idx, "map")
+    
+    # Extract RCPs.
+    rcp_list = utils.get_rcp_list(var_or_idx, "map")
+
+    
+    
+    
+    
+    return "None"

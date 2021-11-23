@@ -1,21 +1,47 @@
 import glob
+import math
 import numpy as np
 import os
 import pandas as pd
 from matplotlib.lines import Line2D
 from typing import List, Optional
 
-ref          = "ref"
-rcp26        = "rcp26"
-rcp45        = "rcp45"
-rcp85        = "rcp85"
-back_sidebar = "WhiteSmoke"
-d_data       = "./data/"
-d_ts         = d_data + "ts/"
-d_tbl        = d_data + "tbl/"
-d_map        = d_data + "map/"
-p_logo       = d_data + "ouranos_transparent.png"
-q_list       = [0.1, 0.9] 
+views         = {"ts": "Série temporelle", "tbl": "Tableau", "map": "Carte"}
+ref           = "ref"
+rcp26         = "rcp26"
+rcp45         = "rcp45"
+rcp85         = "rcp85"
+sb_fill_color = "WhiteSmoke"
+d_data        = "./data/"
+d_ts          = d_data + "ts/"
+d_tbl         = d_data + "tbl/"
+d_map         = d_data + "map/"
+p_logo        = d_data + "ouranos_transparent.png"
+q_list        = [0.1, 0.9] 
+
+
+def get_view_code(view: str) -> str:
+    
+    """
+    Get the code of a view.
+    
+    Parameters
+    ----------
+    view : str
+        View = {"ts", "tbl", "map"}
+    
+    Returns
+    -------
+    str
+        Code.
+    """
+    
+    code = ""
+    
+    if view in list(views.values()):
+        code = list(views.keys())[list(views.values()).index(view)]
+        
+    return code
 
 
 def get_var_or_idx_list(view: str) -> List[str]:
@@ -225,7 +251,7 @@ def get_var_or_idx_name(var_or_idx: str) -> str:
     return title
 
 
-def get_hor_list(var_or_idx: str, view: str, incl_ref: bool = True) -> List[str]:
+def get_hor_list(var_or_idx: str, view: str) -> List[str]:
 
     """
     Get title.
@@ -236,8 +262,6 @@ def get_hor_list(var_or_idx: str, view: str, incl_ref: bool = True) -> List[str]
         Climate variable or index.
     view : str
         View = {"tbl", "map"}
-    incl_ref : bool
-        If True, considers the reference period (when view="tbl").
         
     Returns
     -------
@@ -256,8 +280,7 @@ def get_hor_list(var_or_idx: str, view: str, incl_ref: bool = True) -> List[str]
         df = load_data(var_or_idx, view)
         hor_ref = df[df["rcp"] == ref]["hor"][0]
         hor_list = list(dict.fromkeys(list(df["hor"])))
-        if (incl_ref is False) and (any(hor_ref == hor for hor in hor_list)):
-            hor_list.remove(hor_ref)
+        hor_list.remove(hor_ref)
     hor_list.sort()
     
     # Remove the horizon that includes all years.
@@ -277,8 +300,8 @@ def get_hor_list(var_or_idx: str, view: str, incl_ref: bool = True) -> List[str]
     return hor_list
 
 
-def load_data(var_or_idx: str, view: str, rcp: str = "", hor: str = "",
-              stat: str="", delta: bool = False) -> pd.DataFrame:
+def load_data(var_or_idx: str, view: str, hor: str = "", rcp: str = "",
+              stat: str="", q: float=-1, delta: bool = False) -> pd.DataFrame:
 
     """
     Load data.
@@ -289,12 +312,14 @@ def load_data(var_or_idx: str, view: str, rcp: str = "", hor: str = "",
         Climate variable or index.
     view : str
         View = {"ts", "tbl", "map"}
-    rcp : Optional[str]
-        RCP = {"rcp26", "rcp45", "rcp85"}
     hor : Optional[str]
         Horizon (ex: "1981-2010")
+    rcp : Optional[str]
+        RCP = {"rcp26", "rcp45", "rcp85"}
     stat : Optional[str]
-        Statistic = {"q10", "mean", "q90"}
+        Statistic = {"quantile", "mean"}
+    q : Optional[float]
+        Quantile (ex: 0.1).
     delta : Optional[bool]
         If True, return delta.
     
@@ -308,6 +333,8 @@ def load_data(var_or_idx: str, view: str, rcp: str = "", hor: str = "",
     if view in ["ts", "tbl"]:
         p = d_data + "<view>/<var_or_idx>.csv"    
     else:
+        if stat == "quantile":
+            stat = "q" + str(math.ceil(q * 100))
         p = d_data + "<view>/<var_or_idx>/<hor>/<var_or_idx>_<rcp>_<hor_>_<stat>_<delta>.csv"        
     p = p.replace("<view>", view)
     p = p.replace("<var_or_idx>", var_or_idx)
