@@ -1,3 +1,4 @@
+import config as cf
 import holoviews as hv
 import plot
 import streamlit as st
@@ -11,22 +12,24 @@ def main():
     Entry point.
     """
   
-    logo_oura = Image.open(utils.p_logo)
+    logo_oura = Image.open(cf.p_logo)
+    
     st.sidebar.image(logo_oura, width=150)
-    view = st.sidebar.radio("Choisir la vue", list(utils.views.values()))
-    plot_lib = st.sidebar.radio("Choisir la librairie visuelle", plot.plot_libs)
-        
-    if utils.get_view_code(view) == "ts":
-        vars = st.selectbox("Variable", options=utils.get_var_or_idx_list("ts"))
-        if plot_lib == "altair": 
+
+    views = st.sidebar.radio("Choisir la vue", list(cf.views.values()))
+
+    vars = st.selectbox("Variable", options=utils.get_varidx_list(utils.get_view_code(views)))
+    
+    if utils.get_view_code(views) == "ts":
+        libs = st.sidebar.radio("Choisir la librairie visuelle", cf.libs)        
+        if libs == "altair": 
             st.write(plot.gen_ts(vars, "altair"))
-        elif plot_lib == "hvplot": 
+        elif libs == "hvplot": 
             st.write(hv.render(plot.gen_ts(vars, "hvplot")), backend="bokeh")
         else:
             st.write(plot.gen_ts(vars, "matplotlib"))
             
-    elif utils.get_view_code(view) == "tbl":
-        vars = st.selectbox("Variable", options=utils.get_var_or_idx_list("tbl"))
+    elif utils.get_view_code(views) == "tbl":
         hors = st.selectbox("Horizon", options=utils.get_hor_list(vars, "tbl"))
         tbl = plot.gen_tbl(vars, hors)
         tbl_ref = str(plot.get_ref_val(vars))
@@ -37,11 +40,11 @@ def main():
         st.write("Valeur de référence : " + tbl_ref)
         
     else:
-        vars = st.selectbox("Variable", options=utils.get_var_or_idx_list("map"))
+        libs = st.sidebar.radio("Choisir la librairie visuelle", [cf.libs[2]])
         hors = st.selectbox("Horizon", options=utils.get_hor_list(vars, "map"))
         rcps = st.selectbox("Scénario d'émissions", options=utils.get_rcp_list(vars, "map", hors))
-        st.write(plot.gen_map(vars, hors, rcps, "quantile", utils.q_list[0]))
-        st.write(plot.gen_map(vars, hors, rcps, "quantile", utils.q_list[1]))
+        st.write(plot.gen_map(vars, hors, rcps, "quantile", cf.q_list[0]))
+        st.write(plot.gen_map(vars, hors, rcps, "quantile", cf.q_list[1]))
 
 
 main()
