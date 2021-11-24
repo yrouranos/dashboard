@@ -71,7 +71,7 @@ def get_varidx_list(
     else:
         p = cf.d_data + "<view>/"
         p = p.replace("<view>", view)
-        varidx_list = os.listdir(p)
+        varidx_list = list_dir(p)
     
     return varidx_list
 
@@ -259,7 +259,7 @@ def get_varidx_desc(varidx_name: str) -> str:
         
     return title
 
-
+            
 def get_hor_list(varidx_code: str, view: str) -> List[str]:
 
     """
@@ -286,7 +286,7 @@ def get_hor_list(varidx_code: str, view: str) -> List[str]:
     if view == "map":
         p = cf.d_map + "<varidx_code>/"
         p = p.replace("<varidx_code>", varidx_code)
-        hor_list = [e for e in Path(p).iterdir() if not e.is_file()]
+        hor_list = list_dir(p)
     elif view == "tbl":
         df = load_data(varidx_code, view)
         hor_ref = df[df["rcp"] == cf.rcp_ref]["hor"][0]
@@ -451,3 +451,33 @@ def get_min_max(
                 max = np.nanmax(max_vals)
 
     return min, max
+
+
+def list_dir(p: str) -> List[str]:
+
+    """
+    --------------------------------------------------------------------------------------------------------------------
+    List sub-directories within a directory.
+    
+    Parameters
+    ----------
+    p : str
+        Path.
+    
+    Returns
+    -------
+    List[str]
+        List of sub-directories.
+    --------------------------------------------------------------------------------------------------------------------
+    """
+    
+    list = []
+    
+    for e in Path(p).iterdir():
+        try:
+            if Path(e).is_dir():
+                list.append(os.path.basename(str(e)))
+        except NotADirectoryError:
+            pass
+    
+    return list
