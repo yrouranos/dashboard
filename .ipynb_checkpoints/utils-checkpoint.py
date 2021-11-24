@@ -1,3 +1,14 @@
+# -*- coding: utf-8 -*-
+# ----------------------------------------------------------------------------------------------------------------------
+# Climate information dashboard.
+# 
+# Utilities.
+#
+# Contributors:
+# 1. rousseau.yannick@ouranos.ca
+# (C) 2021 Ouranos Inc., Canada
+# ----------------------------------------------------------------------------------------------------------------------
+
 import config as cf
 import glob
 import math

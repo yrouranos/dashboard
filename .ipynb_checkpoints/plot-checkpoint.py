@@ -1,3 +1,17 @@
+# -*- coding: utf-8 -*-
+# ----------------------------------------------------------------------------------------------------------------------
+# Climate information dashboard.
+# 
+# Plotting functions.
+# - time series;
+# - table of statistics;
+# - map.
+#
+# Contributors:
+# 1. rousseau.yannick@ouranos.ca
+# (C) 2021 Ouranos Inc., Canada
+# ----------------------------------------------------------------------------------------------------------------------
+
 import altair as alt
 import config as cf
 import holoviews as hv
@@ -40,7 +54,7 @@ def get_col_list(
     
     col_list = []
     for rcp in rcp_list:
-        col_list.append(cf.cols[rcp])
+        col_list.append(cf.cols_rcp[rcp])
         
     return col_list
 
@@ -249,13 +263,13 @@ def gen_ts_hv(
             curve = None
             if item == "area":
                 area = df.hvplot.area(x="year", y=str(rcp + "_min"), y2=str(rcp + "_max"),
-                                      color=cf.cols[rcp], alpha=0.3, line_alpha=0,
+                                      color=cf.cols_rcp[rcp], alpha=0.3, line_alpha=0,
                                       xlabel=x_label, ylabel=y_label)
             
             # Draw curve.
             else:
                 curve = df.hvplot.line(x="year", y=cf.rcp_ref if rcp == cf.rcp_ref else str(rcp + "_moy"),
-                                       color=cf.cols[rcp], alpha=0.7, label=utils.get_rcp_desc(rcp))
+                                       color=cf.cols_rcp[rcp], alpha=0.7, label=utils.get_rcp_desc(rcp))
 
             # Combine parts.
             if plot is None:
@@ -347,7 +361,7 @@ def gen_ts_mat(
             continue
 
         # Add curves and areas.
-        color = cf.cols[rcp]
+        color = cf.cols_rcp[rcp]
         if rcp == cf.rcp_ref:
             ax.plot(data_year, data_rcp, color=color, alpha=1.0)
         else:
