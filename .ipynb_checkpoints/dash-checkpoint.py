@@ -35,7 +35,7 @@ def main():
         tbl_ref = str(plot.get_ref_val(vars))
         if vars in ["tasmin", "tasmax"]:
             tbl = tbl.style.format("{:.1f}")
-            tbl_ref = "{:.1f}".format(float(ref))
+            tbl_ref = "{:.1f}".format(float(tbl_ref))
         st.table(tbl)
         st.write("Valeur de référence : " + tbl_ref)
         
