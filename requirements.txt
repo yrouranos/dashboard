@@ -1,4 +1,5 @@
 altair
+descartes
 holoviews
 hvplot
 matplotlib
