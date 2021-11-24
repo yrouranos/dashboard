@@ -285,7 +285,7 @@ def get_hor_list(varidx_code: str, view: str) -> List[str]:
     if view == "map":
         p = cf.d_map + "<varidx_code>/"
         p = p.replace("<varidx_code>", varidx_code)
-        hor_list = [e for e in os.path.iterdir() if e.is_dir()]
+        hor_list = [e for e in p.iterdir() if e.is_dir()]
     elif view == "tbl":
         df = load_data(varidx_code, view)
         hor_ref = df[df["rcp"] == cf.rcp_ref]["hor"][0]
