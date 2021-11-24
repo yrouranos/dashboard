@@ -1,5 +1,5 @@
 altair
-bokeh=2.4.1
+bokeh==2.4.1
 descartes
 holoviews
 hvplot
