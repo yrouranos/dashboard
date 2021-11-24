@@ -34,7 +34,7 @@ def main():
         tbl = plot.gen_tbl(vars, hors)
         tbl_ref = str(plot.get_ref_val(vars))
         if vars in ["tasmin", "tasmax"]:
-            tbl = df_tbl.style.format("{:.1f}")
+            tbl = tbl.style.format("{:.1f}")
             tbl_ref = "{:.1f}".format(float(ref))
         st.table(tbl)
         st.write("Valeur de référence : " + tbl_ref)
