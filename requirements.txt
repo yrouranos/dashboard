@@ -1,7 +1,8 @@
 altair
+bokeh
 descartes
 holoviews
-hvplot>=2.4.1
+hvplot
 matplotlib
 numpy
 pandas
