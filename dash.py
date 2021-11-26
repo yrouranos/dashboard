@@ -10,6 +10,8 @@
 # ----------------------------------------------------------------------------------------------------------------------
 
 import config as cf
+import context
+import ghg_scen
 import holoviews as hv
 import plot
 import streamlit as st
@@ -25,26 +27,29 @@ def main():
     --------------------------------------------------------------------------------------------------------------------
     """
   
-    logo_oura = Image.open(cf.p_logo)
+    # Create context.
+    cntx = context.Context()
     
-    st.sidebar.image(logo_oura, width=150)
+    st.sidebar.image(Image.open(cf.p_logo), width=150)
 
     views = st.sidebar.radio("Choisir la vue", list(cf.views.values()))
 
-    vars = st.selectbox("Variable", options=utils.get_varidx_list(utils.get_view_code(views)))
+    vars = st.selectbox("Variable", options=utils.get_varidx_l(utils.get_view_code(views)))
     
     if utils.get_view_code(views) == "ts":
-        libs = st.sidebar.radio("Choisir la librairie visuelle", cf.libs)        
+        libs = st.sidebar.radio("Choisir la librairie visuelle", cf.libs)  
+        cntx.rcps = ghg_scen.RCPs(cf.d_data, vars, "ts")
         if libs == "altair": 
-            st.write(plot.gen_ts(vars, "altair"))
+            st.write(plot.gen_ts(vars, cntx.rcps, "altair"))
         elif libs == "hvplot": 
-            st.write(hv.render(plot.gen_ts(vars, "hvplot")), backend="bokeh")
+            st.write(hv.render(plot.gen_ts(vars, cntx.rcps, "hvplot")), backend="bokeh")
         else:
-            st.write(plot.gen_ts(vars, "matplotlib"))
+            st.write(plot.gen_ts(vars, cntx.rcps, "matplotlib"))
             
     elif utils.get_view_code(views) == "tbl":
-        hors = st.selectbox("Horizon", options=utils.get_hor_list(vars, "tbl"))
-        tbl = plot.gen_tbl(vars, hors)
+        hors = st.selectbox("Horizon", options=utils.get_hor_l(vars, "tbl"))
+        cntx.rcps = ghg_scen.RCPs(cf.d_data, vars, "tbl", hors)
+        tbl = plot.gen_tbl(vars, cntx.rcps, hors)
         tbl_ref = str(plot.get_ref_val(vars))
         if vars in ["tasmin", "tasmax"]:
             tbl = tbl.style.format("{:.1f}")
@@ -54,10 +59,11 @@ def main():
         
     else:
         libs = st.sidebar.radio("Choisir la librairie visuelle", [cf.libs[2]])
-        hors = st.selectbox("Horizon", options=utils.get_hor_list(vars, "map"))
-        rcps = st.selectbox("Scénario d'émissions", options=utils.get_rcp_list(vars, "map", hors))
-        st.write(plot.gen_map(vars, hors, rcps, "quantile", cf.q_list[0]))
-        st.write(plot.gen_map(vars, hors, rcps, "quantile", cf.q_list[1]))
+        hors = st.selectbox("Horizon", options=utils.get_hor_l(vars, "map"))
+        cntx.rcps = ghg_scen.RCPs(cf.d_data, vars, "map", hors)
+        rcps = st.selectbox("Scénario d'émissions", options=cntx.rcps.get_desc_l())
+        st.write(plot.gen_map(vars, hors, cntx.rcps.get_name(rcps), "quantile", cf.q_l[0]))
+        st.write(plot.gen_map(vars, hors, cntx.rcps.get_name(rcps), "quantile", cf.q_l[1]))
 
 
 main()

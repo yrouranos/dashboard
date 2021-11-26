@@ -9,52 +9,40 @@
 # (C) 2021 Ouranos Inc., Canada
 # ----------------------------------------------------------------------------------------------------------------------
 
+import utils
+
+
 """
-Context ----------------------------------------------------------------------------------------------------------------
+File system ------------------------------------------------------------------------------------------------------------
 """
 
-# Emission scenarios:
+# Base directory of data.
+d_data = "./data/"
 
-# Reference period.
-rcp_ref = "ref"
+# Directory of data related to time series.
+d_ts = d_data + "ts/"
 
-# Future period RCP 2.6.
-rcp_26 = "rcp26"
+# Directory of data related to tables of statistics.
+d_tbl = d_data + "tbl/"
 
-# Future period RCP 4.5.
-rcp_45 = "rcp45"
+# Directory of data related to maps.
+d_map = d_data + "map/"
 
-# Future period RCP 8.5.
-rcp_85 = "rcp85"
+# Path to company logo.
+p_logo = d_data + "ouranos_transparent.png"
 
-# Any type of RCP.
-rcp_xx = "rcpxx"
+# Region oundaries.
+p_bounds = d_map + "sn_boundaries.geojson"
+
+# Quantiles.
+q_l = [0.1, 0.9]
+    
+"""
+Views ------------------------------------------------------------------------------------------------------------------
+"""
 
 # Views.
 views = {"ts": "Série temporelle", "tbl": "Tableau", "map": "Carte"}
-
-# Quantiles.
-q_list = [0.1, 0.9]
-
-# Paths:
-
-# Data.
-d_data = "./data/"
-
-# Time series.
-d_ts = d_data + "ts/"
-
-# Table of statistics.
-d_tbl = d_data + "tbl/"
-
-# Map.
-d_map = d_data + "map/"
-
-# Company logo.
-p_logo = d_data + "ouranos_transparent.png"
-
-# Study boundaries.
-p_bounds = d_map + "sn_boundaries.geojson"
 
 """
 Climate variables (CORDEX) ---------------------------------------------------------------------------------------------
@@ -226,9 +214,6 @@ Design -------------------------------------------------------------------------
 # Background color of sidebar.
 col_sb_fill = "WhiteSmoke"
 
-# Time series.
-cols_rcp = {"ref": "black", "rcp26": "blue", "rcp45": "green", "rcp85": "red"}
-
 """
 Color maps apply to categories of variables and indices.
 +----------------------------+------------+------------+
@@ -285,3 +270,7 @@ libs = ["altair", "hvplot", "matplotlib"]
 
 # Discrete vs. continuous colors scales (maps).
 opt_map_discrete = True
+
+"""
+Instances --------------------------------------------------------------------------------------------------------------
+"""

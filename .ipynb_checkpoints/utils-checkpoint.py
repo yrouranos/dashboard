@@ -10,6 +10,7 @@
 # ----------------------------------------------------------------------------------------------------------------------
 
 import config as cf
+import ghg_scen
 import glob
 import math
 import numpy as np
@@ -48,8 +49,8 @@ def get_view_code(
     return code
 
 
-def get_varidx_list(
-    view: str
+def get_varidx_l(
+    view : str
 ) -> List[str]:
     
     
@@ -69,140 +70,24 @@ def get_varidx_list(
     --------------------------------------------------------------------------------------------------------------------
     """
     
-    varidx_list = []
+    varidx_l = []
     
     if view in ["ts", "tbl"]:
         p = cf.d_data + "<view>/*.csv"
         p = p.replace("<view>", view)
-        f_list = list(glob.glob(p))
-        for f in f_list:
-            varidx_list.append(os.path.basename(f).replace(".csv", ""))
-        varidx_list.sort()
+        f_l = list(glob.glob(p))
+        for f in f_l:
+            varidx_l.append(os.path.basename(f).replace(".csv", ""))
+        varidx_l.sort()
     
     else:
         p = cf.d_data + "<view>/"
         p = p.replace("<view>", view)
-        varidx_list = list_dir(p)
+        varidx_l = list_dir(p)
     
-    return varidx_list
+    return varidx_l
 
 
-def get_rcp_list(
-    varidx_code: str,
-    view: str,
-    hor: Optional[str] = ""
-) -> List[str]:
-    
-    """
-    --------------------------------------------------------------------------------------------------------------------
-    Get RCP list.
-    
-    Parameters
-    ----------
-    varidx_code : str
-        Climate variable or index.
-    view : str
-        View = {"ts", "tbl", "map"}
-    hor : Optional[str]
-        Horizon (ex: "1981-2010")
-        
-    Returns
-    -------
-    List[str]
-        RCP list.
-    --------------------------------------------------------------------------------------------------------------------
-    """
-    
-    rcp_list = []
-    
-    # The list of RCPs is within data files.
-    if view in ["ts", "tbl"]:
-        p = cf.d_data + "<view>/<varidx_code>.csv"
-        p = p.replace("<view>", view)
-        p = p.replace("<varidx_code>", varidx_code)
-        df = pd.read_csv(p)
-        if view == "ts":
-            items = list(df.columns)
-        else:
-            items = df["rcp"]
-    
-    # The list of RCPs is within file structure.
-    else:
-        p = cf.d_data + "<view>/<varidx_code>/<hor>/*.csv"
-        p = p.replace("<view>", view)
-        p = p.replace("<varidx_code>", varidx_code)
-        p = p.replace("<hor>", hor)
-        items = list(glob.glob(p))
-    
-    # Extract RCPs.
-    for item in items:
-        if ("rcp" in item) or (cf.rcp_ref in item):
-            rcp = item.split("_")[0 if view in ["ts", "tbl"] else 1]
-            if rcp not in rcp_list:
-                rcp_list.append(rcp)
-    rcp_list.sort()
-    
-    return rcp_list
-
-
-def get_rcp_list_desc(rcp_list: List[str]) -> List[str]:
-    
-    """
-    --------------------------------------------------------------------------------------------------------------------
-    Get a list of RCP descriptions.
-    
-    Parameters
-    ----------
-    rcp_list : List[str]
-        List of RCPs.
-    
-    Returns
-    -------
-    List[str]
-        List of RCP descriptions.
-    --------------------------------------------------------------------------------------------------------------------
-    """
-    
-    rcp_list_desc = []
-    
-    for rcp in rcp_list:
-        rcp_list_desc.append(get_rcp_desc(rcp))
-    
-    return rcp_list_desc
-
-
-def get_rcp_desc(rcp: str) -> str:
-
-    """
-    --------------------------------------------------------------------------------------------------------------------
-    Get RCP description.
-    
-    Parameters
-    ----------
-    rcp : str
-        RCP = {"rcp26", "rcp45", "rcp85"}
-    
-    Returns
-    -------
-    str
-        RCP description.
-    --------------------------------------------------------------------------------------------------------------------
-    """
-    
-    rcp_desc = ""
-
-    if rcp == cf.rcp_ref:
-        rcp_desc = "Référence"
-    elif rcp == cf.rcp_26:
-        rcp_desc = "RCP 2.6"
-    elif rcp == cf.rcp_45:
-        rcp_desc = "RCP 4.5"
-    elif rcp == cf.rcp_85:
-        rcp_desc = "RCP 8.5"
-
-    return rcp_desc
-    
-    
 def get_varidx_desc_unit(varidx_name: str) -> str:
     
     """
@@ -222,7 +107,9 @@ def get_varidx_desc_unit(varidx_name: str) -> str:
     """
     
     varidx_desc_unit = ""
-    if varidx_name == "tasmin":
+    if varidx_name == "tas":
+        varidx_desc_unit = "Température moyenne (°C)"
+    elif varidx_name == "tasmin":
         varidx_desc_unit = "Température minimale (°C)"
     elif varidx_name == "tasmax":
         varidx_desc_unit = "Température maximale (°C)"
@@ -271,7 +158,7 @@ def get_varidx_desc(varidx_name: str) -> str:
     return title
 
             
-def get_hor_list(varidx_code: str, view: str) -> List[str]:
+def get_hor_l(varidx_code: str, view: str) -> List[str]:
 
     """
     --------------------------------------------------------------------------------------------------------------------
@@ -291,23 +178,23 @@ def get_hor_list(varidx_code: str, view: str) -> List[str]:
     --------------------------------------------------------------------------------------------------------------------
     """
     
-    hor_list = []
+    hor_l = []
     
     # List all horizons.
     if view == "map":
         p = cf.d_map + "<varidx_code>/"
         p = p.replace("<varidx_code>", varidx_code)
-        hor_list = list_dir(p)
+        hor_l = list_dir(p)
     elif view == "tbl":
         df = load_data(varidx_code, view)
-        hor_ref = df[df["rcp"] == cf.rcp_ref]["hor"][0]
-        hor_list = list(dict.fromkeys(list(df["hor"])))
-        hor_list.remove(hor_ref)
-    hor_list.sort()
+        hor_ref = df[df["rcp"] == ghg_scen.rcp_ref]["hor"][0]
+        hor_l = list(dict.fromkeys(list(df["hor"])))
+        hor_l.remove(hor_ref)
+    hor_l.sort()
     
     # Remove the horizon that includes all years.
     min_hor, max_hor = None, None
-    for hor in hor_list:
+    for hor in hor_l:
         tokens = hor.split("-")
         if min_hor is None:
             min_hor = tokens[0]
@@ -316,13 +203,13 @@ def get_hor_list(varidx_code: str, view: str) -> List[str]:
             min_hor = min(min_hor, tokens[0])
             max_hor = max(max_hor, tokens[1])
     tot_hor = min_hor + "-" + max_hor
-    if tot_hor in hor_list:
-        hor_list.remove(tot_hor)
+    if tot_hor in hor_l:
+        hor_l.remove(tot_hor)
 
-    return hor_list
+    return hor_l
 
 
-def load_data(varidx_code: str, view: str, hor: str = "", rcp: str = "",
+def load_data(varidx_code: str, view: str, hor: str = "", rcp_name: str = "",
               stat: str="", q: float=-1, delta: bool = False) -> pd.DataFrame:
 
     """
@@ -337,7 +224,7 @@ def load_data(varidx_code: str, view: str, hor: str = "", rcp: str = "",
         View = {"ts", "tbl", "map"}
     hor : Optional[str]
         Horizon (ex: "1981-2010")
-    rcp : Optional[str]
+    rcp_name : Optional[str]
         RCP = {"rcp26", "rcp45", "rcp85"}
     stat : Optional[str]
         Statistic = {"quantile", "mean"}
@@ -366,7 +253,7 @@ def load_data(varidx_code: str, view: str, hor: str = "", rcp: str = "",
     p = p.replace("<view>", view)
     p = p.replace("<varidx_code>", varidx_code)
     p = p.replace("<varidx_name>", varidx_name)
-    p = p.replace("<rcp>", rcp)
+    p = p.replace("<rcp>", rcp_name)
     p = p.replace("<hor_>", hor.replace("-", "_"))
     p = p.replace("<hor>", hor)
     p = p.replace("<stat>", stat)
@@ -448,12 +335,12 @@ def get_min_max(
         # Identify the files to consider.
         p_ref = glob.glob(cf.d_map + varidx_code + "/*/" + varidx_name + "_ref*_mean.csv")
         p_rcp = cf.d_map + varidx_code + "/*/" + varidx_name + "_rcp*_q<q>.csv" 
-        p_rcp_q_low = glob.glob(p_rcp.replace("<q>", str(math.ceil(cf.q_list[0] * 100))))
-        p_rcp_q_high = glob.glob(p_rcp.replace("<q>", str(math.ceil(cf.q_list[1] * 100))))
-        p_list = p_ref + p_rcp_q_low + p_rcp_q_high
+        p_rcp_q_low = glob.glob(p_rcp.replace("<q>", str(math.ceil(cf.q_l[0] * 100))))
+        p_rcp_q_high = glob.glob(p_rcp.replace("<q>", str(math.ceil(cf.q_l[1] * 100))))
+        p_l = p_ref + p_rcp_q_low + p_rcp_q_high
 
         # Find the minimum and maximum values.
-        for p in p_list:
+        for p in p_l:
             if os.path.exists(p):
                 df = pd.read_csv(p)
                 min_vals = list(df[varidx_name]) + [min]
