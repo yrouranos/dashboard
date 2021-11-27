@@ -14,9 +14,10 @@
 
 import altair as alt
 import config as cf
-import ghg_scen
+import context_def
 import holoviews as hv
 import hvplot.pandas
+import lib_def
 import logging
 import math
 import matplotlib
@@ -25,6 +26,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import panel as pn
+import rcp_def
 import simplejson
 import utils
 import warnings
@@ -39,9 +41,7 @@ hv.extension("bokeh", logo=False)
 
 
 def gen_ts(
-    varidx_code: str,
-    rcps: ghg_scen.RCPs,
-    lib: str = "altair"
+    cntx: context_def.Context
 ) -> Union[alt.Chart, plt.figure]:
 
     """
@@ -50,13 +50,9 @@ def gen_ts(
     
     Parameters
     ----------
-    varidx_code : str
-        Climate variable or index.
-    rcps : rcp.RCPs
-        Instance of RCPs.
-    lib : str
-        Plotting library = {"altair", "matplotlib", "hvplot"}
-        
+    cntx : context_def.Context
+        Context.
+    
     Returns
     -------
     Union[alt.Chart, plt.figure] :
@@ -65,48 +61,44 @@ def gen_ts(
     """
        
     # Load data.
-    df = utils.load_data(varidx_code, "ts")
-
-    # Extract variable name.
-    varidx_name = varidx_code if varidx_code in cf.variables_cordex else utils.extract_varidx_name(varidx_code)
+    df = utils.load_data(cntx)
     
     # Extract minimum and maximum x-values (round to lower and upper decades).
     x_min = math.floor(min(df["year"]) / 10) * 10
     x_max = math.ceil(max(df["year"]) / 10) * 10
     
     # Extract minimum and maximum y-values.
-    y_min = df[ghg_scen.rcp_ref].min()
-    y_max = df[ghg_scen.rcp_ref].max()
+    y_min = df[rcp_def.rcp_ref].min()
+    y_max = df[rcp_def.rcp_ref].max()
     for rcp in rcps.items:
-        if rcp.get_name() == ghg_scen.rcp_ref:
-            col_min = col_max = ghg_scen.rcp_ref
+        if rcp.get_code() == rcp_def.rcp_ref:
+            col_min = col_max = rcp_def.rcp_ref
         else:
-            col_min = rcp.get_name() + "_min"
-            col_max = rcp.get_name() + "_max"
+            col_min = rcp.get_code() + "_min"
+            col_max = rcp.get_code() + "_max"
         if col_min in df.columns:
             y_min = min(y_min, df[col_min].min())
         if col_max in df.columns:
             y_max = max(y_max, df[col_max].max())
 
     # Plot components.
-    title = utils.get_varidx_desc(varidx_name)
+    title = cntx.varidx.get_name()
     x_label = "Année"
-    y_label = utils.get_varidx_desc_unit(varidx_name)
+    y_label = cntx.varidx.get_label()
     
-    if lib == "matplotlib":
-        ts = gen_ts_mat(df, varidx_code, rcps, title, x_label, y_label, [x_min, x_max], [y_min, y_max])
-    elif lib == "hvplot":
-        ts = gen_ts_hv(df, varidx_code, rcps, title, x_label, y_label, [y_min, y_max])
+    if cntx.lib.get_code() == lib_def.mode_mat:
+        ts = gen_ts_mat(cntx, df, title, x_label, y_label, [x_min, x_max], [y_min, y_max])
+    elif cntx.lib.get_code() == lib_def.mode_hv:
+        ts = gen_ts_hv(cntx, df, title, x_label, y_label, [y_min, y_max])
     else:
-        ts = gen_ts_alt(df, varidx_code, rcps, title, x_label, y_label, [y_min, y_max])
+        ts = gen_ts_alt(cntx, df, title, x_label, y_label, [y_min, y_max])
         
     return ts
 
 
 def gen_ts_alt(
+    cntx: context_def.Context,
     df: pd.DataFrame,
-    varidx_code: str,
-    rcps: ghg_scen.RCPs,
     title: str,
     x_label: str,
     y_label: str,
@@ -119,12 +111,10 @@ def gen_ts_alt(
     
     Parameters
     ----------
+    cntx : context_def.Context
+        Context.
     df : pd.DataFrame
         Dataframe.
-    varidx_code : str
-        Climate variable or index.
-    rcps : ghg_scen.RCPs
-        Instance of RCPs.
     title : str
         Plot title.
     x_label : str
@@ -146,32 +136,29 @@ def gen_ts_alt(
     y_axis = alt.Axis(title=y_label, format="d")
     y_scale = scale=alt.Scale(domain=y_range)
     col_legend = alt.Legend(title="", orient="top-left", direction="horizontal", symbolType="stroke")
-    col_scale = alt.Scale(range=rcps.get_color_l(), domain=rcps.get_desc_l())
+    col_scale = alt.Scale(range=cntx.rcps.get_color_l(), domain=cntx.rcps.get_desc_l())
     
     # Add layers.
     plot = None
     for item in ["area", "curve"]:
-        for rcp in rcps.items:
-
-            # if (rcp.get_name() == ghg_scen.rcp_ref) and (item == "area"):
-            #     continue
+        for rcp in cntx.rcps.items:
             
-            if rcp.get_name() == ghg_scen.rcp_ref:
-                df_rcp = df[["year", rcp.get_name()]].copy()
+            if rcp.get_code() == rcp_def.rcp_ref:
+                df_rcp = df[["year", rcp.get_code()]].copy()
                 df_rcp.insert(len(df_rcp.columns), "rcp", rcp.get_desc())
-                df_rcp.rename(columns={ghg_scen.rcp_ref: "mean"}, inplace=True)
+                df_rcp.rename(columns={rcp_def.rcp_ref: "mean"}, inplace=True)
                 df_rcp.insert(len(df_rcp.columns), "minimum", df_rcp["mean"])
                 df_rcp.insert(len(df_rcp.columns), "maximum", df_rcp["mean"])
                 tooltip = ["year", "rcp", "mean"]
             else:
                 df_rcp = df[["year",
-                             str(rcp.get_name() + "_min"),
-                             str(rcp.get_name() + "_moy"),
-                             str(rcp.get_name() + "_max")]].copy()
+                             str(rcp.get_code() + "_min"),
+                             str(rcp.get_code() + "_moy"),
+                             str(rcp.get_code() + "_max")]].copy()
                 df_rcp.insert(len(df_rcp.columns), "rcp", rcp.get_desc())
-                df_rcp.rename(columns={str(rcp.get_name() + "_min"): "minimum",
-                                       str(rcp.get_name() + "_moy"): "mean",
-                                       str(rcp.get_name() + "_max"): "maximum"}, inplace=True)
+                df_rcp.rename(columns={str(rcp.get_code() + "_min"): "minimum",
+                                       str(rcp.get_code() + "_moy"): "mean",
+                                       str(rcp.get_code() + "_max"): "maximum"}, inplace=True)
                 tooltip = ["year", "rcp", "minimum", "mean", "maximum"]
             
             # Draw area.
@@ -210,9 +197,8 @@ def gen_ts_alt(
 
 
 def gen_ts_hv(
+    cntx: context_def.Context,
     df: pd.DataFrame,
-    varidx_code: str,
-    rcps: ghg_scen.RCPs,
     title: str,
     x_label: str,
     y_label: str,
@@ -225,12 +211,10 @@ def gen_ts_hv(
     
     Parameters
     ----------
+    cntx : context_def.Context
+        Context.
     df : pd.DataFrame
         Dataframe.
-    varidx_code : str
-        Climate variable or index.
-    rcps : ghg_scen.RCPs
-        Instance of RCPs.
     title : str
         Plot title.
     x_label : str
@@ -252,9 +236,9 @@ def gen_ts_hv(
     # Loop through RCPs.
     plot = None
     for item in ["area", "curve"]:
-        for rcp in rcps.items:
+        for rcp in cntx.rcps.items:
 
-            if (item == "area") and (rcp.get_name() == ghg_scen.rcp_ref):
+            if (item == "area") and (rcp.get_code() == rcp_def.rcp_ref):
                 continue
                 
             # Draw area.
@@ -262,14 +246,14 @@ def gen_ts_hv(
             curve = None
             if item == "area":
                 area = df.hvplot.area(x="year",
-                                      y=str(rcp.get_name() + "_min"),
-                                      y2=str(rcp.get_name() + "_max"),
+                                      y=str(rcp.get_code() + "_min"),
+                                      y2=str(rcp.get_code() + "_max"),
                                       color=rcp.get_color(), alpha=0.3, line_alpha=0,
                                       xlabel=x_label, ylabel=y_label)
             
             # Draw curve.
             else:
-                y = ghg_scen.rcp_ref if rcp.get_name() == ghg_scen.rcp_ref else str(rcp.get_name() + "_moy")
+                y = rcp_def.rcp_ref if rcp.get_code() == rcp_def.rcp_ref else str(rcp.get_code() + "_moy")
                 curve = df.hvplot.line(x="year",
                                        y=y,
                                        color=rcp.get_color(), alpha=0.7, label=rcp.get_desc())
@@ -294,9 +278,10 @@ def gen_ts_hv(
 
 
 def gen_ts_mat(
+    cntx: context_def.Context,
     df: pd.DataFrame,
     varidx_code: str,
-    rcps: ghg_scen.RCPs,
+    rcps: rcp_def.RCPs,
     title: str,
     x_label: str,
     y_label: str,
@@ -310,12 +295,10 @@ def gen_ts_mat(
     
     Parameters
     ----------
+    cntx : context_def.Context
+        Context.
     df : pd.DataFrame
         Dataframe.
-    varidx_code : str
-        Climate variable or index.
-    rcps : ghg_scen.RCPs
-        Instance of RCPs.
     title : str
         Plot title.
     x_label : str
@@ -349,15 +332,15 @@ def gen_ts_mat(
     # Loop through RCPs.
     leg_labels = []
     leg_lines = []
-    for rcp in rcps.items:
+    for rcp in cntx.rcps.items:
 
         # Extract columns.
         data_year = df.year
         data_rcp = []
-        if (rcp.get_name() == ghg_scen.rcp_ref) and (ghg_scen.rcp_ref in df.columns):
-            data_rcp = df[ghg_scen.rcp_ref]
-        elif (rcp.get_name() != ghg_scen.rcp_ref) and (str(rcp.get_name() + "_moy") in df.columns):
-            data_rcp = [df[rcp.get_name() + "_min"], df[rcp.get_name() + "_moy"], df[rcp.get_name() + "_max"]]
+        if (rcp.get_code() == rcp_def.rcp_ref) and (rcp_def.rcp_ref in df.columns):
+            data_rcp = df[rcp_def.rcp_ref]
+        elif (rcp.get_code() != rcp_def.rcp_ref) and (str(rcp.get_code() + "_moy") in df.columns):
+            data_rcp = [df[rcp.get_code() + "_min"], df[rcp.get_code() + "_moy"], df[rcp.get_code() + "_max"]]
                           
         # Skip if no data is available for this RCP.
         if len(data_rcp) == 0:
@@ -365,7 +348,7 @@ def gen_ts_mat(
 
         # Add curves and areas.
         color = rcp.get_color()
-        if rcp.get_name() == ghg_scen.rcp_ref:
+        if rcp.get_code() == rcp_def.rcp_ref:
             ax.plot(data_year, data_rcp, color=color, alpha=1.0)
         else:
             ax.plot(data_year, data_rcp[1], color=color, alpha=1.0)
@@ -384,9 +367,7 @@ def gen_ts_mat(
 
 
 def gen_tbl(
-    varidx_code: str,
-    rcps: ghg_scen.RCPs,
-    hor: str
+    cntx: context_def.Context
 ) -> pd.DataFrame:
     
     """
@@ -395,12 +376,8 @@ def gen_tbl(
     
     Parameters
     ----------
-    varidx_code : str
-        Climate variable or index.
-    rcps : ghg_scen.RCPs
-        Instance of RCPs.
-    hor : str
-        Horizon (ex: "1981-2010").
+    cntx : context_def.Context
+        Context.
     
     Returns
     -------
@@ -408,15 +385,9 @@ def gen_tbl(
         Dataframe.
     --------------------------------------------------------------------------------------------------------------------
     """
-
-    # Extract variable name.
-    varidx_name = varidx_code if varidx_code in cf.variables_cordex else utils.extract_varidx_name(varidx_code)
     
     # Load data.
-    df = utils.load_data(varidx_code, "tbl")
-
-    # Extract horizons.
-    hor_l = utils.get_hor_l(varidx_code, "tbl")
+    df = utils.load_data(cntx)
 
     # List of statistics (in a column).
     stat_l = [["min", -1],
@@ -438,23 +409,23 @@ def gen_tbl(
 
     # Loop through RCPs.
     columns = []
-    for rcp in rcps.items:
+    for rcp in cntx.rcps.items:
 
-        if rcp.get_name() == ghg_scen.rcp_ref:
+        if rcp.get_code() == rcp_def.rcp_ref:
             continue
 
         vals = []
         for stat in stat_l:
-            df_cell = float(df[(df["rcp"] == rcp.get_name()) &
-                               (df["hor"] == hor) &
+            df_cell = float(df[(df["rcp"] == rcp.get_code()) &
+                               (df["hor"] == cntx.hor.get_code()) &
                                (df["stat"] == stat[0]) &
                                (df["q"] == stat[1])]["val"])
             val = df_cell            
             vals.append(val)
 
-        df_res[rcp.get_name()] = vals
-        if varidx_name not in [cf.var_cordex_tasmin, cf.var_cordex_tasmax]:
-            df_res[rcp.get_name()] = df_res[rcp.get_name()].astype(int)
+        df_res[rcp.get_code()] = vals
+        if cntx.varidx.get_code() not in [vi.var_tasmin, vi.var_tasmax]:
+            df_res[rcp.get_code()] = df_res[rcp.get_code()].astype(int)
 
         columns.append(rcp.get_desc())
 
@@ -466,7 +437,7 @@ def gen_tbl(
 
 
 def get_ref_val(
-    varidx_code: str
+    cntx: context_def.Context
 ) -> Union[int, float]:
     
     """
@@ -475,8 +446,8 @@ def get_ref_val(
 
     Parameters
     ----------
-    varidx_code : str
-        Climate variable or index
+    cntx : context_def.Context
+        Context.
         
     Returns
     -------
@@ -485,24 +456,19 @@ def get_ref_val(
     --------------------------------------------------------------------------------------------------------------------
     """
     
-    # Extract variable name.
-    varidx_name = varidx_code if varidx_code in cf.variables_cordex else utils.extract_varidx_name(varidx_code)
-    
     # Load data.
-    df = utils.load_data(varidx_code, "tbl")
+    df = utils.load_data(cntx)
     
     # Extract value.
-    val = df[df["rcp"] == ghg_scen.rcp_ref]["val"][0]
-    if varidx_name not in [cf.var_cordex_tasmin, cf.var_cordex_tasmax]:
+    val = df[df["rcp"] == rcp_def.rcp_ref]["val"][0]
+    if cntx.varidx.get_code() not in [vi.var_tasmin, vi.var_tasmax]:
         val = int(val)
     
     return val
 
 
 def gen_map(
-    varidx_code: str,
-    hor: str,
-    rcp_name: str,
+    cntx: context_def.Context,
     stat: str,
     q: Optional[float] = -1
 ):
@@ -513,12 +479,8 @@ def gen_map(
     
     Parameters
     ----------
-    varidx_code : str
-        Climate variable or index.
-    hor : str
-        Horizon (ex: "1981-2010")
-    rcp_name : str
-        RCP (ex: "rcp45").
+    cntx : context_def.Context
+        Context.
     stat : str
         Statistic = {"quantile", "mean"}
     q : Optional[float]
@@ -528,14 +490,8 @@ def gen_map(
     
     is_delta = False
     
-    # Extract variable name.
-    varidx_name = varidx_code if varidx_code in cf.variables_cordex else utils.extract_varidx_name(varidx_code)
-    
     # Load data.
-    df = utils.load_data(varidx_code, "map", hor, rcp_name, stat, q)
-
-    # Extract horizons.
-    hor_l = utils.get_hor_l(varidx_code, "map")
+    df = utils.load_data(cntx, stat, q)
 
     # Hardcoded parameters.
     # Number of clusters (for discrete color scale).
@@ -561,13 +517,13 @@ def gen_map(
         title = "Moyenne"
     elif stat == "quantile":
         title = str(math.ceil(q * 100)) + "e percentile"
-    label = utils.get_varidx_desc_unit(varidx_name)
+    label = cntx.get_label()
 
     # Find minimum and maximum values (consider all relevant CSV files).
-    z_min, z_max = utils.get_min_max(varidx_name, "map")
+    z_min, z_max = utils.get_min_max(cntx)
     
     # Determine color scale index.
-    is_wind_var = varidx_name in [cf.var_cordex_uas, cf.var_cordex_vas, cf.var_cordex_sfcwindmax]
+    is_wind_var = cntx.varidx.get_code() in [vi.var_uas, vi.var_vas, vi.var_sfcwindmax]
     if (not is_delta) and (not is_wind_var):
         cmap_idx = 0
     elif (z_min < 0) and (z_max > 0):
@@ -578,32 +534,41 @@ def gen_map(
         cmap_idx = 3
 
     # Temperature-related.
-    if varidx_name in [cf.var_cordex_tas, cf.var_cordex_tasmin, cf.var_cordex_tasmax, cf.idx_etr, cf.idx_tgg,
-                       cf.idx_tng, cf.idx_tnx, cf.idx_txx, cf.idx_txg]:
+    if cntx.varidx.get_code() in \
+        [vi.var_tas, vi.var_tasmin, vi.var_tasmax, vi.idx_etr, vi.idx_tgg,
+         vi.idx_tng, vi.idx_tnx, vi.idx_txx, vi.idx_txg]:
         cmap_name = cf.opt_map_col_temp_var[cmap_idx]
-    elif varidx_name in [cf.idx_tx_days_above, cf.idx_heat_wave_max_length, cf.idx_heat_wave_total_length,
-                         cf.idx_hot_spell_frequency, cf.idx_hot_spell_max_length, cf.idx_tropical_nights,
-                         cf.idx_tx90p, cf.idx_wsdi]:
+    elif cntx.varidx.get_code() in \
+        [vi.idx_tx_days_above, vi.idx_heat_wave_max_length, vi.idx_heat_wave_total_length,
+         vi.idx_hot_spell_frequency, vi.idx_hot_spell_max_length, vi.idx_tropical_nights,
+         vi.idx_tx90p, vi.idx_wsdi]:
         cmap_name = cf.opt_map_col_temp_idx_1[cmap_idx]
-    elif varidx_name in [cf.idx_tn_days_below, cf.idx_tng_months_below]:
+    elif cntx.varidx.get_code() in \
+        [vi.idx_tn_days_below, vi.idx_tng_months_below]:
         cmap_name = cf.opt_map_col_temp_idx_2[cmap_idx]
 
     # Precipitation-related.
-    elif varidx_name in [cf.var_cordex_pr, cf.idx_prcptot, cf.idx_rx1day, cf.idx_rx5day, cf.idx_sdii,
-                         cf.idx_rain_season_prcptot]:
+    elif cntx.varidx.get_code() in \
+        [vi.var_pr, vi.idx_prcptot, vi.idx_rx1day, vi.idx_rx5day, vi.idx_sdii,
+         vi.idx_rain_season_prcptot]:
         cmap_name = cf.opt_map_col_prec_var[cmap_idx]
-    elif varidx_name in [cf.idx_cwd, cf.idx_r10mm, cf.idx_r20mm, cf.idx_wet_days, cf.idx_rain_season_length,
-                         cf.idx_rnnmm]:
+    elif cntx.varidx.get_code() in \
+        [vi.idx_cwd, vi.idx_r10mm, vi.idx_r20mm, vi.idx_wet_days, vi.idx_rain_season_length,
+         vi.idx_rnnmm]:
         cmap_name = cf.opt_map_col_prec_idx_1[cmap_idx]
-    elif varidx_name in [cf.idx_cdd, cf.idx_dry_days, cf.idx_drought_code, cf.idx_dry_spell_total_length]:
+    elif cntx.varidx.get_code() in \
+        [vi.idx_cdd, vi.idx_dry_days, vi.idx_drought_code, vi.idx_dry_spell_total_length]:
         cmap_name = cf.opt_map_col_prec_idx_2[cmap_idx]
-    elif varidx_name in [cf.idx_rain_season_start, cf.idx_rain_season_end]:
+    elif cntx.varidx.get_code() in \
+        [vi.idx_rain_season_start, vi.idx_rain_season_end]:
         cmap_name = cf.opt_map_col_prec_idx_3[cmap_idx]
 
     # Wind-related.
-    elif varidx_name in [cf.var_cordex_uas, cf.var_cordex_vas, cf.var_cordex_sfcwindmax]:
+    elif cntx.varidx.get_code() in \
+        [vi.var_uas, vi.var_vas, vi.var_sfcwindmax]:
         cmap_name = cf.opt_map_col_wind_var[cmap_idx]
-    elif varidx_name in [cf.idx_wg_days_above, cf.idx_wx_days_above]:
+    elif cntx.varidx.get_code() in \
+        [vi.idx_wg_days_above, vi.idx_wx_days_above]:
         cmap_name = cf.opt_map_col_wind_idx_1[cmap_idx]
 
     # Default values.
@@ -738,13 +703,13 @@ def gen_map(
     plt.subplots_adjust(top=0.92, bottom=0.145, left=0.14, right=0.80, hspace=0.0, wspace=0.05)
 
     # Convert to DataArray.
-    df = pd.DataFrame(df, columns=["longitude", "latitude", varidx_name])
+    df = pd.DataFrame(df, columns=["longitude", "latitude", cntx.varidx.get_code()])
     df = df.sort_values(by=["latitude", "longitude"])
     lat = list(set(df["latitude"]))
     lat.sort()
     lon = list(set(df["longitude"]))
     lon.sort()
-    arr = np.reshape(list(df[varidx_name]), (len(lat), len(lon)))
+    arr = np.reshape(list(df[cntx.varidx.get_code()]), (len(lat), len(lon)))
     da = xr.DataArray(data=arr, dims=["latitude", "longitude"], coords=[("latitude", lat), ("longitude", lon)])
 
     # Add mesh.
