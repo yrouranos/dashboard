@@ -23,10 +23,7 @@ from typing import List, Optional, Tuple
 
 
 def load_data(
-    cntx: context_def.Context,
-    stat: str = "",
-    q: float = -1,
-    delta: bool = False
+    cntx: context_def.Context
 ) -> pd.DataFrame:
 
     """
@@ -37,12 +34,6 @@ def load_data(
     ----------
     cntx : context_def.Context
         Context.
-    stat : Optional[str]
-        Statistic = {"quantile", "mean"}
-    q : Optional[float]
-        Quantile (ex: 0.1).
-    delta : Optional[bool]
-        If True, return delta.
     
     Returns
     -------
@@ -55,17 +46,16 @@ def load_data(
     if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_tbl]:
         p = cf.d_data + "<view>/<varidx_code>.csv"    
     else:
-        if stat == "quantile":
-            stat = "q" + str(math.ceil(q * 100))
-        p = cf.d_data + "<view>/<varidx_code>/<hor>/<varidx_name>_<rcp>_<hor_>_<stat>_<delta>.csv"        
+        p = cf.d_data + "<view>/<varidx_code>/<hor>/<varidx_name>_<rcp>_<hor_>_<stat>_<delta>.csv"
     p = p.replace("<view>", cntx.view.get_code())
     p = p.replace("<varidx_code>", cntx.varidx.get_code())
-    p = p.replace("<varidx_name>", cntx.varidx.get_code())
-    p = p.replace("<rcp>", cntx.rcp.get_code())
-    p = p.replace("<hor_>", cntx.hor.get_code().replace("-", "_"))
-    p = p.replace("<hor>", cntx.hor.get_code())
-    p = p.replace("<stat>", stat)
-    p = p.replace("_<delta>", "" if delta is False else "_delta")        
+    if cntx.view.get_code() == view_def.mode_map:
+        p = p.replace("<varidx_name>", cntx.varidx.get_code())
+        p = p.replace("<rcp>", cntx.rcp.get_code())
+        p = p.replace("<hor_>", cntx.hor.get_code().replace("-", "_"))
+        p = p.replace("<hor>", cntx.hor.get_code())
+        p = p.replace("<stat>", cntx.stat.get_code())
+        p = p.replace("_<delta>", "" if cntx.delta is False else "_delta")
     df = pd.read_csv(p)
     
     # Round values.
@@ -108,8 +98,8 @@ def get_min_max(
         # Identify the files to consider.
         p_ref = glob.glob(cf.d_map + cntx.varidx.get_code() + "/*/" + cntx.varidx.get_code() + "_ref*_mean.csv")
         p_rcp = cf.d_map + cntx.varidx.get_code() + "/*/" + cntx.varidx.get_code() + "_rcp*_q<q>.csv" 
-        p_rcp_q_low = glob.glob(p_rcp.replace("<q>", str(math.ceil(cf.q_l[0] * 100))))
-        p_rcp_q_high = glob.glob(p_rcp.replace("<q>", str(math.ceil(cf.q_l[1] * 100))))
+        p_rcp_q_low = glob.glob(p_rcp.replace("<q>", cf.q_low))
+        p_rcp_q_high = glob.glob(p_rcp.replace("<q>", cf.q_high))
         p_l = p_ref + p_rcp_q_low + p_rcp_q_high
 
         # Find the minimum and maximum values.

@@ -17,14 +17,19 @@ import panel as pn
 import panel.widgets as pnw
 import plot
 import rcp_def
+import stat_def
+import utils
 import varidx_def as vi
 import view_def
 
-dash, views, libs, varidxs, hors, rcps = None, None, None, None, None, None
-views_updated, libs_updated, varidxs_updated, hors_updated, rcps_updated = True, True, True, True, True
+cntx = None
+dash, views, libs, varidxs, hors, rcps, stats = \
+    None, None, None, None, None, None, None
+view_updated, lib_updated, varidx_updated, hor_updated, rcp_updated, stat_updated = \
+    True, True, True, True, True, True
 
 
-def views_updated_event(event):
+def view_updated_event():
 
     """
     --------------------------------------------------------------------------------------------------------------------
@@ -32,12 +37,12 @@ def views_updated_event(event):
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    global views_updated
-    views_updated = True
+    global view_updated
+    view_updated = True
     refresh()
 
 
-def libs_updated_event(event):
+def lib_updated_event():
 
     """
     --------------------------------------------------------------------------------------------------------------------
@@ -45,12 +50,12 @@ def libs_updated_event(event):
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    global libs_updated
-    libs_updated = True
+    global lib_updated
+    lib_updated = True
     refresh()
 
 
-def varidxs_updated_event(event):
+def varidx_updated_event():
 
     """
     --------------------------------------------------------------------------------------------------------------------
@@ -58,12 +63,12 @@ def varidxs_updated_event(event):
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    global varidxs_updated
-    varidxs_updated = True
+    global varidx_updated
+    varidx_updated = True
     refresh()
 
 
-def hors_updated_event(event):
+def hor_updated_event():
 
     """
     --------------------------------------------------------------------------------------------------------------------
@@ -71,12 +76,12 @@ def hors_updated_event(event):
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    global hors_updated
-    hors_updated = True
+    global hor_updated
+    hor_updated = True
     refresh()
 
 
-def rcps_updated_event(event):
+def rcp_updated_event():
 
     """
     --------------------------------------------------------------------------------------------------------------------
@@ -84,8 +89,20 @@ def rcps_updated_event(event):
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    global rcps_updated
-    rcps_updated = True
+    global rcp_updated
+    rcp_updated = True
+    refresh()
+
+
+def stat_updated_event():
+    """
+    --------------------------------------------------------------------------------------------------------------------
+    Statistic updated event.
+    --------------------------------------------------------------------------------------------------------------------
+    """
+
+    global stat_updated
+    stat_updated = True
     refresh()
 
 
@@ -97,41 +114,45 @@ def refresh():
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    global dash, views, libs, varidxs, hors, rcps
-    global views_updated, libs_updated, varidxs_updated, hors_updated, rcps_updated
+    global cntx
+    global dash, views, libs, varidxs, hors, rcps, stats
+    global view_updated, lib_updated, varidx_updated, hor_updated, rcp_updated, stat_updated
 
     # Initialize context.
-    cntx = context_def.Context()
+    if cntx is None:
+        cntx = context_def.Context()
+        cntx.views = view_def.Views()
+        cntx.libs = lib_def.Libs()
+        cntx.varidxs = vi.VarIdxs()
+        cntx.hors = hor_def.Hors()
+        cntx.rcps = rcp_def.RCPs()
+        cntx.stats = stat_def.Stats()
 
     # Views.
     cntx.views = view_def.Views()
     if views is None:
         views = pnw.RadioBoxGroup(name="RadioBoxGroup", options=cntx.views.get_desc_l(), inline=False)
-        views.param.watch(views_updated_event, ["value"], onlychanged=True)
+        views.param.watch(view_updated_event, ["value"], onlychanged=True)
     cntx.view = view_def.View(cntx.views.get_code(views.value))
 
     # Plotting libraries.
     cntx.libs = lib_def.Libs(cntx.view.get_code())
-    if views_updated:
-        if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_map]:
-            libs = pn.Column(pn.pane.Markdown("<b>Choisir la librairie graphique</b>"),
-                             pnw.RadioBoxGroup(name="RadioBoxGroup", options=cntx.libs.get_desc_l(), inline=False))
-            libs[1].param.watch(libs_updated_event, ["value"], onlychanged=True)
-            if cntx.view.get_code() == view_def.mode_ts:
-                cntx.lib = lib_def.Lib(cntx.libs.get_code(libs[1].value))
-            else:
-                cntx.lib = lib_def.Lib(lib_def.mode_mat)
+    if view_updated:
+        libs = pn.Column(pn.pane.Markdown("<b>Choisir la librairie graphique</b>"),
+                         pnw.RadioBoxGroup(name="RadioBoxGroup", options=cntx.libs.get_desc_l(), inline=False))
+        libs[1].param.watch(lib_updated_event, ["value"], onlychanged=True)
+        if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_tbl]:
+            cntx.lib = lib_def.Lib(cntx.libs.get_code(libs[1].value))
         else:
-            libs = pn.Column("")
-            cntx.lib = lib_def.Lib("")
+            cntx.lib = lib_def.Lib(lib_def.mode_mat)
 
     # Variables and indices.
     cntx.varidxs = vi.VarIdxs(cntx.view)
 
-    if views_updated:
+    if view_updated:
         if varidxs is None:
             varidxs = pnw.Select(options=cntx.varidxs.get_desc_l(), width=250)
-            varidxs.param.watch(varidxs_updated_event, ["value"], onlychanged=True)
+            varidxs.param.watch(varidx_updated_event, ["value"], onlychanged=True)
         else:
             varidxs.options = cntx.varidxs.get_desc_l()
     cntx.varidx = vi.VarIdx(cntx.varidxs.get_code(varidxs.value))
@@ -139,27 +160,34 @@ def refresh():
     # Horizons.
     if cntx.view.get_code() in [view_def.mode_tbl, view_def.mode_map]:
         cntx.hors = hor_def.Hors(cntx)
-    if views_updated or varidxs_updated:
+    if view_updated or varidx_updated:
         hors = pnw.Select(options=cntx.hors.get_code_l(), width=100)
-        hors.param.watch(hors_updated_event, ["value"], onlychanged=True)
+        hors.param.watch(hor_updated_event, ["value"], onlychanged=True)
     if cntx.view.get_code() in [view_def.mode_tbl, view_def.mode_map]:
         cntx.hor = hor_def.Hor(hors.value)
 
     # Emission scenarios.
-    cntx.rcps = rcp_def.RCPs(cntx, cf.d_data)
-    if (views_updated or varidxs_updated or hors_updated) and \
-            (cntx.view.get_code() == view_def.mode_map):
-        if rcps is None:
-            rcps = pnw.Select(options=cntx.rcps.get_desc_l(), width=250)
-            rcps.param.watch(rcps_updated_event, ["value"], onlychanged=True)
-        else:
-            rcps.options = cntx.rcps.get_desc_l()
+    cntx.rcps = rcp_def.RCPs(cntx)
+    if (view_updated or varidx_updated or hor_updated) and \
+       (cntx.view.get_code() == view_def.mode_map):
+        rcps = pnw.Select(options=cntx.rcps.get_desc_l(), width=250)
+        rcps.param.watch(rcp_updated_event, ["value"], onlychanged=True)
     if cntx.view.get_code() == view_def.mode_map:
         cntx.rcp = rcp_def.RCP(cntx.rcps.get_code(rcps.value))
 
+    # Statistics.
+    if cntx.view.get_code() == view_def.mode_map:
+        cntx.stats = stat_def.Stats(cntx)
+    if (view_updated or varidx_updated or hor_updated or rcp_updated) and \
+       (cntx.view.get_code() == view_def.mode_map):
+        stats = pnw.Select(options=cntx.stats.get_desc_l(), width=250)
+        stats.param.watch(stat_updated_event, ["value"], onlychanged=True)
+    if cntx.view.get_code() == view_def.mode_map:
+        cntx.stat = stat_def.Stat(cntx.stats.get_code(stats.value))
+
     # Time series.
     tab_ts = None
-    if (views_updated or libs_updated or varidxs_updated) and \
+    if (view_updated or lib_updated or varidx_updated) and \
        (cntx.view.get_code() == view_def.mode_ts):
         tab_ts = pn.Row(pn.Column(pn.pane.Markdown("<b>Variable</b>"),
                                   varidxs,
@@ -167,7 +195,7 @@ def refresh():
 
     # Table.
     tab_tbl = None
-    if (views_updated or varidxs_updated or hors_updated) and \
+    if (view_updated or varidx_updated or hor_updated) and \
        (cntx.view.get_code() == view_def.mode_tbl):
         tab_tbl = pn.Row(pn.Column(pn.pane.Markdown("<b>Variable</b>"),
                                    varidxs,
@@ -178,7 +206,7 @@ def refresh():
 
     # Map.
     tab_map = None
-    if (views_updated or varidxs_updated or hors_updated or rcps_updated) and \
+    if (view_updated or varidx_updated or hor_updated or rcp_updated or stat_updated) and \
        (cntx.view.get_code() == view_def.mode_map):
         tab_map = pn.Row(pn.Column(pn.pane.Markdown("<b>Variable</b>"),
                                    varidxs,
@@ -186,8 +214,9 @@ def refresh():
                                    hors,
                                    pn.pane.Markdown("<b>Scénario d'émission</b>"),
                                    rcps,
-                                   plot.gen_map(cntx, "quantile", cf.q_l[0]),
-                                   plot.gen_map(cntx, "quantile", cf.q_l[1])))
+                                   pn.pane.Markdown("<b>Statistique</b>"),
+                                   stats,
+                                   plot.gen_map(cntx)))
 
     # Sidebar.
     sidebar = pn.Column(pn.Column(pn.pane.PNG(cf.p_logo, height=50)),
@@ -210,7 +239,8 @@ def refresh():
         else:
             dash[1] = tab_map
 
-    views_updated, libs_updated, varidxs_updated, hors_updated, rcps_updated = False, False, False, False, False
+    view_updated, lib_updated, varidx_updated, hor_updated, rcp_updated, stat_updated = \
+        False, False, False, False, False, False
 
 
 refresh()

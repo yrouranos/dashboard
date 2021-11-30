@@ -10,7 +10,6 @@
 # ----------------------------------------------------------------------------------------------------------------------
 
 import config as cf
-import context_def
 import object_def
 import rcp_def
 import utils
@@ -28,23 +27,7 @@ class Hor(object_def.Obj):
     
     # Contructor.
     def __init__(self, code):
-        super().__init__(code)
-        self.code = code
-
-    def copy(
-        self
-    ):
-        
-        """
-        Copy item.
-        
-        Returns
-        -------
-        Hor
-            Copy of item.
-        """
-        
-        return Hor(self.code)
+        super(Hor, self).__init__(code=code, desc=code)
 
 
 class Hors(object_def.Objs):
@@ -57,13 +40,13 @@ class Hors(object_def.Objs):
 
     # Constructors.
     def __init__(self, *args):
-        super().__init__()
+        super(Hors, self).__init__()
 
         if len(args) == 1:
-            if isinstance(args[0], context_def.Context):
-                self.load(args)
+            if isinstance(args[0], str) or isinstance(args[0], list):
+                self.add(args[0])
             else:
-                self.items = self.add(args[0]).items
+                self.load(args)
 
     def load(self, args):
 
@@ -106,90 +89,31 @@ class Hors(object_def.Objs):
         if range_yr in code_l:
             code_l.remove(range_yr)
 
-        # Create items.
-        self.items = []
-        for code in code_l:
-            self.items.append(Hor(code))
+        self.add(code_l)
             
     def add(
         self,
-        code: Union[str, List[str]]
+        code: Union[str, List[str]],
+        inplace: bool = True
     ):
         
         """
         Add one or several items.
         
-        Paramters
-        ---------
+        Parameters
+        ----------
         code : Union[str, List[str]]
             Code or list of codes.
+        inplace : bool
+            If True, modifies the current instance.
         """        
         
         code_l = code
         if isinstance(code, str):
             code_l = [code]
         
-        new = Hors()
+        items = []
         for i in range(len(code_l)):
-            new.items.append(Hor(code_l[i]))
+            items.append(Hor(code_l[i]))
         
-        return new
-    
-    def remove(
-        self,
-        code: Union[str, List[str]]
-    ):
-        
-        """
-        Remove one or several items.
-        
-        Paramters
-        ---------
-        code : Union[str, List[str]]
-            Code or list of codes.
-        """
-        
-        code_l = code
-        if isinstance(code, str):
-            code_l = [code]
-        
-        new = self.copy()
-        for i in range(len(code_l)):
-            for j in range(len(new.items)):
-                if new.items[j].code == code:
-                    del new.items[j]
-                    break
-        
-        return new
-    
-    def copy(self):
-        
-        """
-        Copy items.
-        """
-        
-        new = Hors()
-        for item in self.items:
-            new.items.append(Hor(item.code))
-        
-        return new
-
-    def get_code_l(
-        self
-    ) -> List[str]:
-
-        """
-        Get codes.
-
-        Returns
-        -------
-        List[str]
-            Codes.
-        """
-
-        code_l = []
-
-        for item in self.items:
-            code_l.append(item.get_code())
-
-        return code_l
+        return super(Hors, self).add_items(items, inplace)

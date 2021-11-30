@@ -9,8 +9,10 @@
 # (C) 2021 Ouranos Inc., Canada
 # ----------------------------------------------------------------------------------------------------------------------
 
+import config as cf
 import object_def
-from typing import Union, List
+import os
+from typing import List, Union
 
 mode_ts = "ts"
 mode_tbl = "tbl"
@@ -31,38 +33,10 @@ class View(object_def.Obj):
     
     # Contructor.
     def __init__(self, code):
-        super().__init__(code)
-    
-    def get_desc(
-        self,
-    ) -> str:
-    
-        """
-        Get description.
+        desc = "" if code == "" else code_desc[code]
+        super(View, self).__init__(code=code, desc=desc)
 
-        Returns
-        -------
-        str
-            Description.
-        """
 
-        return code_desc[self.code]
-    
-    def copy(
-        self
-    ):
-        
-        """
-        Copy item.
-        
-        Returns
-        -------
-        View
-            Copy of item.
-        """
-        
-        return View(self.code)
-    
 class Views(object_def.Objs):
 
     """
@@ -70,171 +44,58 @@ class Views(object_def.Objs):
     Class defining the object Views.
     --------------------------------------------------------------------------------------------------------------------
     """
-    
-    # List of instances.
-    items = []
 
     # Constructors.
     def __init__(self, *args):
+        super(Views, self).__init__()
         
         if len(args) == 0:
-            for code in list(code_desc.keys()):
-                self.items.append(View(code))
+            self.load()
         elif len(args) == 1:
-            self = self.add(args[0])
+            self.add(args[0])
+
+    def load(self):
+
+        """
+        Load items.
+        """
+
+        code_l = []
+        for code in list(code_desc.keys()):
+            if code == mode_ts:
+                d = cf.d_ts
+            elif code == mode_tbl:
+                d = cf.d_tbl
+            else:
+                d = cf.d_map
+            if os.path.exists(d):
+                code_l.append(code)
+
+        self.add(code_l)
 
     def add(
         self,
-        code: Union[str, List[str]]
+        code: Union[str, List[str]],
+        inplace: bool = True
     ):
-        
+
         """
         Add one or several items.
-        
-        Paramters
-        ---------
+
+        Parameters
+        ----------
         code : Union[str, List[str]]
             Code or list of codes.
-        """        
-        
+        inplace : bool
+            If True, modifies the current instance.
+        """
+
         code_l = code
         if isinstance(code, str):
             code_l = [code]
-        
-        new = Views()
+
+        items = []
         for i in range(len(code_l)):
-            new.items.append(View(code_l[i]))
-        
-        return new
-    
-    def remove(
-        self,
-        code: Union[str, List[str]]
-    ):
-        
-        """
-        Remove one or several items.
-        
-        Paramters
-        ---------
-        code : Union[str, List[str]]
-            Code or list of codes.
-        """
-        
-        code_l = code
-        if isinstance(code, str):
-            code_l = [code]
-        
-        new = self.copy()
-        for i in range(len(code_l)):
-            for j in range(len(new.items)):
-                if new.items[j].code == code:
-                    del new.items[j]
-                    break
-        
-        return new
-    
-    def copy(
-        self
-    ):
-        
-        """
-        Copy items.
-        """
-        
-        new = Views()
-        for item in self.items:
-            new.items.append(View(item.code))
-        
-        return new
-    
-    def get_code(
-        self,
-        desc: str
-    ) -> str:
+            items.append(View(code_l[i]))
 
-        """
-        Get code.
-
-        Paramters
-        ---------
-        desc : str
-            Description.
-
-        Returns
-        -------
-        str
-            Code.
-        """    
-
-        for item in self.items:
-            if item.get_desc() == desc:
-                return item.code
-
-        return ""
-
-
-    def get_desc(
-        self,
-        code: str
-    ) -> str:
-
-        """
-        Get description.
-
-        Paramters
-        ---------
-        code : str
-            Code.
-
-        Returns
-        -------
-        str
-            Description.
-        """    
-
-        for item in self.items:
-            if item.get_code() == code:
-                return item.desc  
-
-        return ""
-
-    def get_code_l(
-        self
-    ) -> List[str]:
-    
-        """
-        Get codes.
-    
-        Returns
-        -------
-        List[str]
-            Codes.
-        """
-    
-        code_l = []
-    
-        for item in self.items:
-            code_l.append(item.get_code())
-    
-        return code_l
-    
-    def get_desc_l(
-        self
-    ) -> List[str]:
-    
-        """
-        Get descriptions.
-    
-        Returns
-        -------
-        List[str]
-            Descriptions.
-        """
-    
-        desc_l = []
-    
-        for item in self.items:
-            desc_l.append(item.get_desc())
-    
-        return desc_l
+        return super(Views, self).add_items(items, inplace)

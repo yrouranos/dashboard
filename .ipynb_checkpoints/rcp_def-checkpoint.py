@@ -13,9 +13,8 @@ import config as cf
 import glob
 import object_def
 import pandas as pd
-import utils
 import view_def
-from typing import List, Optional, Union
+from typing import List, Union
 
 # Reference period.
 rcp_ref = "ref"
@@ -50,26 +49,11 @@ class RCP(object_def.Obj):
     
     # Contructor.
     def __init__(self, code):
-        super().__init__(code)
+        desc = "" if code == "" else code_props[code][0]
+        super(RCP, self).__init__(code=code, desc=desc)
+        self.color = "" if code == "" else code_props[self.code][1]
     
-    def get_desc(
-        self
-    ) -> str:
-        
-        """
-        Get description.
-        
-        Returns
-        -------
-        str
-            Description.
-        """
-            
-        return code_props[self.code][0]
-    
-    def get_color(
-        self
-    ) -> str:
+    def get_color(self) -> str:
         
         """
         Get color.
@@ -80,25 +64,8 @@ class RCP(object_def.Obj):
             Color.
         """
             
-        return code_props[self.code][1]
-                         
-    def copy(
-        self
-    ):
-        
-        """
-        Copy item.
-        
-        Returns
-        -------
-        RCP
-            Copy of item.
-        """
-        
-        new = RCP(self.code)
-        
-        return new
-    
+        return self.color
+
 
 class RCPs(object_def.Objs):
 
@@ -107,21 +74,17 @@ class RCPs(object_def.Objs):
     Class defining the object RCPs.
     --------------------------------------------------------------------------------------------------------------------
     """
-    
-    # List of instances.
-    items = []
 
     # Constructors.
     def __init__(self, *args):
-        
-        if len(args) == 0:
-            self.items = []
-        elif len(args) == 1:
-            self.items = []
-            self.add(args[0])
-        else:
-            self.load(args)
-            
+        super(RCPs, self).__init__()
+    
+        if len(args) == 1:
+            if isinstance(args[0], str) or isinstance(args[0], list):
+                self.add(args[0])
+            else:
+                self.load(args)
+
     def load(self, args):
 
         """
@@ -130,20 +93,15 @@ class RCPs(object_def.Objs):
         Parameters
         ----------
         args :
-            args[0] = cntx : cntx_def.Context
+            args[0] = cntx : context_def.Context
                 Context.
-            args[1] = d_data : str
-                Base directory of data.)
         """
 
         cntx = args[0]
-        d_data = args[1]
-        
-        code_l = []
 
         # The list of RCPs is within data files.
         if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_tbl]:
-            p = d_data + "<view>/<varidx_code>.csv"
+            p = cf.d_data + "<view>/<varidx_code>.csv"
             p = p.replace("<view>", cntx.view.get_code())
             p = p.replace("<varidx_code>", cntx.varidx.get_code())
             df = pd.read_csv(p)
@@ -154,7 +112,7 @@ class RCPs(object_def.Objs):
 
         # The list of RCPs is within file structure.
         else:
-            p = d_data + "<view>/<varidx_code>/<hor>/*.csv"
+            p = cf.d_data + "<view>/<varidx_code>/<hor>/*.csv"
             p = p.replace("<view>", cntx.view.get_code())
             p = p.replace("<varidx_code>", cntx.varidx.get_code())
             p = p.replace("<hor>", cntx.hor.get_code())
@@ -177,163 +135,33 @@ class RCPs(object_def.Objs):
         for code in code_clean_l:
             if code != rcp_ref:
                 self.items.append(RCP(code))
-    
+
     def add(
         self,
-        code: Union[str, List[str]]
+        code: Union[str, List[str]],
+        inplace: bool = True
     ):
-        
+
         """
         Add one or several items.
-        
-        Paramters
-        ---------
+
+        Parameters
+        ----------
         code : Union[str, List[str]]
             Code or list of codes.
-        """        
-        
+        inplace : bool
+            If True, modifies the current instance.
+        """
+
         code_l = code
         if isinstance(code, str):
             code_l = [code]
-        
-        new = RCPs()
+
+        items = []
         for i in range(len(code_l)):
-            new.items.append(RCP(code_l[i]))
-        
-        return new
-    
-    def remove(
-        self,
-        code: Union[str, List[str]]
-    ):
-        
-        """
-        Remove one or several items.
-        
-        Paramters
-        ---------
-        code : Union[str, List[str]]
-            Code or list of codes.
-        """
-        
-        code_l = code
-        if isinstance(code, str):
-            code_l = [code]
-        
-        new = self.copy()
-        for i in range(len(code_l)):
-            for j in range(len(new.items)):
-                if new.items[j].code == code:
-                    del new.items[j]
-                    break
-        
-        return new
-    
-    def copy(
-        self
-    ):
-        
-        """
-        Copy items.
-        """
-        
-        new = RCPs()
-        for item in self.items:
-            new.items.append(RCP(item.code))
-        
-        return new
-    
-    def get_code(
-        self,
-        desc: str
-    ) -> str:
+            items.append(RCP(code_l[i]))
 
-        """
-        Get code.
-
-        Paramters
-        ---------
-        desc : str
-            Description.
-
-        Returns
-        -------
-        str
-            Code.
-        """    
-
-        for item in self.items:
-            if item.get_desc() == desc:
-                return item.code
-
-        return ""
-
-
-    def get_desc(
-        self,
-        code: str
-    ) -> str:
-
-        """
-        Get description.
-
-        Paramters
-        ---------
-        code : str
-            Code.
-
-        Returns
-        -------
-        str
-            Description.
-        """    
-
-        for item in self.items:
-            if item.get_code() == code:
-                return item.desc  
-
-        return ""
-
-
-    def get_code_l(
-        self
-    ) -> List[str]:
-    
-        """
-        Get codes.
-    
-        Returns
-        -------
-        List[str]
-            Codes.
-        """
-    
-        code_l = []
-    
-        for item in self.items:
-            code_l.append(item.get_code())
-    
-        return code_l
-    
-    def get_desc_l(
-        self
-    ) -> List[str]:
-    
-        """
-        Get descriptions.
-    
-        Returns
-        -------
-        List[str]
-            Descriptions.
-        """
-    
-        desc_l = []
-    
-        for item in self.items:
-            desc_l.append(item.get_desc())
-    
-        return desc_l
+        return super(RCPs, self).add_items(items, inplace)
 
     def get_color_l(
         self

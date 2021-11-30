@@ -11,23 +11,21 @@
 
 import config as cf
 import context_def
-import rcp_def
 import glob
 import math
 import numpy as np
 import os
 import pandas as pd
+import varidx_def as vi
 import view_def
-from matplotlib.lines import Line2D
 from pathlib import Path
 from typing import List, Optional, Tuple
 
 
 def load_data(
     cntx: context_def.Context,
-    stat: str="",
-    q: float=-1,
-    delta: bool = False
+    stat: str = "",
+    q: float = -1
 ) -> pd.DataFrame:
 
     """
@@ -42,8 +40,6 @@ def load_data(
         Statistic = {"quantile", "mean"}
     q : Optional[float]
         Quantile (ex: 0.1).
-    delta : Optional[bool]
-        If True, return delta.
     
     Returns
     -------
@@ -58,15 +54,16 @@ def load_data(
     else:
         if stat == "quantile":
             stat = "q" + str(math.ceil(q * 100))
-        p = cf.d_data + "<view>/<varidx_code>/<hor>/<varidx_name>_<rcp>_<hor_>_<stat>_<delta>.csv"        
+        p = cf.d_data + "<view>/<varidx_code>/<hor>/<varidx_name>_<rcp>_<hor_>_<stat>_<delta>.csv"
     p = p.replace("<view>", cntx.view.get_code())
     p = p.replace("<varidx_code>", cntx.varidx.get_code())
-    p = p.replace("<varidx_name>", cntx.varidx.get_code())
-    p = p.replace("<rcp>", cntx.rcp.get_code())
-    p = p.replace("<hor_>", cntx.hor.get_code().replace("-", "_"))
-    p = p.replace("<hor>", cntx.hor.get_code())
-    p = p.replace("<stat>", stat)
-    p = p.replace("_<delta>", "" if delta is False else "_delta")        
+    if cntx.view.get_code() == view_def.mode_map:
+        p = p.replace("<varidx_name>", cntx.varidx.get_code())
+        p = p.replace("<rcp>", cntx.rcp.get_code())
+        p = p.replace("<hor_>", cntx.hor.get_code().replace("-", "_"))
+        p = p.replace("<hor>", cntx.hor.get_code())
+        p = p.replace("<stat>", stat)
+        p = p.replace("_<delta>", "" if cntx.delta is False else "_delta")
     df = pd.read_csv(p)
     
     # Round values.
@@ -84,7 +81,7 @@ def load_data(
 
 def get_min_max(
     cntx: context_def.Context
-) -> Tuple[float , float]:
+) -> Tuple[float, float]:
 
     """
     --------------------------------------------------------------------------------------------------------------------
@@ -102,27 +99,27 @@ def get_min_max(
     --------------------------------------------------------------------------------------------------------------------
     """
     
-    min, max = np.nan, np.nan
+    min_val, max_val = np.nan, np.nan
     
     if cntx.view.get_code() == view_def.mode_map:
         
         # Identify the files to consider.
         p_ref = glob.glob(cf.d_map + cntx.varidx.get_code() + "/*/" + cntx.varidx.get_code() + "_ref*_mean.csv")
         p_rcp = cf.d_map + cntx.varidx.get_code() + "/*/" + cntx.varidx.get_code() + "_rcp*_q<q>.csv" 
-        p_rcp_q_low = glob.glob(p_rcp.replace("<q>", str(math.ceil(cf.q_l[0] * 100))))
-        p_rcp_q_high = glob.glob(p_rcp.replace("<q>", str(math.ceil(cf.q_l[1] * 100))))
+        p_rcp_q_low = glob.glob(p_rcp.replace("<q>", cf.q_low))
+        p_rcp_q_high = glob.glob(p_rcp.replace("<q>", cf.q_high))
         p_l = p_ref + p_rcp_q_low + p_rcp_q_high
 
         # Find the minimum and maximum values.
         for p in p_l:
             if os.path.exists(p):
                 df = pd.read_csv(p)
-                min_vals = list(df[cntx.varidx.get_code()]) + [min]
-                max_vals = list(df[cntx.varidx.get_code()]) + [max]
-                min = np.nanmin(min_vals)
-                max = np.nanmax(max_vals)
+                min_vals = list(df[cntx.varidx.get_code()]) + [min_val]
+                max_vals = list(df[cntx.varidx.get_code()]) + [max_val]
+                min_val = np.nanmin(min_vals)
+                max_val = np.nanmax(max_vals)
 
-    return min, max
+    return min_val, max_val
 
 
 def list_dir(
@@ -145,13 +142,13 @@ def list_dir(
     --------------------------------------------------------------------------------------------------------------------
     """
     
-    list = []
+    dir_l = []
     
     for e in Path(p).iterdir():
         try:
             if Path(e).is_dir():
-                list.append(os.path.basename(str(e)))
+                dir_l.append(os.path.basename(str(e)))
         except NotADirectoryError:
             pass
     
-    return list
+    return dir_l

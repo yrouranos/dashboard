@@ -4,10 +4,13 @@ descartes
 holoviews
 hvplot
 matplotlib
+mpl_toolkits
 numpy
 pandas
 panel
 pathlib
+PIL
+plotly
 simplejson
 streamlit
 xarray

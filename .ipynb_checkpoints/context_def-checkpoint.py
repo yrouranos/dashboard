@@ -9,12 +9,6 @@
 # (C) 2021 Ouranos Inc., Canada
 # ----------------------------------------------------------------------------------------------------------------------
 
-import hor_def
-import lib_def
-import rcp_def
-import varidx_def as vi
-import view_def
-
 
 class Context:
     
@@ -23,28 +17,33 @@ class Context:
     Class defining the object context.
     --------------------------------------------------------------------------------------------------------------------
     """
-
-    # View (selected and all).
-    view = view_def.View("")
-    views = view_def.Views()
-    
-    # Plotting library (selected and all).
-    lib = lib_def.Lib("")
-    libs = lib_def.Libs()
-    
-    # Variable or index (selected and all).
-    varidx = vi.VarIdx("")
-    varidxs = vi.VarIdxs()
-    
-    # Horizons (selected and all).
-    hor = hor_def.Hor("")
-    hors = hor_def.Hors()
-    
-    # Emission scenarios (selected and all).
-    rcp = rcp_def.RCP("")
-    rcps = rcp_def.RCPs()
     
     # Constructor.
-    def __init__(self):    
-        pass
-    
+    def __init__(self):
+
+        # View (selected and all).
+        self.view = None
+        self.views = None
+
+        # Plotting library (selected and all).
+        self.lib = None
+        self.libs = None
+
+        # Variable or index (selected and all).
+        self.varidx = None
+        self.varidxs = None
+
+        # Horizons (selected and all).
+        self.hor = None
+        self.hors = None
+
+        # Emission scenarios (selected and all).
+        self.rcp = None
+        self.rcps = None
+
+        # Statistics (selected and all).
+        self.stat = None
+        self.stats = None
+        
+        # Anomalies.
+        self.delta = False

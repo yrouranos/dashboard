@@ -19,25 +19,29 @@ import holoviews as hv
 import hvplot.pandas
 import lib_def
 import math
-import matplotlib
 import matplotlib.colors as colors
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import panel as pn
+import plotly.graph_objects as go
+import plotly.io as pio
 import rcp_def
 import simplejson
+import stat_def
 import utils
 import varidx_def as vi
 import xarray as xr
 from descartes import PolygonPatch
 from matplotlib.lines import Line2D
-from typing import Union, List, Optional
-    
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+from typing import Union, List
+
 alt.renderers.enable("default")
 pn.extension("vega")
 hv.extension("bokeh", logo=False)
+pio.renderers.default = "iframe"
 
 
 def gen_ts(
@@ -301,7 +305,7 @@ def gen_ts_mat(
     """
     
     # Initialize plot.
-    fig = plt.figure(figsize=(9, 4.45))
+    fig = plt.figure(figsize=(9, 4.45), dpi=cf.dpi)
     specs = gridspec.GridSpec(ncols=1, nrows=1, figure=fig)
     ax = fig.add_subplot(specs[:])
     ax.set_xlabel(x_label)
@@ -360,7 +364,7 @@ def gen_tbl(
     ----------
     cntx : context_def.Context
         Context.
-    
+
     Returns
     -------
     pd.DataFrame :
@@ -372,22 +376,21 @@ def gen_tbl(
     df = utils.load_data(cntx)
 
     # List of statistics (in a column).
-    stat_l = [["min", -1],
-              ["quantile", cf.q_l[0]],
-              ["quantile", 0.5],
-              ["quantile", cf.q_l[1]],
-              ["max", -1],
-              ["mean", -1]]
+    stat_l, stat_desc_l = [], []
+    for code in list(stat_def.code_desc.keys()):
+        if code in [stat_def.mode_min, stat_def.mode_max, stat_def.mode_mean]:
+            stat_l.append([code, -1])
+        elif code == stat_def.mode_q_low:
+            stat_l.append(["quantile", cf.q_l[0]])
+        elif code == stat_def.mode_q_high:
+            stat_l.append(["quantile", cf.q_l[1]])
+        else:
+            stat_l.append(["quantile", 0.5])
+        stat_desc_l.append(stat_def.code_desc[code])
 
     # Initialize resulting dataframe.
     df_res = pd.DataFrame()
-    df_res["Statistique"] =\
-        ["minimum",
-         str(math.ceil(cf.q_l[0] * 100)) + "e percentile",
-         "médiane",
-         str(math.ceil(cf.q_l[1] * 100)) + "e percentile",
-         "maximum",
-         "moyenne"]
+    df_res["Statistique"] = stat_desc_l
 
     # Loop through RCPs.
     columns = []
@@ -413,13 +416,36 @@ def gen_tbl(
 
     df_res.columns = [df_res.columns[0]] + columns
     df_res = df_res.set_index(df_res.columns[0])
-    
+
+    """
+    values = []
+    for col_name in df_res.columns:
+        values.append(df_res[col_name])
+    fig = go.Figure(data=[go.Table(
+        header=dict(values=list(df_res.columns),
+                    line_color="white",
+                    fill_color=cf.col_sb_fill,
+                    align="right"),
+        cells=dict(values=values,
+                   line_color="white",
+                   fill_color="white",
+                   align="right"))
+    ])
+    fig.data[0]["columnwidth"] = [200] + [100] * (len(df_res.columns) - 1)
+    fig.update_layout(
+        font=dict(
+            size=15
+        )
+    )
+    fig.show()
+    """
+
     return df_res
 
 
 def get_ref_val(
     cntx: context_def.Context
-) -> Union[int, float]:
+) -> str:
     
     """
     --------------------------------------------------------------------------------------------------------------------
@@ -432,8 +458,8 @@ def get_ref_val(
         
     Returns
     -------
-    Union[int, float]
-        Reference value.
+    str
+        Reference value and unit.
     --------------------------------------------------------------------------------------------------------------------
     """
     
@@ -442,16 +468,18 @@ def get_ref_val(
     
     # Extract value.
     val = df[df["rcp"] == rcp_def.rcp_ref]["val"][0]
-    if cntx.varidx.get_code() not in [vi.var_tasmin, vi.var_tasmax]:
+    if cntx.varidx.get_code() not in [vi.var_tas, vi.var_tasmin, vi.var_tasmax]:
         val = int(val)
+    val = str(val)
+    unit = cntx.varidx.get_unit()
+    if unit != "°C":
+        val += " "
     
-    return val
+    return val + unit
 
 
 def gen_map(
-    cntx: context_def.Context,
-    stat: str,
-    q: Optional[float] = -1
+    cntx: context_def.Context
 ):
 
     """
@@ -462,17 +490,13 @@ def gen_map(
     ----------
     cntx : context_def.Context
         Context.
-    stat : str
-        Statistic = {"quantile", "mean"}
-    q : Optional[float]
-        Quantile (ex: 0.1).
     --------------------------------------------------------------------------------------------------------------------
     """
     
     is_delta = False
     
     # Load data.
-    df = utils.load_data(cntx, stat, q)
+    df = utils.load_data(cntx)
 
     # Hardcoded parameters.
     # Number of clusters (for discrete color scale).
@@ -483,21 +507,15 @@ def gen_map(
     # Maximum number of decimal places for colorbar ticks.
     n_dec_max = 4
     # Font size.
-    fs_title      = 8
-    fs_labels     = 10
-    fs_ticks      = 10
-    fs_ticks_cbar = 10
+    fs_title      = 5
+    fs_labels     = 5
+    fs_ticks      = 5
+    fs_ticks_cbar = 5
     if is_delta:
         fs_ticks_cbar = fs_ticks_cbar - 1
-    # Resolution.
-    dpi = 300
 
     # Title and label.
     title = ""
-    if stat == "mean":
-        title = "Moyenne"
-    elif stat == "quantile":
-        title = str(math.ceil(q * 100)) + "e percentile"
     label = cntx.varidx.get_label()
 
     # Find minimum and maximum values (consider all relevant CSV files).
@@ -677,8 +695,8 @@ def gen_map(
         vmax_adj = ticks[n_cluster]
 
     # Create figure.
-    fig = plt.figure(figsize=(4.5, 4), dpi=dpi)
-    plt.subplots_adjust(top=0.92, bottom=0.145, left=0.14, right=0.80, hspace=0.0, wspace=0.05)
+    fig = plt.figure(figsize=(4.5, 4), dpi=cf.dpi)
+    ax = fig.add_subplot(1, 1, 1, aspect="equal")
 
     # Convert to DataArray.
     df = pd.DataFrame(df, columns=["longitude", "latitude", cntx.varidx.get_code()])
@@ -690,10 +708,8 @@ def gen_map(
     arr = np.reshape(list(df[cntx.varidx.get_code()]), (len(lat), len(lon)))
     da = xr.DataArray(data=arr, dims=["latitude", "longitude"], coords=[("latitude", lat), ("longitude", lon)])
 
-    # Add mesh.
-    gs = matplotlib.gridspec.GridSpec(1, 2, width_ratios=[20, 1])
-    ax = plt.subplot(gs[0])
-    cbar_ax = plt.subplot(gs[1])
+    # Create mesh.
+    cbar_ax = make_axes_locatable(ax).append_axes("right", size="5%", pad=0.05)
     da.plot.pcolormesh(cbar_ax=cbar_ax, add_colorbar=True, add_labels=True,
                        ax=ax, cbar_kwargs=dict(orientation='vertical', pad=0.05, label=label, ticks=ticks),
                        cmap=cmap, vmin=vmin_adj, vmax=vmax_adj)
@@ -864,12 +880,8 @@ def draw_region_boundary(
     with open(cf.p_bounds) as f:
         pydata = simplejson.load(f)
 
-    # Configure.
-    ax_new = ax
-    ax_new.set_aspect("equal")
-    ax_new.set_anchor("C")
-        
     # Draw feature.
+    ax_new = ax
     coordinates = pydata["features"][0]["geometry"]["coordinates"][0]
     vertices = coordinates[0]
     if len(vertices) == 2:

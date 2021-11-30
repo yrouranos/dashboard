@@ -16,22 +16,34 @@ import hor_def
 import lib_def
 import plot
 import rcp_def
+import stat_def
 import streamlit as st
 import varidx_def as vi
 import view_def
 from PIL import Image
+
+cntx = None
 
 
 def refresh():
 
     """
     --------------------------------------------------------------------------------------------------------------------
-    Entry point.
+    Refresh GUI.
     --------------------------------------------------------------------------------------------------------------------
     """
-  
-    # Create context.
-    cntx = context_def.Context()
+
+    global cntx
+
+    # Initialize context.
+    if cntx is None:
+        cntx = context_def.Context()
+        cntx.views = view_def.Views()
+        cntx.libs = lib_def.Libs()
+        cntx.varidxs = vi.VarIdxs()
+        cntx.hors = hor_def.Hors()
+        cntx.rcps = rcp_def.RCPs()
+        cntx.stats = stat_def.Stats()
 
     st.sidebar.image(Image.open(cf.p_logo), width=150)  
         
@@ -42,9 +54,8 @@ def refresh():
     
     # Plotting libraries.
     cntx.libs = lib_def.Libs(cntx.view.get_code())
-    if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_map]:
-        libs = st.sidebar.radio("Choisir la librairie visuelle", options=cntx.libs.get_desc_l())
-        cntx.lib = lib_def.Lib(cntx.libs.get_code(libs))
+    libs = st.sidebar.radio("Choisir la librairie visuelle", options=cntx.libs.get_desc_l())
+    cntx.lib = lib_def.Lib(cntx.libs.get_code(libs))
     
     # Variables and indices.
     cntx.varidxs = vi.VarIdxs(cntx.view)
@@ -54,17 +65,22 @@ def refresh():
     # Horizons.
     if cntx.view.get_code() in [view_def.mode_tbl, view_def.mode_map]:
         cntx.hors = hor_def.Hors(cntx)
-    if cntx.view.get_code() in [view_def.mode_tbl, view_def.mode_map]:
         hors = st.selectbox("Horizon", options=cntx.hors.get_code_l())
-    if cntx.view.get_code() in [view_def.mode_tbl, view_def.mode_map]:
         cntx.hor = hor_def.Hor(hors)
         
     # Emission scenarios.
-    cntx.rcps = rcp_def.RCPs(cntx, cf.d_data)
+    cntx.rcps = rcp_def.RCPs(cntx)
     if cntx.view.get_code() == view_def.mode_map:
         rcps = st.selectbox("Scénario d'émissions", options=cntx.rcps.get_desc_l())
         cntx.rcp = rcp_def.RCP(cntx.rcps.get_code(rcps))
-    
+
+    # Statistics.
+    if cntx.view.get_code() == view_def.mode_map:
+        cntx.stats = stat_def.Stats(cntx)
+    if cntx.view.get_code() == view_def.mode_map:
+        stats = st.selectbox("Statistique", options=cntx.stats.get_desc_l())
+        cntx.stat = stat_def.Stat(cntx.stats.get_code(stats))
+
     # Components.
     if cntx.view.get_code() == view_def.mode_ts:
         if cntx.lib.get_code() in [lib_def.mode_alt, lib_def.mode_mat]:
@@ -73,17 +89,15 @@ def refresh():
             st.write(hv.render(plot.gen_ts(cntx)), backend="bokeh")
             
     elif cntx.view.get_code() == view_def.mode_tbl:
-        tbl = plot.gen_tbl(cntx)
+        st.table(plot.gen_tbl(cntx))
         tbl_ref = str(plot.get_ref_val(cntx))
         if vars in [vi.var_tas, vi.var_tasmin, vi.var_tasmax]:
-            tbl = tbl.style.format("{:.1f}")
             tbl_ref = "{:.1f}".format(float(tbl_ref))
-        st.table(tbl)
+            tbl_ref = "{:.1f}".format(float(tbl_ref))
         st.write("Valeur de référence : " + tbl_ref)
         
     else:
-        st.write(plot.gen_map(cntx, "quantile", cf.q_l[0]))
-        st.write(plot.gen_map(cntx, "quantile", cf.q_l[1]))
+        st.write(plot.gen_map(cntx))
 
 
 refresh()

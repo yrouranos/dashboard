@@ -15,7 +15,7 @@ import object_def
 import os
 import utils
 import view_def
-from typing import List
+from typing import List, Union
 
 
 """
@@ -185,10 +185,10 @@ code_props = {
     var_tas:                    ["Température moyenne",
                                  "Température",
                                  "°C"],
-    var_tasmin:                 ["Température minimale quotidienne",
+    var_tasmin:                 ["Température minimale journalière",
                                  "Température",
                                  "°C"],
-    var_tasmax:                 ["Température maximale quotidienne",
+    var_tasmax:                 ["Température maximale journalière",
                                  "Température",
                                  "°C"],
     var_uas:                    ["Vitesse du vent (dir. est)",
@@ -336,12 +336,10 @@ class VarIdx(object_def.Obj):
     
     # Contructor.
     def __init__(self, code):
-        super().__init__(code)
-        self.code = code
+        desc = "" if code == "" else code_props[code][0]
+        super(VarIdx, self).__init__(code=code, desc=desc)
     
-    def get_name(
-        self
-    ) -> str:
+    def get_name(self) -> str:
 
         """
         Extract name.
@@ -360,24 +358,7 @@ class VarIdx(object_def.Obj):
 
         return self.code
     
-    def get_desc(
-        self,
-    ) -> str:
-    
-        """
-        Get description.
-
-        Returns
-        -------
-        str
-            Description.
-        """
-
-        return code_props[self.get_name()][0]
-    
-    def get_unit(
-        self,
-    ) -> str:
+    def get_unit(self,) -> str:
     
         """
         Get unit.
@@ -388,11 +369,9 @@ class VarIdx(object_def.Obj):
             Unit.
         """
 
-        return code_props[self.get_name()][2]
+        return code_props[self.get_code()][2]
     
-    def get_label(
-        self
-    ) -> str:
+    def get_label(self) -> str:
 
         """
         Combine description and unit.
@@ -403,16 +382,14 @@ class VarIdx(object_def.Obj):
             Combine description and unit.
         """
 
-        desc = self.get_desc()
+        desc = code_props[self.get_code()][1]
         unit = self.get_unit()
         if (unit not in ["", "1"]) and (unit not in desc):
             unit = " (" + unit + ")"
         
         return desc + unit
     
-    def is_var(
-        self
-    ) -> bool:
+    def is_var(self) -> bool:
         
         """
         Determine if the instance is a variable.
@@ -421,17 +398,7 @@ class VarIdx(object_def.Obj):
         var_l = [var_tas, var_tasmin, var_tasmax, var_pr, var_uas, var_vas, var_sfcwindmax,
                  var_ps, var_rsds, var_evspsbl, var_evspsblpot, var_huss, var_clt]
 
-        return self.get_name() in var_l
-
-    def copy(
-        self
-    ):
-        
-        """
-        Copy item.
-        """
-        
-        return VarIdx(self.code)
+        return self.get_code() in var_l
 
     
 class VarIdxs(object_def.Objs):
@@ -450,7 +417,7 @@ class VarIdxs(object_def.Objs):
             if isinstance(args[0], view_def.View):
                 self.load(args)
             else:
-                self.items.append(VarIdx(args[0]))
+                self.add(args[0])
 
     def load(self, args):
 
@@ -480,98 +447,48 @@ class VarIdxs(object_def.Objs):
             p = cf.d_data + "<view>/"
             p = p.replace("<view>", view.get_code())
             code_l = utils.list_dir(p)
-        
-        # Create items.
-        self.items = []
-        for code in code_l:
-            self.items.append(VarIdx(code))
 
-    def get_code(
+        self.add(code_l)
+
+    def add(
         self,
-        desc: str
-    ) -> str:
+        code: Union[str, List[str]],
+        inplace: bool = True
+    ):
 
         """
-        Get code.
+        Add one or several items.
 
-        Paramters
-        ---------
-        desc : str
-            Description.
+        Parameters
+        ----------
+        code : Union[str, List[str]]
+            Code or list of codes.
+        inplace : bool
+            If True, modifies the current instance.
+        """
 
-        Returns
-        -------
-        str
-            Code.
-        """    
+        code_l = code
+        if isinstance(code, str):
+            code_l = [code]
 
-        for item in self.items:
-            if item.get_desc() == desc:
-                return item.code
+        items = []
+        for i in range(len(code_l)):
+            items.append(VarIdx(code_l[i]))
 
-        return ""
+        return super(VarIdxs, self).add_items(items, inplace)
 
-    def get_desc(
-        self,
-        code: str
-    ) -> str:
+    def get_desc_l(self) -> List[str]:
 
         """
-        Get description.
+        Get a list of descriptions.
 
-        Paramters
-        ---------
-        code : str
-            Code.
-
-        Returns
-        -------
-        str
-            Description.
-        """    
-
-        for item in self.items:
-            if item.get_code() == code:
-                return item.get_desc()
-
-        return ""
-
-    def get_code_l(
-        self
-    ) -> List[str]:
-    
-        """
-        Get codes.
-    
-        Returns
-        -------
-        List[str]
-            Codes.
-        """
-    
-        code_l = []
-    
-        for item in self.items:
-            code_l.append(item.get_code())
-    
-        return code_l
-    
-    def get_desc_l(
-        self
-    ) -> List[str]:
-    
-        """
-        Get descriptions.
-    
         Returns
         -------
         List[str]
             Descriptions.
         """
-    
-        desc_l = []
-    
-        for item in self.items:
-            desc_l.append(item.get_desc())
-    
+
+        desc_l = super(VarIdxs, self).get_desc_l()
+        desc_l.sort()
+
         return desc_l
