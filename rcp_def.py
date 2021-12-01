@@ -109,6 +109,8 @@ class RCPs(object_def.Objs):
                 code_l = list(df.columns)
             else:
                 code_l = df["rcp"]
+            if cntx.delta and (rcp_ref in code_l):
+                code_l.remove(rcp_ref)
 
         # The list of RCPs is within file structure.
         else:

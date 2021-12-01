@@ -38,6 +38,8 @@ from matplotlib.lines import Line2D
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from typing import Union, List
 
+import view_def
+
 alt.renderers.enable("default")
 pn.extension("vega")
 hv.extension("bokeh", logo=False)
@@ -66,14 +68,21 @@ def gen_ts(
        
     # Load data.
     df = utils.load_data(cntx)
-    
+
+    # Calculate deltas.
+    if cntx.delta:
+        for col in df.columns[2:]:
+            if col != rcp_def.rcp_ref:
+                df[col] = df[col] - df[rcp_def.rcp_ref].mean()
+
     # Extract minimum and maximum x-values (round to lower and upper decades).
     x_min = math.floor(min(df["year"]) / 10) * 10
     x_max = math.ceil(max(df["year"]) / 10) * 10
     
     # Extract minimum and maximum y-values.
-    y_min = df[rcp_def.rcp_ref].min()
-    y_max = df[rcp_def.rcp_ref].max()
+    first_col_index = 3 if cntx.delta else 2
+    y_min = df.iloc[:, first_col_index:].min().min()
+    y_max = df.iloc[:, first_col_index:].max().max()
     for rcp in cntx.rcps.items:
         if rcp.get_code() == rcp_def.rcp_ref:
             col_min = col_max = rcp_def.rcp_ref
@@ -87,7 +96,7 @@ def gen_ts(
 
     # Plot components.
     x_label = "Année"
-    y_label = cntx.varidx.get_label()
+    y_label = ("Δ" if cntx.delta else "") + cntx.varidx.get_label()
     
     if cntx.lib.get_code() == lib_def.mode_mat:
         ts = gen_ts_mat(cntx, df, x_label, y_label, [x_min, x_max], [y_min, y_max])
@@ -399,13 +408,19 @@ def gen_tbl(
         if rcp.get_code() == rcp_def.rcp_ref:
             continue
 
+        # Extract delta.
+        delta = 0.0
+        if cntx.delta:
+            delta = float(df[df["rcp"] == rcp_def.rcp_ref]["val"])
+
+        # Extract statistics.
         vals = []
         for stat in stat_l:
             df_cell = float(df[(df["rcp"] == rcp.get_code()) &
                                (df["hor"] == cntx.hor.get_code()) &
                                (df["stat"] == stat[0]) &
                                (df["q"] == stat[1])]["val"])
-            val = df_cell            
+            val = df_cell - delta
             vals.append(val)
 
         df_res[rcp.get_code()] = vals
@@ -472,7 +487,9 @@ def get_ref_val(
     """
     
     # Load data.
-    df = utils.load_data(cntx)
+    cntx_tbl = cntx.copy()
+    cntx_tbl.view = view_def.View(view_def.mode_tbl)
+    df = utils.load_data(cntx_tbl)
     
     # Extract value.
     val = df[df["rcp"] == rcp_def.rcp_ref]["val"][0]
@@ -501,8 +518,6 @@ def gen_map(
     --------------------------------------------------------------------------------------------------------------------
     """
     
-    is_delta = False
-    
     # Load data.
     df = utils.load_data(cntx)
 
@@ -519,19 +534,19 @@ def gen_map(
     fs_labels     = 5
     fs_ticks      = 5
     fs_ticks_cbar = 5
-    if is_delta:
+    if cntx.delta:
         fs_ticks_cbar = fs_ticks_cbar - 1
 
     # Title and label.
     title = ""
-    label = cntx.varidx.get_label()
+    label = ("Δ" if cntx.delta else "") + cntx.varidx.get_label()
 
     # Find minimum and maximum values (consider all relevant CSV files).
     z_min, z_max = utils.get_min_max(cntx)
     
     # Determine color scale index.
     is_wind_var = cntx.varidx.get_code() in [vi.var_uas, vi.var_vas, vi.var_sfcwindmax]
-    if (not is_delta) and (not is_wind_var):
+    if (not cntx.delta) and (not is_wind_var):
         cmap_idx = 0
     elif (z_min < 0) and (z_max > 0):
         cmap_idx = 1

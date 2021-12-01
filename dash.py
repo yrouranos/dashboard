@@ -48,7 +48,7 @@ def refresh():
 
     st.sidebar.image(Image.open(cf.p_logo), width=150)  
         
-    # Views.    
+    # Views.
     cntx.views = view_def.Views()
     views = st.sidebar.radio("Choisir la vue", cntx.views.get_desc_l())
     cntx.view = view_def.View(cntx.views.get_code(views))
@@ -57,7 +57,13 @@ def refresh():
     cntx.libs = lib_def.Libs(cntx.view.get_code())
     libs = st.sidebar.radio("Choisir la librairie visuelle", options=cntx.libs.get_desc_l())
     cntx.lib = lib_def.Lib(cntx.libs.get_code(libs))
-    
+
+    # Deltas.
+    st.sidebar.markdown("<style>.sel_title {font-size:14.5px}</style>", unsafe_allow_html=True)
+    st.sidebar.markdown("<p class='sel_title'>Afficher les anomalies</p>", unsafe_allow_html=True)
+    deltas = st.sidebar.checkbox("", value=False)
+    cntx.delta = deltas
+
     # Variables and indices.
     cntx.varidxs = vi.VarIdxs(cntx.view)
     varidxs = st.selectbox("Variable", options=cntx.varidxs.get_desc_l())
@@ -88,17 +94,13 @@ def refresh():
             st.write(plot.gen_ts(cntx))
         else:
             st.write(hv.render(plot.gen_ts(cntx)), backend="bokeh")
-            
     elif cntx.view.get_code() == view_def.mode_tbl:
         st.write(plot.gen_tbl(cntx))
-        tbl_ref = str(plot.get_ref_val(cntx))
-        if vars in [vi.var_tas, vi.var_tasmin, vi.var_tasmax]:
-            tbl_ref = "{:.1f}".format(float(tbl_ref))
-            tbl_ref = "{:.1f}".format(float(tbl_ref))
-        st.write("Valeur de référence : " + tbl_ref)
-        
     else:
         st.write(plot.gen_map(cntx))
+    if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_tbl]:
+        tbl_ref = plot.get_ref_val(cntx)
+        st.write("Valeur de référence : " + tbl_ref)
 
 
 refresh()

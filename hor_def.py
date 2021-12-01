@@ -10,7 +10,9 @@
 # ----------------------------------------------------------------------------------------------------------------------
 
 import config as cf
+import glob
 import object_def
+import os
 import rcp_def
 import utils
 import view_def
@@ -66,9 +68,15 @@ class Hors(object_def.Objs):
 
         # List all items.
         if cntx.view.get_code() == view_def.mode_map:
-            p = cf.d_map + "<varidx_code>/"
+            p = cf.d_map + "<varidx_code>/*/*_<delta>.csv"
             p = p.replace("<varidx_code>", cntx.varidx.get_code())
-            code_l = utils.list_dir(p)
+            p = p.replace("_<delta>", "" if cntx.delta is False else "_delta")
+            p_l = glob.glob(p)
+            code_l = []
+            for p in p_l:
+                code = os.path.basename(os.path.dirname(p))
+                if code not in code_l:
+                    code_l.append(code)
         elif cntx.view.get_code() == view_def.mode_tbl:
             df = utils.load_data(cntx)
             code_l = list(dict.fromkeys(list(df["hor"])))

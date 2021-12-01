@@ -372,14 +372,14 @@ class VarIdx(object_def.Obj):
 
         return code_props[self.get_code()][2]
 
-    def get_precision(self, ) -> str:
+    def get_precision(self, ) -> int:
 
         """
         Get precision (number of decimals).
 
         Returns
         -------
-        str
+        int
             Precision (number of decimals).
         """
 

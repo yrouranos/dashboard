@@ -15,7 +15,6 @@ import glob
 import numpy as np
 import os
 import pandas as pd
-import varidx_def as vi
 import view_def
 from pathlib import Path
 from typing import List, Optional, Tuple
@@ -56,9 +55,9 @@ def load_data(
         p = p.replace("<stat>", cntx.stat.get_code())
         p = p.replace("_<delta>", "" if cntx.delta is False else "_delta")
     df = pd.read_csv(p)
-    
+
     # Round values.
-    n_dec = 1 if (cntx.varidx.get_code() in [vi.var_tasmin, vi.var_tasmax]) else 0
+    n_dec = cntx.varidx.get_precision()
     if cntx.view.get_code() == view_def.mode_ts:
         for col in df.columns:
             df[col] = df[col].round(decimals=n_dec)
@@ -96,10 +95,13 @@ def get_min_max(
         
         # Identify the files to consider.
         p_ref = glob.glob(cf.d_map + cntx.varidx.get_code() + "/*/" + cntx.varidx.get_code() + "_ref*_mean.csv")
-        p_rcp = cf.d_map + cntx.varidx.get_code() + "/*/" + cntx.varidx.get_code() + "_rcp*_q<q>.csv" 
+        p_rcp = cf.d_map + cntx.varidx.get_code() + "/*/" + cntx.varidx.get_code() + "_rcp*_q<q>_<delta>.csv"
+        p_rcp = p_rcp.replace("_<delta>", "" if cntx.delta is False else "_delta")
         p_rcp_q_low = glob.glob(p_rcp.replace("<q>", cf.q_low))
         p_rcp_q_high = glob.glob(p_rcp.replace("<q>", cf.q_high))
-        p_l = p_ref + p_rcp_q_low + p_rcp_q_high
+        p_l = p_rcp_q_low + p_rcp_q_high
+        if not cntx.delta:
+            p_l = p_ref + p_l
 
         # Find the minimum and maximum values.
         for p in p_l:
