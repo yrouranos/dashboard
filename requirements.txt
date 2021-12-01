@@ -10,7 +10,7 @@ numpy
 pandas
 panel
 pathlib
-PIL
+pillow
 plotly
 simplejson
 streamlit
