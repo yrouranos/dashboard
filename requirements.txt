@@ -5,7 +5,7 @@ descartes
 holoviews
 hvplot
 matplotlib
-mpl-toolkits
+mpl-toolkits.clifford
 numpy
 pandas
 panel
