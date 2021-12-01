@@ -5,6 +5,7 @@ descartes
 holoviews
 hvplot
 matplotlib
+pyqt
 mpl_toolkits.axes_grid1
 numpy
 pandas
@@ -12,7 +13,6 @@ panel
 pathlib
 PIL
 plotly
-pyqt
 simplejson
 streamlit
 xarray
