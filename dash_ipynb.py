@@ -121,6 +121,7 @@ def refresh():
     # Initialize context.
     if cntx is None:
         cntx = context_def.Context()
+        cntx.platform = "jupyter"
         cntx.views = view_def.Views()
         cntx.libs = lib_def.Libs()
         cntx.varidxs = vi.VarIdxs()

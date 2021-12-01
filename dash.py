@@ -38,6 +38,7 @@ def refresh():
     # Initialize context.
     if cntx is None:
         cntx = context_def.Context()
+        cntx.platform = "streamlit"
         cntx.views = view_def.Views()
         cntx.libs = lib_def.Libs()
         cntx.varidxs = vi.VarIdxs()
@@ -89,7 +90,7 @@ def refresh():
             st.write(hv.render(plot.gen_ts(cntx)), backend="bokeh")
             
     elif cntx.view.get_code() == view_def.mode_tbl:
-        st.table(plot.gen_tbl(cntx))
+        st.write(plot.gen_tbl(cntx))
         tbl_ref = str(plot.get_ref_val(cntx))
         if vars in [vi.var_tas, vi.var_tasmin, vi.var_tasmax]:
             tbl_ref = "{:.1f}".format(float(tbl_ref))

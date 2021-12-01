@@ -44,6 +44,9 @@ class Context:
         # Statistics (selected and all).
         self.stat = None
         self.stats = None
-        
+
+        # Platform.
+        self.platform = ""
+
         # Anomalies.
         self.delta = False

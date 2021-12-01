@@ -354,7 +354,7 @@ def gen_ts_mat(
 
 def gen_tbl(
     cntx: context_def.Context
-) -> pd.DataFrame:
+) -> Union[pd.DataFrame, go.Figure]:
     
     """
     --------------------------------------------------------------------------------------------------------------------
@@ -367,8 +367,8 @@ def gen_tbl(
 
     Returns
     -------
-    pd.DataFrame :
-        Dataframe.
+    Union[pd.DataFrame, go.Figure] :
+        Dataframe or figure.
     --------------------------------------------------------------------------------------------------------------------
     """
     
@@ -409,38 +409,46 @@ def gen_tbl(
             vals.append(val)
 
         df_res[rcp.get_code()] = vals
-        if cntx.varidx.get_code() not in [vi.var_tasmin, vi.var_tasmax]:
+        if cntx.varidx.get_precision() == 0:
             df_res[rcp.get_code()] = df_res[rcp.get_code()].astype(int)
 
         columns.append(rcp.get_desc())
 
     df_res.columns = [df_res.columns[0]] + columns
-    df_res = df_res.set_index(df_res.columns[0])
 
-    """
-    values = []
-    for col_name in df_res.columns:
-        values.append(df_res[col_name])
-    fig = go.Figure(data=[go.Table(
-        header=dict(values=list(df_res.columns),
-                    line_color="white",
-                    fill_color=cf.col_sb_fill,
-                    align="right"),
-        cells=dict(values=values,
-                   line_color="white",
-                   fill_color="white",
-                   align="right"))
-    ])
-    fig.data[0]["columnwidth"] = [200] + [100] * (len(df_res.columns) - 1)
-    fig.update_layout(
-        font=dict(
-            size=15
+    if cntx.platform == "jupyter":
+        res = df_res.set_index(df_res.columns[0])
+
+    else:
+        values = []
+        for col_name in df_res.columns:
+            col = df_res[col_name].astype(str)
+            n_dec = cntx.varidx.get_precision()
+            for i in range(len(col)):
+                try:
+                    col[i] = str("{:." + str(n_dec) + "f}").format(float(col[i]))
+                except ValueError:
+                    pass
+            values.append(col)
+        fig = go.Figure(data=[go.Table(
+            header=dict(values=list(df_res.columns),
+                        line_color="white",
+                        fill_color=cf.col_sb_fill,
+                        align="right"),
+            cells=dict(values=values,
+                       line_color="white",
+                       fill_color="white",
+                       align="right"))
+        ])
+        fig.data[0]["columnwidth"] = [200] + [100] * (len(df_res.columns) - 1)
+        fig.update_layout(
+            font=dict(
+                size=15
+            )
         )
-    )
-    fig.show()
-    """
+        res = fig
 
-    return df_res
+    return res
 
 
 def get_ref_val(
@@ -468,7 +476,7 @@ def get_ref_val(
     
     # Extract value.
     val = df[df["rcp"] == rcp_def.rcp_ref]["val"][0]
-    if cntx.varidx.get_code() not in [vi.var_tas, vi.var_tasmin, vi.var_tasmax]:
+    if cntx.varidx.get_precision == 0:
         val = int(val)
     val = str(val)
     unit = cntx.varidx.get_unit()
