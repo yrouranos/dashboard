@@ -5,7 +5,7 @@ descartes
 holoviews
 hvplot
 matplotlib
-mpl_toolkits.axes_grid1
+matplotlib.mpl_toolkits.axes_grid1
 numpy
 pandas
 panel
