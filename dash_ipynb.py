@@ -18,7 +18,6 @@ import panel.widgets as pnw
 import plot
 import rcp_def
 import stat_def
-import utils
 import varidx_def as vi
 import view_def
 
