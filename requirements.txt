@@ -12,6 +12,7 @@ panel
 pathlib
 PIL
 plotly
+pyqt
 simplejson
 streamlit
 xarray
