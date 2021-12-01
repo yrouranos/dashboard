@@ -16,12 +16,12 @@ from typing import Union, List
 mode_alt = "alt"
 mode_hv = "hv"
 mode_mat = "mat"
-mode_pd = "pd"
+mode_ply = "ply"
 
 code_desc = {mode_alt: "altair",
              mode_hv: "hvplot",
              mode_mat: "matplotlib",
-             mode_pd: "pandas"}
+             mode_ply: "plotly"}
 
 
 class Lib(object_def.Obj):
@@ -55,7 +55,7 @@ class Libs(object_def.Objs):
             if args[0] == view_def.mode_ts:
                 code_l = [mode_alt, mode_hv, mode_mat]
             elif args[0] == view_def.mode_tbl:
-                code_l = [mode_pd]
+                code_l = [mode_ply]
             elif args[0] == view_def.mode_map:
                 code_l = [mode_mat]
             self.add(code_l)
