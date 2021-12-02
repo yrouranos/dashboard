@@ -1,7 +1,0 @@
-altair
-matplotlib
-numpy
-pandas
-panel
-streamlit
-xarray
