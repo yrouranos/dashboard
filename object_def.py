@@ -26,9 +26,13 @@ class Obj:
 
     # Description.
     desc = ""
-    
-    # Contructor.
+
     def __init__(self, code, desc):
+
+        """
+        Constructor.
+        """
+
         self.code = code
         self.desc = desc
 
@@ -83,8 +87,12 @@ class Objs:
     # List of instances.
     items = []
 
-    # Constructors.
     def __init__(self, *args):
+
+        """
+        Constructor.
+        """
+
         self.items = []
 
     def set_items(self, items):

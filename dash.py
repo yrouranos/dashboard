@@ -15,9 +15,11 @@ import holoviews as hv
 import hor_def
 import lib_def
 import plot
+import project_def
 import rcp_def
 import stat_def
 import streamlit as st
+import utils
 import varidx_def as vi
 import view_def
 from PIL import Image
@@ -45,11 +47,14 @@ def refresh():
         cntx.hors = hor_def.Hors()
         cntx.rcps = rcp_def.RCPs()
         cntx.stats = stat_def.Stats()
+        cntx.project = project_def.Project("sn")
+        stat_def.mode_q_low = "q" + cntx.project.get_quantiles_as_str()[0]
+        stat_def.mode_q_high = "q" + cntx.project.get_quantiles_as_str()[1]
 
-    st.sidebar.image(Image.open(cf.p_logo), width=150)  
+    st.sidebar.image(Image.open(utils.get_p_logo(cntx)), width=150)
         
     # Views.
-    cntx.views = view_def.Views()
+    cntx.views = view_def.Views(cntx)
     views = st.sidebar.radio("Choisir la vue", cntx.views.get_desc_l())
     cntx.view = view_def.View(cntx.views.get_code(views))
     
@@ -65,7 +70,7 @@ def refresh():
     cntx.delta = deltas
 
     # Variables and indices.
-    cntx.varidxs = vi.VarIdxs(cntx.view)
+    cntx.varidxs = vi.VarIdxs(cntx)
     varidxs = st.selectbox("Variable", options=cntx.varidxs.get_desc_l())
     cntx.varidx = vi.VarIdx(cntx.varidxs.get_code(varidxs))
         

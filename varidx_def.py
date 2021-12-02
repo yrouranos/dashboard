@@ -10,6 +10,7 @@
 # ----------------------------------------------------------------------------------------------------------------------
 
 import config as cf
+import context_def
 import glob
 import object_def
 import os
@@ -180,7 +181,7 @@ idx_groups = [[idx_rain_season,
 """
 
 # TODO: Replace X and Y by real values.
-# TODO: Add n_dec.
+
 # Properties of variables and indices.
 code_props = {
     var_tas:                    ["Température moyenne",
@@ -335,8 +336,12 @@ class VarIdx(object_def.Obj):
     --------------------------------------------------------------------------------------------------------------------
     """
     
-    # Contructor.
     def __init__(self, code):
+
+        """
+        Contructor.
+        """
+
         desc = "" if code == "" else code_props[code][0]
         super(VarIdx, self).__init__(code=code, desc=desc)
     
@@ -359,7 +364,7 @@ class VarIdx(object_def.Obj):
 
         return self.code
     
-    def get_unit(self,) -> str:
+    def get_unit(self) -> str:
     
         """
         Get unit.
@@ -372,7 +377,7 @@ class VarIdx(object_def.Obj):
 
         return code_props[self.get_code()][2]
 
-    def get_precision(self, ) -> int:
+    def get_precision(self) -> int:
 
         """
         Get precision (number of decimals).
@@ -423,12 +428,16 @@ class VarIdxs(object_def.Objs):
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    # Constructors.
     def __init__(self, *args):
+
+        """
+        Contructor.
+        """
+
         super().__init__()
 
         if len(args) > 0:
-            if isinstance(args[0], view_def.View):
+            if isinstance(args[0], context_def.Context):
                 self.load(args)
             else:
                 self.add(args[0])
@@ -441,25 +450,23 @@ class VarIdxs(object_def.Objs):
         Parameters
         ----------
         args :
-            args[0] : str
-                View = {"ts", "tbl", "map"}
+            args[0] : cntx: context_def.Context
+                Context.
         """
 
-        view = args[0]
+        cntx = args[0]
         
         code_l = []
 
-        if view.get_code() in [view_def.mode_ts, view_def.mode_tbl]:
-            p = cf.d_data + "<view>/*.csv"
-            p = p.replace("<view>", view.get_code())
+        if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_tbl]:
+            p = utils.get_d_data(cntx, cntx.view) + "*.csv"
             f_l = list(glob.glob(p))
             for f in f_l:
                 code_l.append(os.path.basename(f).replace(".csv", ""))
             code_l.sort()
 
         else:
-            p = cf.d_data + "<view>/"
-            p = p.replace("<view>", view.get_code())
+            p = utils.get_d_data(cntx, cntx.view)
             code_l = utils.list_dir(p)
 
         self.add(code_l)

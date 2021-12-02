@@ -389,10 +389,10 @@ def gen_tbl(
     for code in list(stat_def.code_desc.keys()):
         if code in [stat_def.mode_min, stat_def.mode_max, stat_def.mode_mean]:
             stat_l.append([code, -1])
-        elif code == stat_def.mode_q_low:
-            stat_l.append(["quantile", cf.q_l[0]])
-        elif code == stat_def.mode_q_high:
-            stat_l.append(["quantile", cf.q_l[1]])
+        elif code == "q" + cntx.project.get_quantiles_as_str()[0]:
+            stat_l.append(["quantile", cntx.project.get_quantiles()[0]])
+        elif code == "q" + cntx.project.get_quantiles_as_str()[1]:
+            stat_l.append(["quantile", cntx.project.get_quantiles()[1]])
         else:
             stat_l.append(["quantile", 0.5])
         stat_desc_l.append(stat_def.code_desc[code])
@@ -749,7 +749,7 @@ def gen_map(
         cbar_ax.set_yticklabels(str_ticks)
 
     # Draw region boundary.
-    draw_region_boundary(ax)
+    draw_region_boundary(cntx, ax)
 
     plt.close(fig)
     
@@ -855,7 +855,8 @@ def build_custom_cmap(
 
 
 def draw_region_boundary(
-    ax
+    cntx: context_def.Context,
+    ax: plt.axes
 ) -> plt.axes:
 
     """
@@ -864,6 +865,8 @@ def draw_region_boundary(
 
     Parameters
     ----------
+    cntx: context_def.Context
+        Context.
     ax : plt.axes
         Plots axes.
     --------------------------------------------------------------------------------------------------------------------
@@ -900,7 +903,7 @@ def draw_region_boundary(
         return _ax
 
     # Read geojson file.
-    with open(cf.p_bounds) as f:
+    with open(utils.get_p_bounds(cntx)) as f:
         pydata = simplejson.load(f)
 
     # Draw feature.

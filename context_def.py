@@ -19,9 +19,15 @@ class Context(object_def.Obj):
     Class defining the object context.
     --------------------------------------------------------------------------------------------------------------------
     """
-    
-    # Constructor.
+
     def __init__(self):
+
+        """
+        Constructor.
+        """
+
+        # Project.
+        self.project = None
 
         # View (selected and all).
         self.view = None

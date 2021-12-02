@@ -27,8 +27,12 @@ class Hor(object_def.Obj):
     --------------------------------------------------------------------------------------------------------------------
     """
     
-    # Contructor.
     def __init__(self, code):
+
+        """
+        Contructor.
+        """
+
         super(Hor, self).__init__(code=code, desc=code)
 
 
@@ -40,8 +44,12 @@ class Hors(object_def.Objs):
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    # Constructors.
     def __init__(self, *args):
+
+        """
+        Contructor.
+        """
+
         super(Hors, self).__init__()
 
         if len(args) == 1:
@@ -68,7 +76,7 @@ class Hors(object_def.Objs):
 
         # List all items.
         if cntx.view.get_code() == view_def.mode_map:
-            p = cf.d_map + "<varidx_code>/*/*_<delta>.csv"
+            p = utils.get_d_data(cntx, cntx.view) + "<varidx_code>/*/*_<delta>.csv"
             p = p.replace("<varidx_code>", cntx.varidx.get_code())
             p = p.replace("_<delta>", "" if cntx.delta is False else "_delta")
             p_l = glob.glob(p)

@@ -42,9 +42,9 @@ def load_data(
     
     # Load data.
     if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_tbl]:
-        p = cf.d_data + "<view>/<varidx_code>.csv"    
+        p = get_d_data(cntx) + "<view>/<varidx_code>.csv"
     else:
-        p = cf.d_data + "<view>/<varidx_code>/<hor>/<varidx_name>_<rcp>_<hor_>_<stat>_<delta>.csv"
+        p = get_d_data(cntx) + "<view>/<varidx_code>/<hor>/<varidx_name>_<rcp>_<hor_>_<stat>_<delta>.csv"
     p = p.replace("<view>", cntx.view.get_code())
     p = p.replace("<varidx_code>", cntx.varidx.get_code())
     if cntx.view.get_code() == view_def.mode_map:
@@ -94,11 +94,13 @@ def get_min_max(
     if cntx.view.get_code() == view_def.mode_map:
         
         # Identify the files to consider.
-        p_ref = glob.glob(cf.d_map + cntx.varidx.get_code() + "/*/" + cntx.varidx.get_code() + "_ref*_mean.csv")
-        p_rcp = cf.d_map + cntx.varidx.get_code() + "/*/" + cntx.varidx.get_code() + "_rcp*_q<q>_<delta>.csv"
+        p_ref = glob.glob(get_d_data(cntx, cntx.view) + cntx.varidx.get_code() + "/*/" + cntx.varidx.get_code() +
+                          "_ref*_mean.csv")
+        p_rcp = get_d_data(cntx, cntx.view) + cntx.varidx.get_code() + "/*/" + cntx.varidx.get_code() +\
+            "_rcp*_q<q>_<delta>.csv"
         p_rcp = p_rcp.replace("_<delta>", "" if cntx.delta is False else "_delta")
-        p_rcp_q_low = glob.glob(p_rcp.replace("<q>", cf.q_low))
-        p_rcp_q_high = glob.glob(p_rcp.replace("<q>", cf.q_high))
+        p_rcp_q_low = glob.glob(p_rcp.replace("<q>", cntx.project.get_quantiles_as_str()[0]))
+        p_rcp_q_high = glob.glob(p_rcp.replace("<q>", cntx.project.get_quantiles_as_str()[1]))
         p_l = p_rcp_q_low + p_rcp_q_high
         if not cntx.delta:
             p_l = p_ref + p_l
@@ -145,3 +147,73 @@ def list_dir(
             pass
     
     return dir_l
+
+
+def get_d_data(
+    cntx: context_def.Context,
+    view: view_def.View = None
+) -> str:
+
+    """
+    Get the base directory of data.
+
+    Parameters
+    ----------
+    cntx : context_def.Context
+        Context.
+    view : view_def.View
+        View
+
+    Returns
+    -------
+    str
+        Base directory of data.
+    """
+
+    d = "./data/<project>/<view>/"
+    d = d.replace("<project>", cntx.project.get_code())
+    d = d.replace("<view>/", view.get_code() + "/" if view is not None else "")
+
+    return d
+
+
+def get_p_logo(
+    cntx: context_def.Context
+) -> str:
+
+    """
+    Get path of logo.
+
+    Parameters
+    ----------
+    cntx : context_def.Context
+        Context.
+
+    Returns
+    -------
+    str
+        Path of logo.
+    """
+
+    return "./data/ouranos.png"
+
+
+def get_p_bounds(
+    cntx: context_def.Context
+) -> str:
+
+    """
+    Get region boundaries.
+
+    Parameters
+    ----------
+    cntx : context_def.Context
+        Context
+
+    Returns
+    -------
+    str
+        Path of geojson file containing region boundaries.
+    """
+
+    return get_d_data(cntx, cntx.view) + cntx.project.get_code() + "_boundaries.geojson"

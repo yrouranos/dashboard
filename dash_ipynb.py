@@ -16,8 +16,10 @@ import lib_def
 import panel as pn
 import panel.widgets as pnw
 import plot
+import project_def
 import rcp_def
 import stat_def
+import utils
 import varidx_def as vi
 import view_def
 
@@ -140,9 +142,12 @@ def refresh():
         cntx.hors = hor_def.Hors()
         cntx.rcps = rcp_def.RCPs()
         cntx.stats = stat_def.Stats()
+        cntx.project = project_def.Project("sn")
+        stat_def.mode_q_low = "q" + cntx.project.get_quantiles_as_str()[0]
+        stat_def.mode_q_high = "q" + cntx.project.get_quantiles_as_str()[1]
 
     # Views.
-    cntx.views = view_def.Views()
+    cntx.views = view_def.Views(cntx)
     if views is None:
         views = pnw.RadioBoxGroup(name="RadioBoxGroup", options=cntx.views.get_desc_l(), inline=False)
         views.param.watch(view_updated_event, ["value"], onlychanged=True)
@@ -166,7 +171,7 @@ def refresh():
     cntx.delta = deltas.value
 
     # Variables and indices.
-    cntx.varidxs = vi.VarIdxs(cntx.view)
+    cntx.varidxs = vi.VarIdxs(cntx)
     if view_updated:
         if varidxs is None:
             varidxs = pnw.Select(options=cntx.varidxs.get_desc_l(), width=250)
@@ -239,7 +244,7 @@ def refresh():
                                    plot.gen_map(cntx)))
 
     # Sidebar.
-    sidebar = pn.Column(pn.Column(pn.pane.PNG(cf.p_logo, height=50)),
+    sidebar = pn.Column(pn.Column(pn.pane.PNG(utils.get_p_logo(cntx), height=50)),
                         pn.pane.Markdown("<b>Choisir la vue</b>"),
                         views,
                         libs,

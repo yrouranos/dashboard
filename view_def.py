@@ -10,8 +10,10 @@
 # ----------------------------------------------------------------------------------------------------------------------
 
 import config as cf
+import context_def
 import object_def
 import os
+import utils
 from typing import List, Union
 
 mode_ts = "ts"
@@ -30,9 +32,13 @@ class View(object_def.Obj):
     Class defining the object View.
     --------------------------------------------------------------------------------------------------------------------
     """
-    
-    # Contructor.
+
     def __init__(self, code):
+
+        """
+        # Contructor.
+        """
+
         desc = "" if code == "" else code_desc[code]
         super(View, self).__init__(code=code, desc=desc)
 
@@ -45,30 +51,37 @@ class Views(object_def.Objs):
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    # Constructors.
     def __init__(self, *args):
-        super(Views, self).__init__()
-        
-        if len(args) == 0:
-            self.load()
-        elif len(args) == 1:
-            self.add(args[0])
 
-    def load(self):
+        """
+        Constructor.
+        """
+
+        super(Views, self).__init__()
+
+        if len(args) > 0:
+            if isinstance(args[0], context_def.Context):
+                self.load(args)
+            else:
+                self.add(args[0])
+
+    def load(self, args):
 
         """
         Load items.
+
+        Parameters
+        ----------
+        args :
+            args[0] : cntx: context_def.Context
+                Context.
         """
+
+        cntx = args[0]
 
         code_l = []
         for code in list(code_desc.keys()):
-            if code == mode_ts:
-                d = cf.d_ts
-            elif code == mode_tbl:
-                d = cf.d_tbl
-            else:
-                d = cf.d_map
-            if os.path.exists(d):
+            if os.path.exists(utils.get_d_data(cntx, View(code))):
                 code_l.append(code)
 
         self.add(code_l)

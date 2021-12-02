@@ -11,37 +11,6 @@
 
 import math
 
-"""
-File system ------------------------------------------------------------------------------------------------------------
-"""
-
-# Base directory of data.
-d_data = "./data/"
-
-# Directory of data related to time series.
-d_ts = d_data + "ts/"
-
-# Directory of data related to tables of statistics.
-d_tbl = d_data + "tbl/"
-
-# Directory of data related to maps.
-d_map = d_data + "map/"
-
-# Path to company logo.
-p_logo = d_data + "ouranos_transparent.png"
-
-# Region oundaries.
-p_bounds = d_map + "sn_boundaries.geojson"
-
-# Quantiles.
-q_l = [0.1, 0.9]
-q_low = str(math.ceil(q_l[0] * 100))
-q_high = str(math.ceil(q_l[1] * 100))
-
-"""
-Design -----------------------------------------------------------------------------------------------------------------
-"""
-
 # Background color of sidebar.
 col_sb_fill = "WhiteSmoke"
 
@@ -95,9 +64,6 @@ opt_map_col_wind_idx_1 = ["Reds", "RdBu_r", "Blues_r", "Reds"]
 
 # Other variables and indices.
 opt_map_col_default    = ["viridis", "RdBu_r", "Blues_r", "Reds"]
-
-# Plotting libraries (only for time series).
-libs = ["altair", "hvplot", "matplotlib"]
 
 # Discrete vs. continuous colors scales (maps).
 opt_map_discrete = True

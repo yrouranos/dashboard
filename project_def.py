@@ -1,43 +1,27 @@
 # -*- coding: utf-8 -*-
 # ----------------------------------------------------------------------------------------------------------------------
 # Climate information dashboard.
-# 
-# Class definition: Stat and Stats.
+#
+# Class definition: Project and Projects.
 #
 # Contributors:
 # 1. rousseau.yannick@ouranos.ca
 # (C) 2021 Ouranos Inc., Canada
 # ----------------------------------------------------------------------------------------------------------------------
 
-import config as cf
 import context_def
+import math
 import object_def
-import os
-import utils
 from typing import List, Union
-        
-mode_min = "min"
-mode_q_low = "q10"
-mode_median = "median"
-mode_q_high = "q90"
-mode_mean = "mean"
-mode_max = "max"
 
-code_desc = {
-    mode_min: "Minimum",
-    mode_q_low: mode_q_low.replace("q", "") + "e percentile",
-    mode_median: "Médiane",
-    mode_q_high: mode_q_high.replace("q", "") + "e percentile",
-    mode_max: "Maximum",
-    mode_mean: "Moyenne"
-}
+code_props = {"sn": ["sn", [0.1, 0.9]]}
 
 
-class Stat(object_def.Obj):
+class Project(object_def.Obj):
 
     """
     --------------------------------------------------------------------------------------------------------------------
-    Class defining the object Stat.
+    Class defining the object Project.
     --------------------------------------------------------------------------------------------------------------------
     """
 
@@ -47,58 +31,75 @@ class Stat(object_def.Obj):
         Contructor.
         """
 
-        desc = "" if code == "" else code_desc[code]
-        super(Stat, self).__init__(code=code, desc=desc)
+        desc = "" if code == "" else code_props[code][0]
+        super(Project, self).__init__(code=code, desc=desc)
+        self.quantiles = [-1, -1] if code == "" else code_props[code][1]
+
+    def get_quantiles(self) -> List[int]:
+
+        """
+        Get quantiles (low and high).
+
+        Returns
+        -------
+        List[int]
+            Quantiles.
+        """
+
+        return self.quantiles
+
+    def get_quantiles_as_str(self) -> List[str]:
+
+        """
+        Get quantiles as string (low and high).
+
+        Returns
+        -------
+        List[str]
+            Formatted quantiles.
+        """
+
+        q_low = str(math.ceil(self.get_quantiles()[0] * 100))
+        q_high = str(math.ceil(self.get_quantiles()[1] * 100))
+
+        return [q_low, q_high]
 
 
-class Stats(object_def.Objs):
+class Projects(object_def.Objs):
 
     """
     --------------------------------------------------------------------------------------------------------------------
-    Class defining the object Stats.
+    Class defining the object Projects.
     --------------------------------------------------------------------------------------------------------------------
     """
 
+    # Constructors.
     def __init__(self, *args):
+        super(Projects, self).__init__()
 
-        """
-        Constructor.
-        """
-
-        super(Stats, self).__init__()
-
-        if len(args) == 1:
-            if isinstance(args[0], str) or isinstance(args[0], list):
-                self.add(args[0])
-            else:
+        if len(args) > 0:
+            if isinstance(args[0], context_def.Context):
                 self.load(args)
+            else:
+                self.add(args[0])
 
     def load(self, args):
 
         """
         Load items.
-        
+
         Parameters
         ----------
         args :
-            args[0] = cntx : context_def.Context
+            args[0] : cntx: context_def.Context
                 Context.
         """
 
         cntx = args[0]
 
-        p = utils.get_d_data(cntx, cntx.view) + "<varidx_code>/<hor>/<varidx_name>_<rcp>_<hor_>_<stat>_<delta>.csv"
-        p = p.replace("<varidx_code>", cntx.varidx.get_code())
-        p = p.replace("<varidx_name>", cntx.varidx.get_code())
-        p = p.replace("<rcp>", cntx.rcp.get_code())
-        p = p.replace("<hor_>", cntx.hor.get_code().replace("-", "_"))
-        p = p.replace("<hor>", cntx.hor.get_code())
-        p = p.replace("_<delta>", "" if cntx.delta is False else "_delta")
-        
         code_l = []
-        for code in list(code_desc.keys()):
-            if os.path.exists(p.replace("<stat>", code)):
-                code_l.append(code)
+        for code in list(code_props.keys()):
+            code_l.append(code)
 
         self.add(code_l)
 
@@ -125,6 +126,6 @@ class Stats(object_def.Objs):
 
         items = []
         for i in range(len(code_l)):
-            items.append(Stat(code_l[i]))
+            items.append(Project(code_l[i]))
 
-        return super(Stats, self).add_items(items, inplace)
+        return super(Projects, self).add_items(items, inplace)

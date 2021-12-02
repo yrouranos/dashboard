@@ -32,8 +32,12 @@ class Lib(object_def.Obj):
     --------------------------------------------------------------------------------------------------------------------
     """
     
-    # Contructor.
     def __init__(self, code):
+
+        """
+        Contructor.
+        """
+
         desc = "" if code == "" else code_desc[code]
         super(Lib, self).__init__(code=code, desc=desc)
 
@@ -46,8 +50,12 @@ class Libs(object_def.Objs):
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    # Constructors.
     def __init__(self, *args):
+
+        """
+        Contructor.
+        """
+
         super(Libs, self).__init__()
 
         if len(args) == 1:

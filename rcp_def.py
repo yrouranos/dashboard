@@ -13,6 +13,7 @@ import config as cf
 import glob
 import object_def
 import pandas as pd
+import utils
 import view_def
 from typing import List, Union
 
@@ -47,8 +48,12 @@ class RCP(object_def.Obj):
     --------------------------------------------------------------------------------------------------------------------
     """
     
-    # Contructor.
     def __init__(self, code):
+
+        """
+        Contructor.
+        """
+
         desc = "" if code == "" else code_props[code][0]
         super(RCP, self).__init__(code=code, desc=desc)
         self.color = "" if code == "" else code_props[self.code][1]
@@ -75,10 +80,14 @@ class RCPs(object_def.Objs):
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    # Constructors.
     def __init__(self, *args):
+
+        """
+        Contructor.
+        """
+
         super(RCPs, self).__init__()
-    
+
         if len(args) == 1:
             if isinstance(args[0], str) or isinstance(args[0], list):
                 self.add(args[0])
@@ -101,8 +110,7 @@ class RCPs(object_def.Objs):
 
         # The list of RCPs is within data files.
         if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_tbl]:
-            p = cf.d_data + "<view>/<varidx_code>.csv"
-            p = p.replace("<view>", cntx.view.get_code())
+            p = utils.get_d_data(cntx, cntx.view) + "/<varidx_code>.csv"
             p = p.replace("<varidx_code>", cntx.varidx.get_code())
             df = pd.read_csv(p)
             if cntx.view.get_code() == view_def.mode_ts:
@@ -114,7 +122,7 @@ class RCPs(object_def.Objs):
 
         # The list of RCPs is within file structure.
         else:
-            p = cf.d_data + "<view>/<varidx_code>/<hor>/*.csv"
+            p = utils.get_d_data(cntx) + "<view>/<varidx_code>/<hor>/*.csv"
             p = p.replace("<view>", cntx.view.get_code())
             p = p.replace("<varidx_code>", cntx.varidx.get_code())
             p = p.replace("<hor>", cntx.hor.get_code())
