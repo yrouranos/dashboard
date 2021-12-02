@@ -210,7 +210,7 @@ def refresh():
         tab_ts = pn.Row(pn.Column(pn.pane.Markdown("<b>Variable</b>"),
                                   varidxs,
                                   plot.gen_ts(cntx),
-                                  pn.pane.Markdown("<br><br><br>" if cntx.lib.get_code() == lib_def.mode_alt else ""),,
+                                  pn.pane.Markdown("<br><br><br>" if cntx.lib.get_code() == lib_def.mode_alt else ""),
                                   pn.Row("Valeur de référence : ", plot.get_ref_val(cntx))))
 
     # Table.
@@ -265,40 +265,4 @@ def refresh():
         False, False, False, False, False, False, False
 
 
-def test_ts():
-    cntx = context_def.Context()
-    cntx.platform = "jupyter"
-    cntx.views = view_def.Views()
-    cntx.view = view_def.View("ts")
-    cntx.libs = lib_def.Libs()
-    cntx.lib = lib_def.Lib(lib_def.mode_mat)
-    cntx.delta = True
-    cntx.varidxs = vi.VarIdxs(cntx.view)
-    cntx.varidx = vi.VarIdx("tasmax")
-    cntx.rcps = rcp_def.RCPs()
-    cntx.rcp = rcp_def.RCP("rcp85")
-    plot.gen_ts(cntx)
-
-
-def test_map():
-
-    cntx = context_def.Context()
-    cntx.platform = "jupyter"
-    cntx.views = view_def.Views()
-    cntx.view = view_def.View("map")
-    cntx.libs = lib_def.Libs()
-    cntx.lib = lib_def.Lib(lib_def.mode_mat)
-    cntx.delta = True
-    cntx.varidxs = vi.VarIdxs(cntx.view)
-    cntx.varidx = vi.VarIdx("tasmax")
-    cntx.hors = hor_def.Hors(cntx)
-    cntx.hor = hor_def.Hor("2021-2050")
-    cntx.rcps = rcp_def.RCPs()
-    cntx.rcp = rcp_def.RCP("rcp85")
-    cntx.stats = stat_def.Stats()
-    cntx.stat = stat_def.Stat("mean")
-    plot.gen_map(cntx)
-
-
-test_ts()
 refresh()
