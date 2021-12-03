@@ -151,42 +151,47 @@ def gen_ts_alt(
     plot = None
     for item in ["area", "curve"]:
         for rcp in cntx.rcps.items:
-            
+
+            # Subset columns.
+            df_rcp = pd.DataFrame()
             if rcp.get_code() == rcp_def.rcp_ref:
-                df_rcp = df[["year", rcp.get_code()]].copy()
-                df_rcp.insert(len(df_rcp.columns), "rcp", rcp.get_desc())
-                df_rcp.rename(columns={rcp_def.rcp_ref: "mean"}, inplace=True)
-                df_rcp.insert(len(df_rcp.columns), "minimum", df_rcp["mean"])
-                df_rcp.insert(len(df_rcp.columns), "maximum", df_rcp["mean"])
-                tooltip = ["year", "rcp", "mean"]
+                df_rcp["Année"] = df["year"]
+                df_rcp["RCP"] = [rcp.get_desc()] * len(df)
+                df_rcp["Moy"] = df[rcp_def.rcp_ref]
             else:
-                df_rcp = df[["year",
-                             str(rcp.get_code() + "_min"),
-                             str(rcp.get_code() + "_moy"),
-                             str(rcp.get_code() + "_max")]].copy()
-                df_rcp.insert(len(df_rcp.columns), "rcp", rcp.get_desc())
-                df_rcp.rename(columns={str(rcp.get_code() + "_min"): "minimum",
-                                       str(rcp.get_code() + "_moy"): "mean",
-                                       str(rcp.get_code() + "_max"): "maximum"}, inplace=True)
-                tooltip = ["year", "rcp", "minimum", "mean", "maximum"]
-            
+                df_rcp["Année"] = df["year"]
+                df_rcp["RCP"] = [rcp.get_desc()] * len(df)
+                df_rcp["Min"] = df[str(rcp.get_code() + "_min")]
+                df_rcp["Moy"] = df[str(rcp.get_code() + "_moy")]
+                df_rcp["Max"] = df[str(rcp.get_code() + "_max")]
+
+            # Adjust precision.
+            n_dec = cntx.varidx.get_precision()
+            df_rcp["Moyenne"] = df_rcp["Moy"].round(n_dec)
+            if rcp.get_code() == rcp_def.rcp_ref:
+                tooltip = ["Année", "RCP", "Moyenne"]
+            else:
+                df_rcp["Minimum"] = df_rcp["Min"].round(n_dec)
+                df_rcp["Maximum"] = df_rcp["Max"].round(n_dec)
+                tooltip = ["Année", "RCP", "Minimum", "Moyenne", "Maximum"]
+
             # Draw area.
             area = None
             curve = None
             if item == "area":
                 area = alt.Chart(df_rcp).mark_area(opacity=0.3, text=rcp.get_desc()).encode(
-                    x=alt.X("year", axis=x_axis),
-                    y=alt.Y("minimum", axis=y_axis, scale=y_scale),
-                    y2="maximum",
-                    color=alt.Color("rcp", scale=col_scale)
+                    x=alt.X("Année", axis=x_axis),
+                    y=alt.Y("Min", axis=y_axis, scale=y_scale),
+                    y2="Max",
+                    color=alt.Color("RCP", scale=col_scale)
                 )
             
             # Draw curve.
             else:
                 curve = alt.Chart(df_rcp).mark_line(opacity=1.0, text=rcp.get_desc()).encode(
-                    x=alt.X("year", axis=x_axis),
-                    y=alt.Y("mean", axis=y_axis, scale=y_scale),
-                    color=alt.Color("rcp", scale=col_scale, legend=col_legend),
+                    x=alt.X("Année", axis=x_axis),
+                    y=alt.Y("Moy", axis=y_axis, scale=y_scale),
+                    color=alt.Color("RCP", scale=col_scale, legend=col_legend),
                     tooltip=tooltip
                 ).interactive()
 
@@ -243,34 +248,34 @@ def gen_ts_hv(
                 continue
 
             # Subset and rename columns.
-            df_curr = pd.DataFrame()
-            df_curr["year"] = df["year"]
-            df_curr["rcp"] = [rcp.get_desc()] * len(df_curr)
+            df_rcp = pd.DataFrame()
+            df_rcp["Année"] = df["year"]
+            df_rcp["RCP"] = [rcp.get_desc()] * len(df_rcp)
             if str(rcp.get_code() + "_min") in df.columns:
-                df_curr["minimum"] = df[str(rcp.get_code() + "_min")]
+                df_rcp["Minimum"] = df[str(rcp.get_code() + "_min")]
             if rcp_def.rcp_ref in df.columns:
-                df_curr["mean"] = df[rcp_def.rcp_ref]
+                df_rcp["Moyenne"] = df[rcp_def.rcp_ref]
             if str(rcp.get_code() + "_moy") in df.columns:
-                df_curr["mean"] = df[str(rcp.get_code() + "_moy")]
+                df_rcp["Moyenne"] = df[str(rcp.get_code() + "_moy")]
             if str(rcp.get_code() + "_max") in df.columns:
-                df_curr["maximum"] = df[str(rcp.get_code() + "_max")]
+                df_rcp["Maximum"] = df[str(rcp.get_code() + "_max")]
 
             # Draw area.
             area = None
             curve = None
             if item == "area":
-                area = df_curr.hvplot.area(x="year",
-                                           y="minimum",
-                                           y2="maximum",
-                                           color=rcp.get_color(), alpha=0.3, line_alpha=0,
-                                           xlabel=x_label, ylabel=y_label)
+                area = df_rcp.hvplot.area(x="Année",
+                                          y="Minimum",
+                                          y2="Maximum",
+                                          color=rcp.get_color(), alpha=0.3, line_alpha=0,
+                                          xlabel=x_label, ylabel=y_label)
             
             # Draw curve.
             else:
-                curve = df_curr.hvplot.line(x="year",
-                                            y="mean",
-                                            color=rcp.get_color(), alpha=0.7, label=rcp.get_desc(),
-                                            hover_cols=["year", "rcp", "minimum", "mean", "maximum"])
+                curve = df_rcp.hvplot.line(x="Année",
+                                           y="Moyenne",
+                                           color=rcp.get_color(), alpha=0.7, label=rcp.get_desc(),
+                                           hover_cols=["Année", "RCP", "Minimum", "Moyenne", "Maximum"])
 
             # Combine parts.
             if plot is None:
@@ -627,8 +632,9 @@ def gen_map_hv(
     """
 
     # Generate plot.
-    df.rename(columns={cntx.varidx.get_name(): "valeur"}, inplace=True)
-    heatmap = df.hvplot.heatmap(x="longitude", y="latitude", C="valeur", aspect="equal", vmin=v_range[0],
+    df.rename(columns={cntx.varidx.get_name(): "Valeur", "longitude": "Longitude", "latitude": "Latitude"},
+              inplace=True)
+    heatmap = df.hvplot.heatmap(x="Longitude", y="Latitude", C="Valeur", aspect="equal", vmin=v_range[0],
                                 vmax=v_range[1]).opts(cmap=cmap, clim=(v_range[0], v_range[1]))
 
     # Adjust ticks.
