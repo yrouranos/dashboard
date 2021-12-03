@@ -65,7 +65,7 @@ class Libs(object_def.Objs):
             elif args[0] == view_def.mode_tbl:
                 code_l = [mode_ply]
             elif args[0] == view_def.mode_map:
-                code_l = [mode_mat]
+                code_l = [mode_hv, mode_mat]
             self.add(code_l)
 
     def add(

@@ -159,10 +159,7 @@ def refresh():
         libs = pn.Column(pn.pane.Markdown("<b>Choisir la librairie graphique</b>"),
                          pnw.RadioBoxGroup(name="RadioBoxGroup", options=cntx.libs.get_desc_l(), inline=False))
         libs[1].param.watch(lib_updated_event, ["value"], onlychanged=True)
-    if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_tbl]:
-        cntx.lib = lib_def.Lib(cntx.libs.get_code(libs[1].value))
-    else:
-        cntx.lib = lib_def.Lib(lib_def.mode_mat)
+    cntx.lib = lib_def.Lib(cntx.libs.get_code(libs[1].value))
 
     # Deltas.
     if deltas is None:
@@ -231,7 +228,8 @@ def refresh():
 
     # Map.
     tab_map = None
-    if (view_updated or varidx_updated or delta_updated or hor_updated or rcp_updated or stat_updated) and \
+    if (view_updated or lib_updated or delta_updated or
+        varidx_updated or hor_updated or rcp_updated or stat_updated) and \
        (cntx.view.get_code() == view_def.mode_map):
         tab_map = pn.Row(pn.Column(pn.pane.Markdown("<b>Variable</b>"),
                                    varidxs,

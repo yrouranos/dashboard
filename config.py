@@ -9,8 +9,6 @@
 # (C) 2021 Ouranos Inc., Canada
 # ----------------------------------------------------------------------------------------------------------------------
 
-import math
-
 # Background color of sidebar.
 col_sb_fill = "WhiteSmoke"
 

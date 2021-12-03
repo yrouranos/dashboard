@@ -15,9 +15,10 @@ import glob
 import numpy as np
 import os
 import pandas as pd
+import simplejson
 import view_def
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 
 
 def load_data(
@@ -67,7 +68,51 @@ def load_data(
         df[cntx.varidx.get_code()] = df[cntx.varidx.get_code()].round(decimals=n_dec)
 
     return df
-    
+
+
+def load_geojson(
+    p: str,
+    format: str = "vertices-coords"
+) -> Union[pd.DataFrame, Tuple[List[float]]]:
+
+    """
+    --------------------------------------------------------------------------------------------------------------------
+    Load a geojson file.
+
+    Parameters
+    ----------
+    p : str
+        Path.
+    format : str
+        Format = {"vertices-coordinates", "pandas"}
+
+    Returns
+    -------
+    Union[pd.DataFrame, Tuple[List[float]]]
+        Vertices and coordinates, or dataframe.
+    --------------------------------------------------------------------------------------------------------------------
+    """
+
+    # Read geojson file.
+    with open(p) as f:
+        pydata = simplejson.load(f)
+
+    # Extract vertices.
+    coordinates = pydata["features"][0]["geometry"]["coordinates"][0]
+    vertices = coordinates[0]
+    if len(vertices) == 2:
+        coordinates = pydata["features"][0]["geometry"]["coordinates"]
+        vertices = coordinates[0]
+    if format == "vertices":
+        return vertices, coordinates
+
+    # Create dataframe.
+    df = pd.DataFrame()
+    df["longitude"] = np.array(vertices).T.tolist()[0]
+    df["latitude"] = np.array(vertices).T.tolist()[1]
+
+    return df
+
 
 def get_min_max(
     cntx: context_def.Context

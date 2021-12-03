@@ -28,15 +28,15 @@ import panel as pn
 import plotly.graph_objects as go
 import plotly.io as pio
 import rcp_def
-import simplejson
 import stat_def
 import utils
 import varidx_def as vi
 import xarray as xr
+from bokeh.models import FixedTicker
 from descartes import PolygonPatch
 from matplotlib.lines import Line2D
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-from typing import Union, List
+from typing import Union, List, Tuple
 
 import view_def
 
@@ -48,7 +48,7 @@ pio.renderers.default = "iframe"
 
 def gen_ts(
     cntx: context_def.Context
-) -> Union[alt.Chart, plt.figure]:
+) -> Union[alt.Chart, any, plt.figure]:
 
     """
     --------------------------------------------------------------------------------------------------------------------
@@ -61,7 +61,7 @@ def gen_ts(
     
     Returns
     -------
-    Union[alt.Chart, plt.figure] :
+    Union[alt.Chart, any, plt.figure] :
         Plot of time series.
     --------------------------------------------------------------------------------------------------------------------
     """
@@ -210,7 +210,7 @@ def gen_ts_hv(
     df: pd.DataFrame,
     x_label: str,
     y_label: str
-) -> hvplot:
+) -> any:
 
     """
     --------------------------------------------------------------------------------------------------------------------
@@ -229,7 +229,7 @@ def gen_ts_hv(
         
     Returns
     -------
-    str :
+    any :
         Plot of time series.
     --------------------------------------------------------------------------------------------------------------------
     """
@@ -241,23 +241,36 @@ def gen_ts_hv(
 
             if (item == "area") and (rcp.get_code() == rcp_def.rcp_ref):
                 continue
-                
+
+            # Subset and rename columns.
+            df_curr = pd.DataFrame()
+            df_curr["year"] = df["year"]
+            df_curr["rcp"] = [rcp.get_desc()] * len(df_curr)
+            if str(rcp.get_code() + "_min") in df.columns:
+                df_curr["minimum"] = df[str(rcp.get_code() + "_min")]
+            if rcp_def.rcp_ref in df.columns:
+                df_curr["mean"] = df[rcp_def.rcp_ref]
+            if str(rcp.get_code() + "_moy") in df.columns:
+                df_curr["mean"] = df[str(rcp.get_code() + "_moy")]
+            if str(rcp.get_code() + "_max") in df.columns:
+                df_curr["maximum"] = df[str(rcp.get_code() + "_max")]
+
             # Draw area.
             area = None
             curve = None
             if item == "area":
-                area = df.hvplot.area(x="year",
-                                      y=str(rcp.get_code() + "_min"),
-                                      y2=str(rcp.get_code() + "_max"),
-                                      color=rcp.get_color(), alpha=0.3, line_alpha=0,
-                                      xlabel=x_label, ylabel=y_label)
+                area = df_curr.hvplot.area(x="year",
+                                           y="minimum",
+                                           y2="maximum",
+                                           color=rcp.get_color(), alpha=0.3, line_alpha=0,
+                                           xlabel=x_label, ylabel=y_label)
             
             # Draw curve.
             else:
-                y = rcp_def.rcp_ref if rcp.get_code() == rcp_def.rcp_ref else str(rcp.get_code() + "_moy")
-                curve = df.hvplot.line(x="year",
-                                       y=y,
-                                       color=rcp.get_color(), alpha=0.7, label=rcp.get_desc())
+                curve = df_curr.hvplot.line(x="year",
+                                            y="mean",
+                                            color=rcp.get_color(), alpha=0.7, label=rcp.get_desc(),
+                                            hover_cols=["year", "rcp", "minimum", "mean", "maximum"])
 
             # Combine parts.
             if plot is None:
@@ -505,30 +518,172 @@ def get_ref_val(
 
 def gen_map(
     cntx: context_def.Context
-):
+) -> Union[any, plt.Figure]:
 
     """
     --------------------------------------------------------------------------------------------------------------------
-    Generate a plot of time series.
+    Generate a heat map using matplotlib.
+
+    Parameters
+    ----------
+    cntx : context_def.Context
+        Context.
+
+    Returns
+    -------
+    Union[any, plt.Figure]
+        Figure.
+    --------------------------------------------------------------------------------------------------------------------
+    """
+
+    # Load data.
+    df = utils.load_data(cntx)
+
+    # Find minimum and maximum values (consider all relevant CSV files).
+    z_min, z_max = utils.get_min_max(cntx)
+
+    # Number of clusters.
+    n_cluster = 10 if cf.opt_map_discrete else 256
+    if (z_min < 0) and (z_max > 0):
+        n_cluster = n_cluster * 2
+
+    # Adjust minimum and maximum values so that zero is attributed the intermediate color in a scale or
+    # use only the positive or negative side of the color scale if the other part is not required.
+    if (z_min < 0) and (z_max > 0):
+        v_max_abs = max(abs(z_min), abs(z_max))
+        v_range = [-v_max_abs, v_max_abs]
+    else:
+        v_range = [z_min, z_max]
+
+    # Maximum number of decimal places for colorbar ticks.
+    n_dec_max = 4
+
+    # Calculate ticks.
+    ticks = None
+    tick_labels = None
+    if cf.opt_map_discrete:
+        ticks = []
+        for i in range(n_cluster + 1):
+            tick = i / float(n_cluster) * (v_range[1] - v_range[0]) + v_range[0]
+            ticks.append(tick)
+
+        # Adjust tick precision.
+        tick_labels = adjust_precision(ticks, n_dec_max)
+
+    # Adjust minimum and maximum values.
+    if ticks is not None:
+        v_range = [ticks[0], ticks[n_cluster]]
+
+    # Build color map (custom or matplotlib).
+    cmap_name = get_cmap_name(cntx, z_min, z_max)
+    hex_l = get_hex_l(cmap_name)
+    if hex_l is not None:
+        cmap = get_cmap(cmap_name, hex_l, n_cluster)
+    else:
+        cmap = plt.cm.get_cmap(cmap_name, n_cluster)
+
+    # Generate map.
+    if cntx.lib.get_code() == lib_def.mode_hv:
+        map = gen_map_hv(cntx, df, v_range, cmap, ticks, tick_labels)
+    else:
+        map = gen_map_mat(cntx, df, v_range, cmap, ticks, tick_labels)
+
+    return map
+
+
+def gen_map_hv(
+    cntx: context_def.Context,
+    df: pd.DataFrame,
+    v_range: List[float],
+    cmap: plt.cm,
+    ticks: List[float],
+    tick_labels: List[str]
+) -> any:
+
+    """
+    --------------------------------------------------------------------------------------------------------------------
+    Generate a heat map using matplotlib.
+
+    Parameters
+    ----------
+    cntx : context_def.Context
+        Context.
+    df : pd.DataFrame
+        Dataframe.
+    v_range : List[float]
+        Minimum and maximum values in colorbar.
+    cmap : plt.cm
+        Color map.
+    ticks : List[float]
+        Ticks.
+    tick_labels : List[str]
+        Tick labels.
+
+    Returns
+    -------
+    any
+        Figure.
+    --------------------------------------------------------------------------------------------------------------------
+    """
+
+    # Generate plot.
+    df.rename(columns={cntx.varidx.get_name(): "valeur"}, inplace=True)
+    heatmap = df.hvplot.heatmap(x="longitude", y="latitude", C="valeur", aspect="equal", vmin=v_range[0],
+                                vmax=v_range[1]).opts(cmap=cmap, clim=(v_range[0], v_range[1]))
+
+    # Adjust ticks.
+    if cf.opt_map_discrete:
+        ticker = FixedTicker(ticks=ticks)
+        ticks_dict = {ticks[i]: tick_labels[i] for i in range(len(ticks))}
+        heatmap = heatmap.opts(colorbar_opts={"ticker": ticker, "major_label_overrides": ticks_dict})
+
+    # Create region boundary.
+    df_curve = utils.load_geojson(utils.get_p_bounds(cntx), "pandas")
+    x_lim = (min(df_curve["longitude"]), max(df_curve["longitude"]))
+    y_lim = (min(df_curve["latitude"]), max(df_curve["latitude"]))
+    curve = df_curve.hvplot.line(x="longitude", y="latitude", color="black", alpha=0.7, xlim=x_lim, ylim=y_lim)
+
+    # Add legend.
+    plot = (heatmap * curve).opts(height=400, width=740)
+
+    return plot
+
+
+def gen_map_mat(
+    cntx: context_def.Context,
+    df: pd.DataFrame,
+    v_range: List[float],
+    cmap: plt.cm,
+    ticks: List[float],
+    tick_labels: List[str]
+) -> plt.Figure:
+
+    """
+    --------------------------------------------------------------------------------------------------------------------
+    Generate a heat map using matplotlib.
     
     Parameters
     ----------
     cntx : context_def.Context
         Context.
+    df : pd.DataFrame
+        Dataframe.
+    v_range : List[float]
+        Minimum and maximum values in colorbar..
+    cmap : plt.cm
+        Color map.
+    ticks : List[float]
+        Ticks.
+    tick_labels : List[str]
+        Tick labels.
+
+    Returns
+    -------
+    plt.Figure
+        Figure.
     --------------------------------------------------------------------------------------------------------------------
     """
-    
-    # Load data.
-    df = utils.load_data(cntx)
 
-    # Hardcoded parameters.
-    # Number of clusters (for discrete color scale).
-    if cf.opt_map_discrete:
-        n_cluster = 10
-    else:
-        n_cluster = 256
-    # Maximum number of decimal places for colorbar ticks.
-    n_dec_max = 4
     # Font size.
     fs_title      = 5
     fs_labels     = 5
@@ -541,9 +696,71 @@ def gen_map(
     title = ""
     label = ("Δ" if cntx.delta else "") + cntx.varidx.get_label()
 
-    # Find minimum and maximum values (consider all relevant CSV files).
-    z_min, z_max = utils.get_min_max(cntx)
+    # Create figure.
+    fig = plt.figure(figsize=(4.5, 4), dpi=cf.dpi)
+    ax = fig.add_subplot(1, 1, 1, aspect="equal")
+
+    # Convert to DataArray.
+    df = pd.DataFrame(df, columns=["longitude", "latitude", cntx.varidx.get_code()])
+    df = df.sort_values(by=["latitude", "longitude"])
+    lat = list(set(df["latitude"]))
+    lat.sort()
+    lon = list(set(df["longitude"]))
+    lon.sort()
+    arr = np.reshape(list(df[cntx.varidx.get_code()]), (len(lat), len(lon)))
+    da = xr.DataArray(data=arr, dims=["latitude", "longitude"], coords=[("latitude", lat), ("longitude", lon)])
+
+    # Create mesh.
+    cbar_ax = make_axes_locatable(ax).append_axes("right", size="5%", pad=0.05)
+    da.plot.pcolormesh(cbar_ax=cbar_ax, add_colorbar=True, add_labels=True,
+                       ax=ax, cbar_kwargs=dict(orientation='vertical', pad=0.05, label=label, ticks=ticks),
+                       cmap=cmap, vmin=v_range[0], vmax=v_range[1])
+
+    # Format.
+    ax.set_title(title, fontsize=fs_title)
+    ax.set_xlabel("Longitude (º)", fontsize=fs_labels)
+    ax.set_ylabel("Latitude (º)", fontsize=fs_labels)
+    ax.tick_params(axis="x", labelsize=fs_ticks, length=0, rotation=90)
+    ax.tick_params(axis="y", labelsize=fs_ticks, length=0)
+    cbar_ax.set_ylabel(label, fontsize=fs_labels)
+    cbar_ax.tick_params(labelsize=fs_ticks_cbar, length=0)
+    if cf.opt_map_discrete:
+        cbar_ax.set_yticklabels(tick_labels)
+
+    # Draw region boundary.
+    draw_region_boundary(cntx, ax)
+
+    plt.close(fig)
     
+    return fig
+
+
+def get_cmap_name(
+    cntx: context_def.Context,
+    z_min: float,
+    z_max: float
+) -> str:
+
+    """
+    --------------------------------------------------------------------------------------------------------------------
+    Get colour map name.
+
+    Parameters
+    ----------
+    cntx : context_def.Context
+        Context.
+    z_min : float
+        Minimum value.
+    z_max : float
+        Maximum value.
+
+    Returns
+    -------
+    str
+        Colour map name.
+    --------------------------------------------------------------------------------------------------------------------
+    """
+
     # Determine color scale index.
     is_wind_var = cntx.varidx.get_code() in [vi.var_uas, vi.var_vas, vi.var_sfcwindmax]
     if (not cntx.delta) and (not is_wind_var):
@@ -594,16 +811,28 @@ def gen_map(
     else:
         cmap_name = cf.opt_map_col_default[cmap_idx]
 
-    # Adjust minimum and maximum values so that zero is attributed the intermediate color in a scale or
-    # use only the positive or negative side of the color scale if the other part is not required.
-    if (z_min < 0) and (z_max > 0):
-        vmax_abs = max(abs(z_min), abs(z_max))
-        vmin = -vmax_abs
-        vmax = vmax_abs
-        n_cluster = n_cluster * 2
-    else:
-        vmin = z_min
-        vmax = z_max
+    return cmap_name
+
+
+def get_hex_l(
+    name: str
+) -> List[str]:
+
+    """
+    --------------------------------------------------------------------------------------------------------------------
+    Get the list of HEX color codes associated with a color map.
+
+    Parameters
+    ----------
+    name : str
+        Name of a color map.
+
+    Returns
+    -------
+    List[str]
+        List of HEX color codes.
+    --------------------------------------------------------------------------------------------------------------------
+    """
 
     # Custom color maps (not in matplotlib). The order assumes a vertical color bar.
     hex_wh  = "#ffffff"  # White.
@@ -621,139 +850,92 @@ def gen_map(
     hex_sa  = "#a52a2a"  # Salmon.
     hex_tu  = "#008080"  # Turquoise.
 
+    code_hex_l = {
+        "Pinks": [hex_wh, hex_pi],
+        "PiPu": [hex_pi, hex_wh, hex_pu],
+        "Browns": [hex_wh, hex_br],
+        "YlBr": [hex_yl, hex_br],
+        "BrYlGr": [hex_br, hex_yl, hex_gr],
+        "YlGr": [hex_yl, hex_gr],
+        "BrWhGr": [hex_br, hex_wh, hex_gr],
+        "TuYlSa": [hex_tu, hex_yl, hex_sa],
+        "YlTu": [hex_yl, hex_tu],
+        "YlSa": [hex_yl, hex_sa],
+        "LBuWhLBr": [hex_lbu, hex_wh, hex_lbr],
+        "LBlues": [hex_wh, hex_lbu],
+        "BuYlRd": [hex_bu, hex_yl, hex_rd],
+        "LBrowns": [hex_wh, hex_lbr],
+        "LBuYlLBr": [hex_lbu, hex_yl, hex_lbr],
+        "YlLBu": [hex_yl, hex_lbu],
+        "YlLBr": [hex_yl, hex_lbr],
+        "YlBu": [hex_yl, hex_bu],
+        "Turquoises": [hex_wh, hex_tu],
+        "PuYlOr": [hex_pu, hex_yl, hex_or],
+        "YlOrRd": [hex_yl, hex_or, hex_rd],
+        "YlOr": [hex_yl, hex_or],
+        "YlPu": [hex_yl, hex_pu],
+        "GyYlRd": [hex_gy, hex_yl, hex_rd],
+        "YlGy": [hex_yl, hex_gy],
+        "YlRd": [hex_yl, hex_rd],
+        "GyWhRd": [hex_gy, hex_wh, hex_rd]}
+
     hex_l = None
-    if "Pinks" in cmap_name:
-        hex_l = [hex_wh, hex_pi]
-    elif "PiPu" in cmap_name:
-        hex_l = [hex_pi, hex_wh, hex_pu]
-    elif "Browns" in cmap_name:
-        hex_l = [hex_wh, hex_br]
-    elif "YlBr" in cmap_name:
-        hex_l = [hex_yl, hex_br]
-    elif "BrYlGr" in cmap_name:
-        hex_l = [hex_br, hex_yl, hex_gr]
-    elif "YlGr" in cmap_name:
-        hex_l = [hex_yl, hex_gr]
-    elif "BrWhGr" in cmap_name:
-        hex_l = [hex_br, hex_wh, hex_gr]
-    elif "TuYlSa" in cmap_name:
-        hex_l = [hex_tu, hex_yl, hex_sa]
-    elif "YlTu" in cmap_name:
-        hex_l = [hex_yl, hex_tu]
-    elif "YlSa" in cmap_name:
-        hex_l = [hex_yl, hex_sa]
-    elif "LBuWhLBr" in cmap_name:
-        hex_l = [hex_lbu, hex_wh, hex_lbr]
-    elif "LBlues" in cmap_name:
-        hex_l = [hex_wh, hex_lbu]
-    elif "BuYlRd" in cmap_name:
-        hex_l = [hex_bu, hex_yl, hex_rd]
-    elif "LBrowns" in cmap_name:
-        hex_l = [hex_wh, hex_lbr]
-    elif "LBuYlLBr" in cmap_name:
-        hex_l = [hex_lbu, hex_yl, hex_lbr]
-    elif "YlLBu" in cmap_name:
-        hex_l = [hex_yl, hex_lbu]
-    elif "YlLBr" in cmap_name:
-        hex_l = [hex_yl, hex_lbr]
-    elif "YlBu" in cmap_name:
-        hex_l = [hex_yl, hex_bu]
-    elif "Turquoises" in cmap_name:
-        hex_l = [hex_wh, hex_tu]
-    elif "PuYlOr" in cmap_name:
-        hex_l = [hex_pu, hex_yl, hex_or]
-    elif "YlOrRd" in cmap_name:
-        hex_l = [hex_yl, hex_or, hex_rd]
-    elif "YlOr" in cmap_name:
-        hex_l = [hex_yl, hex_or]
-    elif "YlPu" in cmap_name:
-        hex_l = [hex_yl, hex_pu]
-    elif "GyYlRd" in cmap_name:
-        hex_l = [hex_gy, hex_yl, hex_rd]
-    elif "YlGy" in cmap_name:
-        hex_l = [hex_yl, hex_gy]
-    elif "YlRd" in cmap_name:
-        hex_l = [hex_yl, hex_rd]
-    elif "GyWhRd" in cmap_name:
-        hex_l = [hex_gy, hex_wh, hex_rd]
+    if name in list(code_hex_l.keys()):
+        hex_l = code_hex_l[name]
 
-    # Build custom map.
-    if hex_l is not None:
+    return hex_l
 
-        # List of positions.
-        if len(hex_l) == 2:
-            pos_l = [0.0, 1.0]
-        else:
-            pos_l = [0.0, 0.5, 1.0]
 
-        # Custom map.
-        if "_r" not in cmap_name:
-            cmap = build_custom_cmap(hex_l, n_cluster, pos_l)
-        else:
-            hex_l.reverse()
-            cmap = build_custom_cmap(hex_l, n_cluster, pos_l)
+def get_cmap(
+    cmap_name: str,
+    hex_l: [str],
+    n_cluster: int
+):
+    """
+    --------------------------------------------------------------------------------------------------------------------
+    Create a color map that can be used in heat map figures.
 
-    # Build Matplotlib map.
+    If pos_l is not provided, color map graduates linearly between each color in hex_l.
+    If pos_l is provided, each color in hex_l is mapped to the respective location in pos_l.
+
+    Parameters
+    ----------
+    cmap_name : str
+        Name of a color map.
+    hex_l: [str]
+        List of hex code strings.
+    n_cluster: int
+        Number of clusters.
+
+    Returns
+    -------
+        Color map.
+    --------------------------------------------------------------------------------------------------------------------
+    """
+
+    # List of positions.
+    if len(hex_l) == 2:
+        pos_l = [0.0, 1.0]
     else:
-        cmap = plt.cm.get_cmap(cmap_name, n_cluster)
+        pos_l = [0.0, 0.5, 1.0]
 
-    # Calculate ticks.
-    ticks = None
-    str_ticks = None
-    if cf.opt_map_discrete:
-        ticks = []
-        for i in range(n_cluster + 1):
-            tick = i / float(n_cluster) * (vmax - vmin) + vmin
-            ticks.append(tick)
+    # Reverse hex list.
+    if "_r" in cmap_name:
+        hex_l.reverse()
 
-        # Adjust tick precision.
-        str_ticks = adjust_precision(ticks, n_dec_max)
-
-    # Adjust minimum and maximum values.
-    if ticks is None:
-        vmin_adj = vmin
-        vmax_adj = vmax
+    # Build colour map.
+    rgb_l = [rgb_to_dec(hex_to_rgb(i)) for i in hex_l]
+    if pos_l:
+        pass
     else:
-        vmin_adj = ticks[0]
-        vmax_adj = ticks[n_cluster]
+        pos_l = list(np.linspace(0, 1, len(rgb_l)))
+    cdict = dict()
+    for num, col in enumerate(["red", "green", "blue"]):
+        col_l = [[pos_l[i], rgb_l[i][num], rgb_l[i][num]] for i in range(len(pos_l))]
+        cdict[col] = col_l
+    cmap = colors.LinearSegmentedColormap("custom_cmap", segmentdata=cdict, N=n_cluster)
 
-    # Create figure.
-    fig = plt.figure(figsize=(4.5, 4), dpi=cf.dpi)
-    ax = fig.add_subplot(1, 1, 1, aspect="equal")
-
-    # Convert to DataArray.
-    df = pd.DataFrame(df, columns=["longitude", "latitude", cntx.varidx.get_code()])
-    df = df.sort_values(by=["latitude", "longitude"])
-    lat = list(set(df["latitude"]))
-    lat.sort()
-    lon = list(set(df["longitude"]))
-    lon.sort()
-    arr = np.reshape(list(df[cntx.varidx.get_code()]), (len(lat), len(lon)))
-    da = xr.DataArray(data=arr, dims=["latitude", "longitude"], coords=[("latitude", lat), ("longitude", lon)])
-
-    # Create mesh.
-    cbar_ax = make_axes_locatable(ax).append_axes("right", size="5%", pad=0.05)
-    da.plot.pcolormesh(cbar_ax=cbar_ax, add_colorbar=True, add_labels=True,
-                       ax=ax, cbar_kwargs=dict(orientation='vertical', pad=0.05, label=label, ticks=ticks),
-                       cmap=cmap, vmin=vmin_adj, vmax=vmax_adj)
-
-    # Format.
-    ax.set_title(title, fontsize=fs_title)
-    ax.set_xlabel("Longitude (º)", fontsize=fs_labels)
-    ax.set_ylabel("Latitude (º)", fontsize=fs_labels)
-    ax.tick_params(axis="x", labelsize=fs_ticks, length=0, rotation=90)
-    ax.tick_params(axis="y", labelsize=fs_ticks, length=0)
-    cbar_ax.set_ylabel(label, fontsize=fs_labels)
-    cbar_ax.tick_params(labelsize=fs_ticks_cbar, length=0)
-    if cf.opt_map_discrete:
-        cbar_ax.set_yticklabels(str_ticks)
-
-    # Draw region boundary.
-    draw_region_boundary(cntx, ax)
-
-    plt.close(fig)
-    
-    return fig
+    return cmap
 
 
 def adjust_precision(
@@ -811,49 +993,6 @@ def adjust_precision(
     return str_vals
 
 
-def build_custom_cmap(
-    hex_l: [str],
-    n_cluster: int,
-    pos_l: [float] = None
-):
-
-    """
-    --------------------------------------------------------------------------------------------------------------------
-    Create a color map that can be used in heat map figures.
-    
-    If pos_l is not provided, color map graduates linearly between each color in hex_l.
-    If pos_l is provided, each color in hex_l is mapped to the respective location in pos_l.
-
-    Parameters
-    ----------
-    hex_l: [str]
-        List of hex code strings.
-    n_cluster: int
-        Number of clusters.
-    pos_l: [float]
-        List of positions (float between 0 and 1), same length as hex_l. Must start with 0 and end with 1.
-
-    Returns
-    -------
-        Color map.
-    --------------------------------------------------------------------------------------------------------------------
-    """
-
-    rgb_l = [rgb_to_dec(hex_to_rgb(i)) for i in hex_l]
-    if pos_l:
-        pass
-    else:
-        pos_l = list(np.linspace(0, 1, len(rgb_l)))
-
-    cdict = dict()
-    for num, col in enumerate(["red", "green", "blue"]):
-        col_l = [[pos_l[i], rgb_l[i][num], rgb_l[i][num]] for i in range(len(pos_l))]
-        cdict[col] = col_l
-    cmp = colors.LinearSegmentedColormap("custom_cmp", segmentdata=cdict, N=n_cluster)
-
-    return cmp
-
-
 def draw_region_boundary(
     cntx: context_def.Context,
     ax: plt.axes
@@ -902,23 +1041,17 @@ def draw_region_boundary(
         
         return _ax
 
-    # Read geojson file.
-    with open(utils.get_p_bounds(cntx)) as f:
-        pydata = simplejson.load(f)
+    # Load geojson file.
+    vertices, coordinates = utils.load_geojson(utils.get_p_bounds(cntx), "vertices")
 
     # Draw feature.
     ax_new = ax
-    coordinates = pydata["features"][0]["geometry"]["coordinates"][0]
-    vertices = coordinates[0]
-    if len(vertices) == 2:
-        coordinates = pydata["features"][0]["geometry"]["coordinates"]
-        vertices = coordinates[0]
     ax_new = _set_plot_extent(ax_new, vertices)
     ax_new = _plot_feature(coordinates, ax_new)
     
     return ax_new
-    
-    
+
+
 def hex_to_rgb(
     value: str
 ):

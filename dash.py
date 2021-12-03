@@ -102,10 +102,34 @@ def refresh():
     elif cntx.view.get_code() == view_def.mode_tbl:
         st.write(plot.gen_tbl(cntx))
     else:
-        st.write(plot.gen_map(cntx))
+        if cntx.lib.get_code() == lib_def.mode_mat:
+            st.write(plot.gen_map(cntx))
+        else:
+            st.write(hv.render(plot.gen_map(cntx)), backend="bokeh")
     if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_tbl]:
         tbl_ref = plot.get_ref_val(cntx)
         st.write("Valeur de référence : " + tbl_ref)
 
 
+def test_gen_map():
+
+    cntx = context_def.Context()
+    cntx.platform = "streamlit"
+    cntx.views = view_def.Views()
+    cntx.view = view_def.View("map")
+    cntx.libs = lib_def.Libs()
+    cntx.lib = lib_def.Lib("hv")
+    cntx.varidxs = vi.VarIdxs()
+    cntx.varidx = vi.VarIdx("pr")
+    cntx.hors = hor_def.Hors()
+    cntx.hor = hor_def.Hor("1981-2010")
+    cntx.rcps = rcp_def.RCPs()
+    cntx.rcp = rcp_def.RCP("ref")
+    cntx.stats = stat_def.Stats()
+    cntx.stat = stat_def.Stat("q10")
+    cntx.project = project_def.Project("sn")
+    st.write(hv.render(plot.gen_map(cntx)), backend="bokeh")
+
+
+# test_gen_map()
 refresh()
