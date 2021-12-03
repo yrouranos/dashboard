@@ -64,7 +64,7 @@ class Libs(object_def.Objs):
                 code_l = [mode_alt, mode_hv, mode_mat]
             elif args[0] == view_def.mode_tbl:
                 code_l = [mode_ply]
-            elif args[0] == view_def.mode_map:
+            elif args[0] in [view_def.mode_map, view_def.mode_box]:
                 code_l = [mode_hv, mode_mat]
             self.add(code_l)
 

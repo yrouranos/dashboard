@@ -1115,3 +1115,134 @@ def rgb_to_dec(
     """
 
     return [v/256 for v in value]
+
+
+def gen_box(
+    cntx: context_def.Context
+) -> Union[any, plt.Figure]:
+
+    """
+    --------------------------------------------------------------------------------------------------------------------
+    Generate a boxplot of monthly values.
+
+    Parameters:
+    ----------
+    cntx: context_def.Context
+        Context.
+
+    Returns
+    -------
+    Union[any, plt.Figure]
+        Figure.
+    --------------------------------------------------------------------------------------------------------------------
+    """
+
+    if cntx.lib.get_code() == lib_def.mode_hv:
+        fig = gen_box_hv(cntx)
+    else:
+        fig = gen_box_mat(cntx)
+
+    return fig
+
+
+def gen_box_hv(
+    cntx: context_def.Context
+) -> any:
+
+    """
+    --------------------------------------------------------------------------------------------------------------------
+    Generate a boxplot of monthly values using hvplot.
+
+    Parameters:
+    ----------
+    cntx: context_def.Context
+        Context.
+
+    Returns
+    -------
+    any
+        Figure.
+    --------------------------------------------------------------------------------------------------------------------
+    """
+
+    # Load data.
+    df = utils.load_data(cntx)
+
+    # Collect data.
+    col_year = []
+    col_month = []
+    col_val = []
+    for m in range(1, 13):
+        col_year += list(df["year"])
+        col_month += [m] * len(df)
+        col_val += list(df[str(m)])
+
+    # Translation between month number and string.
+    ticks = list(range(1, 13))
+    tick_labels = ["Jan", "Fév", "Mar", "Avr", "Mai", "Jui", "Jul", "Aoû", "Sep", "Oct", "Nov", "Déc"]
+    ticks_dict = {ticks[i]: tick_labels[i] for i in range(len(ticks))}
+
+    # Prepare the dataframe that will be used in the plot.
+    df = pd.DataFrame()
+    df["Année"] = col_year
+    df["Mois"] = col_month
+    for i in range(len(df)):
+        df.iloc[i, 1] = ticks_dict[df.iloc[i, 1]]
+    df["Valeur"] = col_val
+
+    # Generate plot.
+    fig = df.hvplot.box(y="Valeur", by="Mois", height=375, width=730, legend=False,
+                        box_fill_color="white", hover_cols=["Mois", "Valeur"], showfliers=False).\
+        opts(tools=["hover"], ylabel=cntx.varidx.get_label())
+
+    return fig
+
+
+def gen_box_mat(
+    cntx: context_def.Context
+) -> plt.Figure:
+
+    """
+    --------------------------------------------------------------------------------------------------------------------
+    Generate a boxplot of monthly values using matplotlib.
+
+    Parameters:
+    ----------
+    cntx: context_def.Context
+        Context.
+
+    Returns
+    -------
+    plt.Figure
+        Figure.
+    --------------------------------------------------------------------------------------------------------------------
+    """
+
+    # Load data.
+    df = utils.load_data(cntx)
+
+    # Collect data.
+    data = []
+    for m in range(1, 13):
+        data.append(df[str(m)])
+
+    # Draw.
+    fig = plt.figure(figsize=(9, 4.48), dpi=cf.dpi)
+    specs = gridspec.GridSpec(ncols=1, nrows=1, figure=fig)
+    ax = fig.add_subplot(specs[:])
+    bp = ax.boxplot(data, showfliers=False)
+
+    # Format.
+    fs = 10
+    plt.title("")
+    plt.xticks([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+               ["Jan", "Fév", "Mar", "Avr", "Mai", "Jui", "Jul", "Aoû", "Sep", "Oct", "Nov", "Déc"], rotation=0)
+    plt.xlabel("Mois", fontsize=fs)
+    plt.ylabel(cntx.varidx.get_label(), fontsize=fs)
+    plt.setp(bp["medians"], color="black")
+    plt.show(block=False)
+
+    # Close plot.
+    plt.close("all")
+
+    return fig

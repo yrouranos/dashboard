@@ -22,6 +22,9 @@ import stat_def
 import utils
 import varidx_def as vi
 import view_def
+import warnings
+
+warnings.filterwarnings("ignore")
 
 cntx = None
 dash, views, libs, deltas, varidxs, hors, rcps, stats = \
@@ -162,7 +165,7 @@ def refresh():
     cntx.lib = lib_def.Lib(cntx.libs.get_code(libs[1].value))
 
     # Deltas.
-    if deltas is None:
+    if (deltas is None) and (cntx.view.get_code() != view_def.mode_box):
         deltas = pnw.Checkbox(value=False)
         deltas.param.watch(delta_updated_event, ["value"], onlychanged=True)
     cntx.delta = deltas.value
@@ -241,6 +244,14 @@ def refresh():
                                    stats,
                                    plot.gen_map(cntx)))
 
+    # Box plot.
+    tab_box = None
+    if (view_updated or lib_updated or varidx_updated) and \
+       (cntx.view.get_code() == view_def.mode_box):
+        tab_box = pn.Row(pn.Column(pn.pane.Markdown("<b>Variable</b>"),
+                                   varidxs,
+                                   plot.gen_box(cntx)))
+
     # Sidebar.
     sidebar = pn.Column(pn.Column(pn.pane.PNG(utils.get_p_logo(cntx), height=50)),
                         pn.pane.Markdown("<b>Choisir la vue</b>"),
@@ -261,8 +272,10 @@ def refresh():
             dash[1] = tab_ts
         elif cntx.view.get_code() == view_def.mode_tbl:
             dash[1] = tab_tbl
-        else:
+        elif cntx.view.get_code() == view_def.mode_map:
             dash[1] = tab_map
+        else:
+            dash[1] = tab_box
 
     view_updated, lib_updated, delta_updated, varidx_updated, hor_updated, rcp_updated, stat_updated = \
         False, False, False, False, False, False, False

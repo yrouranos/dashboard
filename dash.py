@@ -64,10 +64,11 @@ def refresh():
     cntx.lib = lib_def.Lib(cntx.libs.get_code(libs))
 
     # Deltas.
-    st.sidebar.markdown("<style>.sel_title {font-size:14.5px}</style>", unsafe_allow_html=True)
-    st.sidebar.markdown("<p class='sel_title'>Afficher les anomalies</p>", unsafe_allow_html=True)
-    deltas = st.sidebar.checkbox("", value=False)
-    cntx.delta = deltas
+    if cntx.view.get_code() != view_def.mode_box:
+        st.sidebar.markdown("<style>.sel_title {font-size:14.5px}</style>", unsafe_allow_html=True)
+        st.sidebar.markdown("<p class='sel_title'>Afficher les anomalies</p>", unsafe_allow_html=True)
+        deltas = st.sidebar.checkbox("", value=False)
+        cntx.delta = deltas
 
     # Variables and indices.
     cntx.varidxs = vi.VarIdxs(cntx)
@@ -101,11 +102,16 @@ def refresh():
             st.write(hv.render(plot.gen_ts(cntx)), backend="bokeh")
     elif cntx.view.get_code() == view_def.mode_tbl:
         st.write(plot.gen_tbl(cntx))
-    else:
+    elif cntx.view.get_code() == view_def.mode_map:
         if cntx.lib.get_code() == lib_def.mode_mat:
             st.write(plot.gen_map(cntx))
         else:
             st.write(hv.render(plot.gen_map(cntx)), backend="bokeh")
+    else:
+        if cntx.lib.get_code() == lib_def.mode_mat:
+            st.write(plot.gen_box(cntx))
+        else:
+            st.write(hv.render(plot.gen_box(cntx)), backend="bokeh")
     if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_tbl]:
         tbl_ref = plot.get_ref_val(cntx)
         st.write("Valeur de référence : " + tbl_ref)
@@ -130,6 +136,26 @@ def test_gen_map():
     cntx.project = project_def.Project("sn")
     st.write(hv.render(plot.gen_map(cntx)), backend="bokeh")
 
+def test_gen_box():
+
+    cntx = context_def.Context()
+    cntx.platform = "streamlit"
+    cntx.views = view_def.Views()
+    cntx.view = view_def.View("box")
+    cntx.libs = lib_def.Libs()
+    cntx.lib = lib_def.Lib("hv")
+    cntx.varidxs = vi.VarIdxs()
+    cntx.varidx = vi.VarIdx("pr")
+    cntx.hors = hor_def.Hors()
+    cntx.hor = hor_def.Hor("1981-2010")
+    cntx.rcps = rcp_def.RCPs()
+    cntx.rcp = rcp_def.RCP("ref")
+    cntx.stats = stat_def.Stats()
+    cntx.stat = stat_def.Stat("q10")
+    cntx.project = project_def.Project("sn")
+    st.write(hv.render(plot.gen_box(cntx)), backend="bokeh")
+
 
 # test_gen_map()
+# test_gen_box()
 refresh()

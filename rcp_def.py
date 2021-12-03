@@ -121,12 +121,15 @@ class RCPs(object_def.Objs):
                 code_l.remove(rcp_ref)
 
         # The list of RCPs is within file structure.
-        else:
+        elif cntx.view.get_code() == view_def.mode_map:
             p = utils.get_d_data(cntx) + "<view>/<varidx_code>/<hor>/*.csv"
             p = p.replace("<view>", cntx.view.get_code())
             p = p.replace("<varidx_code>", cntx.varidx.get_code())
             p = p.replace("<hor>", cntx.hor.get_code())
             code_l = list(glob.glob(p))
+
+        else:
+            code_l = []
 
         # Extract RCPs.
         code_clean_l = []

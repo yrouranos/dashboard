@@ -458,7 +458,7 @@ class VarIdxs(object_def.Objs):
         
         code_l = []
 
-        if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_tbl]:
+        if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_tbl, view_def.mode_box]:
             p = utils.get_d_data(cntx, cntx.view) + "*.csv"
             f_l = list(glob.glob(p))
             for f in f_l:

@@ -17,8 +17,12 @@ import os
 import pandas as pd
 import simplejson
 import view_def
+import warnings
+from pandas.core.common import SettingWithCopyWarning
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
+
+warnings.filterwarnings("ignore")
 
 
 def load_data(
@@ -42,7 +46,7 @@ def load_data(
     """
     
     # Load data.
-    if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_tbl]:
+    if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_tbl, view_def.mode_box]:
         p = get_d_data(cntx) + "<view>/<varidx_code>.csv"
     else:
         p = get_d_data(cntx) + "<view>/<varidx_code>/<hor>/<varidx_name>_<rcp>_<hor_>_<stat>_<delta>.csv"
@@ -59,9 +63,10 @@ def load_data(
 
     # Round values.
     n_dec = cntx.varidx.get_precision()
-    if cntx.view.get_code() == view_def.mode_ts:
+    if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_box]:
         for col in df.columns:
-            df[col] = df[col].round(decimals=n_dec)
+            if col != "year":
+                df.loc[:, col] = df.copy()[col].round(n_dec).to_numpy()
     elif cntx.view.get_code() == view_def.mode_tbl:
         df["val"] = df["val"].round(decimals=n_dec)
     else:

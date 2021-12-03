@@ -19,10 +19,12 @@ from typing import List, Union
 mode_ts = "ts"
 mode_tbl = "tbl"
 mode_map = "map"
+mode_box = "box"
 
 code_desc = {mode_ts: "Série temporelle",
              mode_tbl: "Tableau",
-             mode_map: "Carte"}
+             mode_map: "Carte",
+             mode_box: "Diagramme à moustache"}
 
 
 class View(object_def.Obj):
