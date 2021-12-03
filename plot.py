@@ -157,7 +157,9 @@ def gen_ts_alt(
             if rcp.get_code() == rcp_def.rcp_ref:
                 df_rcp["Année"] = df["year"]
                 df_rcp["RCP"] = [rcp.get_desc()] * len(df)
+                df_rcp["Min"] = df[rcp_def.rcp_ref]
                 df_rcp["Moy"] = df[rcp_def.rcp_ref]
+                df_rcp["Max"] = df[rcp_def.rcp_ref]
             else:
                 df_rcp["Année"] = df["year"]
                 df_rcp["RCP"] = [rcp.get_desc()] * len(df)
@@ -165,14 +167,14 @@ def gen_ts_alt(
                 df_rcp["Moy"] = df[str(rcp.get_code() + "_moy")]
                 df_rcp["Max"] = df[str(rcp.get_code() + "_max")]
 
-            # Adjust precision.
+            # Round values.
             n_dec = cntx.varidx.get_precision()
-            df_rcp["Moyenne"] = df_rcp["Moy"].round(n_dec)
+            df_rcp["Moyenne"] = utils.round_values(df_rcp["Moy"], n_dec)
             if rcp.get_code() == rcp_def.rcp_ref:
                 tooltip = ["Année", "RCP", "Moyenne"]
             else:
-                df_rcp["Minimum"] = df_rcp["Min"].round(n_dec)
-                df_rcp["Maximum"] = df_rcp["Max"].round(n_dec)
+                df_rcp["Minimum"] = utils.round_values(df_rcp["Min"], n_dec)
+                df_rcp["Maximum"] = utils.round_values(df_rcp["Max"], n_dec)
                 tooltip = ["Année", "RCP", "Minimum", "Moyenne", "Maximum"]
 
             # Draw area.
@@ -260,6 +262,16 @@ def gen_ts_hv(
             if str(rcp.get_code() + "_max") in df.columns:
                 df_rcp["Maximum"] = df[str(rcp.get_code() + "_max")]
 
+            # Round values.
+            n_dec = cntx.varidx.get_precision()
+            df_rcp["Moyenne"] = np.array(utils.round_values(df_rcp["Moyenne"], n_dec)).astype(float)
+            if rcp.get_code() == rcp_def.rcp_ref:
+                hover_cols = ["Année", "RCP", "Moyenne"]
+            else:
+                df_rcp["Minimum"] = np.array(utils.round_values(df_rcp["Minimum"], n_dec)).astype(float)
+                df_rcp["Maximum"] = np.array(utils.round_values(df_rcp["Maximum"], n_dec)).astype(float)
+                hover_cols = ["Année", "RCP", "Minimum", "Moyenne", "Maximum"]
+
             # Draw area.
             area = None
             curve = None
@@ -275,7 +287,7 @@ def gen_ts_hv(
                 curve = df_rcp.hvplot.line(x="Année",
                                            y="Moyenne",
                                            color=rcp.get_color(), alpha=0.7, label=rcp.get_desc(),
-                                           hover_cols=["Année", "RCP", "Minimum", "Moyenne", "Maximum"])
+                                           hover_cols=hover_cols)
 
             # Combine parts.
             if plot is None:

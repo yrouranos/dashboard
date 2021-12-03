@@ -162,6 +162,33 @@ def get_min_max(
     return min_val, max_val
 
 
+def round_values(vals: List[float], n_dec: int) -> List[str]:
+
+    """
+    --------------------------------------------------------------------------------------------------------------------
+    Round values.
+
+    Parameters
+    ----------
+    vals : List[float]
+        Values.
+    n_dec : int
+        Number of decimals.
+
+    Returns
+    -------
+    List[str]
+        Rounded values.
+    --------------------------------------------------------------------------------------------------------------------
+    """
+
+    for i in range(len(vals)):
+        if not np.isnan(vals[i]):
+            vals[i] = str("{:." + str(n_dec) + "f}").format(float(vals[i]))
+
+    return vals
+
+
 def list_dir(
     p: str
 ) -> List[str]:
