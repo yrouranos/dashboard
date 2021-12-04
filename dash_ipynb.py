@@ -93,7 +93,7 @@ def field_updated(event):
     refresh()
 
 
-def refresh(i: int = 1):
+def refresh():
 
     """
     --------------------------------------------------------------------------------------------------------------------
@@ -233,8 +233,6 @@ def refresh(i: int = 1):
             dash[1] = tab_map
         else:
             dash[1] = tab_box
-
-    refresh(i+1)
 
 
 refresh()
