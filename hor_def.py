@@ -76,7 +76,8 @@ class Hors(object_def.Objs):
 
         # List all items.
         if cntx.view.get_code() == view_def.mode_map:
-            p = utils.get_d_data(cntx, cntx.view) + "<varidx_code>/*/*_<delta>.csv"
+            p = utils.get_d_data(cntx) + "<view>/<varidx_code>/*/*_<delta>.csv"
+            p = p.replace("<view>", cntx.view.get_code())
             p = p.replace("<varidx_code>", cntx.varidx.get_code())
             p = p.replace("_<delta>", "" if cntx.delta is False else "_delta")
             p_l = glob.glob(p)
@@ -92,18 +93,19 @@ class Hors(object_def.Objs):
         code_l.sort()
 
         # Remove the items that includes all years.
-        min_yr, max_yr = None, None
-        for code in code_l:
-            tokens = code.split("-")
-            if min_yr is None:
-                min_yr = tokens[0]
-                max_yr = tokens[1]
-            else:
-                min_yr = min(min_yr, tokens[0])
-                max_yr = max(max_yr, tokens[1])
-        range_yr = min_yr + "-" + max_yr
-        if range_yr in code_l:
-            code_l.remove(range_yr)
+        if len(code_l) > 0:
+            min_yr, max_yr = None, None
+            for code in code_l:
+                tokens = code.split("-")
+                if min_yr is None:
+                    min_yr = tokens[0]
+                    max_yr = tokens[1]
+                else:
+                    min_yr = min(min_yr, tokens[0])
+                    max_yr = max(max_yr, tokens[1])
+            range_yr = min_yr + "-" + max_yr
+            if range_yr in code_l:
+                code_l.remove(range_yr)
 
         self.add(code_l)
             

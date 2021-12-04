@@ -28,6 +28,7 @@ class Context(object_def.Obj):
 
         # Project.
         self.project = None
+        self.projects = None
 
         # View (selected and all).
         self.view = None

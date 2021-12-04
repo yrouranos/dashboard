@@ -19,6 +19,7 @@ import project_def
 import rcp_def
 import stat_def
 import streamlit as st
+import test
 import utils
 import varidx_def as vi
 import view_def
@@ -46,25 +47,26 @@ def refresh():
         cntx.varidxs = vi.VarIdxs()
         cntx.hors = hor_def.Hors()
         cntx.rcps = rcp_def.RCPs()
-        cntx.stats = stat_def.Stats()
-        cntx.project = project_def.Project("sn")
-        stat_def.mode_q_low = "q" + cntx.project.get_quantiles_as_str()[0]
-        stat_def.mode_q_high = "q" + cntx.project.get_quantiles_as_str()[1]
 
     st.sidebar.image(Image.open(utils.get_p_logo(cntx)), width=150)
-        
+
+    # Projects.
+    cntx.projects = project_def.Projects(cntx=cntx)
+    projects = st.sidebar.radio("Choisir le projet", cntx.projects.get_desc_l())
+    cntx.project = project_def.Project(code=projects, cntx=cntx)
+
     # Views.
     cntx.views = view_def.Views(cntx)
     views = st.sidebar.radio("Choisir la vue", cntx.views.get_desc_l())
     cntx.view = view_def.View(cntx.views.get_code(views))
-    
+
     # Plotting libraries.
     cntx.libs = lib_def.Libs(cntx.view.get_code())
     libs = st.sidebar.radio("Choisir la librairie visuelle", options=cntx.libs.get_desc_l())
     cntx.lib = lib_def.Lib(cntx.libs.get_code(libs))
 
     # Deltas.
-    if cntx.view.get_code() != view_def.mode_box:
+    if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_tbl, view_def.mode_map]:
         st.sidebar.markdown("<style>.sel_title {font-size:14.5px}</style>", unsafe_allow_html=True)
         st.sidebar.markdown("<p class='sel_title'>Afficher les anomalies</p>", unsafe_allow_html=True)
         deltas = st.sidebar.checkbox("", value=False)
@@ -74,7 +76,8 @@ def refresh():
     cntx.varidxs = vi.VarIdxs(cntx)
     varidxs = st.selectbox("Variable", options=cntx.varidxs.get_desc_l())
     cntx.varidx = vi.VarIdx(cntx.varidxs.get_code(varidxs))
-        
+    cntx.project.set_quantiles(cntx.project.get_code(), cntx)
+
     # Horizons.
     if cntx.view.get_code() in [view_def.mode_tbl, view_def.mode_map]:
         cntx.hors = hor_def.Hors(cntx)
@@ -117,45 +120,10 @@ def refresh():
         st.write("Valeur de référence : " + tbl_ref)
 
 
-def test_gen_map():
+# Tests:
+# test.test_gen_ts("sn")
+# test.test_gen_tbl("sn")
+# test.test_gen_map("sn")
+test.test_gen_box("sn")
 
-    cntx = context_def.Context()
-    cntx.platform = "streamlit"
-    cntx.views = view_def.Views()
-    cntx.view = view_def.View("map")
-    cntx.libs = lib_def.Libs()
-    cntx.lib = lib_def.Lib("hv")
-    cntx.varidxs = vi.VarIdxs()
-    cntx.varidx = vi.VarIdx("pr")
-    cntx.hors = hor_def.Hors()
-    cntx.hor = hor_def.Hor("1981-2010")
-    cntx.rcps = rcp_def.RCPs()
-    cntx.rcp = rcp_def.RCP("ref")
-    cntx.stats = stat_def.Stats()
-    cntx.stat = stat_def.Stat("q10")
-    cntx.project = project_def.Project("sn")
-    st.write(hv.render(plot.gen_map(cntx)), backend="bokeh")
-
-def test_gen_box():
-
-    cntx = context_def.Context()
-    cntx.platform = "streamlit"
-    cntx.views = view_def.Views()
-    cntx.view = view_def.View("box")
-    cntx.libs = lib_def.Libs()
-    cntx.lib = lib_def.Lib("hv")
-    cntx.varidxs = vi.VarIdxs()
-    cntx.varidx = vi.VarIdx("pr")
-    cntx.hors = hor_def.Hors()
-    cntx.hor = hor_def.Hor("1981-2010")
-    cntx.rcps = rcp_def.RCPs()
-    cntx.rcp = rcp_def.RCP("ref")
-    cntx.stats = stat_def.Stats()
-    cntx.stat = stat_def.Stat("q10")
-    cntx.project = project_def.Project("sn")
-    st.write(hv.render(plot.gen_box(cntx)), backend="bokeh")
-
-
-# test_gen_map()
-# test_gen_box()
 refresh()

@@ -24,6 +24,8 @@ from typing import List, Optional, Tuple, Union
 
 warnings.filterwarnings("ignore")
 
+d_data = "./data/"
+
 
 def load_data(
     cntx: context_def.Context
@@ -143,11 +145,16 @@ def get_min_max(
     
     if cntx.view.get_code() == view_def.mode_map:
         
-        # Identify the files to consider.
-        p_ref = glob.glob(get_d_data(cntx, cntx.view) + cntx.varidx.get_code() + "/*/" + cntx.varidx.get_code() +
-                          "_ref*_mean.csv")
-        p_rcp = get_d_data(cntx, cntx.view) + cntx.varidx.get_code() + "/*/" + cntx.varidx.get_code() +\
-            "_rcp*_q<q>_<delta>.csv"
+        # Reference file.
+        p_ref = get_d_data(cntx) + "<view>/<varidx_code>/*/<varidx_code>_ref*_mean.csv"
+        p_ref = p_ref.replace("<view>", cntx.view.get_code())
+        p_ref = p_ref.replace("<varidx_code>", cntx.varidx.get_code())
+        p_ref = glob.glob(p_ref)
+
+        # RCP files.
+        p_rcp = get_d_data(cntx) + "<view>/<varidx_code>/*/<varidx_code>_rcp*_q<q>_<delta>.csv"
+        p_rcp = p_rcp.replace("<view>", cntx.view.get_code())
+        p_rcp = p_rcp.replace("<varidx_code>", cntx.varidx.get_code())
         p_rcp = p_rcp.replace("_<delta>", "" if cntx.delta is False else "_delta")
         p_rcp_q_low = glob.glob(p_rcp.replace("<q>", cntx.project.get_quantiles_as_str()[0]))
         p_rcp_q_high = glob.glob(p_rcp.replace("<q>", cntx.project.get_quantiles_as_str()[1]))
@@ -227,8 +234,7 @@ def list_dir(
 
 
 def get_d_data(
-    cntx: context_def.Context,
-    view: view_def.View = None
+    cntx: context_def.Context
 ) -> str:
 
     """
@@ -238,8 +244,6 @@ def get_d_data(
     ----------
     cntx : context_def.Context
         Context.
-    view : view_def.View
-        View
 
     Returns
     -------
@@ -247,9 +251,8 @@ def get_d_data(
         Base directory of data.
     """
 
-    d = "./data/<project>/<view>/"
-    d = d.replace("<project>", cntx.project.get_code())
-    d = d.replace("<view>/", view.get_code() + "/" if view is not None else "")
+    d = d_data + "<project>/"
+    d = d.replace("<project>/", "" if cntx.project is None else cntx.project.get_code() + "/")
 
     return d
 
@@ -293,4 +296,8 @@ def get_p_bounds(
         Path of geojson file containing region boundaries.
     """
 
-    return get_d_data(cntx, cntx.view) + cntx.project.get_code() + "_boundaries.geojson"
+    p = get_d_data(cntx) + "<view>/<project_code>_boundaries.geojson"
+    p = p.replace("<view>", cntx.view.get_code())
+    p = p.replace("<project_code>", cntx.project.get_code())
+
+    return p

@@ -23,14 +23,17 @@ mode_q_high = "q90"
 mode_mean = "mean"
 mode_max = "max"
 
-code_desc = {
-    mode_min: "Minimum",
-    mode_q_low: mode_q_low.replace("q", "") + "e percentile",
-    mode_median: "Médiane",
-    mode_q_high: mode_q_high.replace("q", "") + "e percentile",
-    mode_max: "Maximum",
-    mode_mean: "Moyenne"
-}
+
+def get_code_desc():
+
+    return {
+        mode_min: "Minimum",
+        mode_q_low: mode_q_low.replace("q", "") + "e percentile",
+        mode_median: "Médiane",
+        mode_q_high: mode_q_high.replace("q", "") + "e percentile",
+        mode_max: "Maximum",
+        mode_mean: "Moyenne"
+    }
 
 
 class Stat(object_def.Obj):
@@ -47,7 +50,7 @@ class Stat(object_def.Obj):
         Contructor.
         """
 
-        desc = "" if code == "" else code_desc[code]
+        desc = "" if code == "" else get_code_desc()[code]
         super(Stat, self).__init__(code=code, desc=desc)
 
 
@@ -87,7 +90,8 @@ class Stats(object_def.Objs):
 
         cntx = args[0]
 
-        p = utils.get_d_data(cntx, cntx.view) + "<varidx_code>/<hor>/<varidx_name>_<rcp>_<hor_>_<stat>_<delta>.csv"
+        p = utils.get_d_data(cntx) + "<view>/<varidx_code>/<hor>/<varidx_name>_<rcp>_<hor_>_<stat>_<delta>.csv"
+        p = p.replace("<view>", cntx.view.get_code())
         p = p.replace("<varidx_code>", cntx.varidx.get_code())
         p = p.replace("<varidx_name>", cntx.varidx.get_code())
         p = p.replace("<rcp>", cntx.rcp.get_code())
@@ -96,7 +100,7 @@ class Stats(object_def.Objs):
         p = p.replace("_<delta>", "" if cntx.delta is False else "_delta")
         
         code_l = []
-        for code in list(code_desc.keys()):
+        for code in list(get_code_desc().keys()):
             if os.path.exists(p.replace("<stat>", code)):
                 code_l.append(code)
 

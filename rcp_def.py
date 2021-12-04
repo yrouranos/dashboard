@@ -110,7 +110,8 @@ class RCPs(object_def.Objs):
 
         # The list of RCPs is within data files.
         if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_tbl]:
-            p = utils.get_d_data(cntx, cntx.view) + "/<varidx_code>.csv"
+            p = utils.get_d_data(cntx) + "/<view>/<varidx_code>.csv"
+            p = p.replace("<view>", cntx.view.get_code())
             p = p.replace("<varidx_code>", cntx.varidx.get_code())
             df = pd.read_csv(p)
             if cntx.view.get_code() == view_def.mode_ts:

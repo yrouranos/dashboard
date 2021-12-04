@@ -83,7 +83,7 @@ class Views(object_def.Objs):
 
         code_l = []
         for code in list(code_desc.keys()):
-            if os.path.exists(utils.get_d_data(cntx, View(code))):
+            if os.path.exists(utils.get_d_data(cntx) + code + "/"):
                 code_l.append(code)
 
         self.add(code_l)

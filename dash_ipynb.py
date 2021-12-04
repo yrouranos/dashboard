@@ -23,107 +23,77 @@ import utils
 import varidx_def as vi
 import view_def
 import warnings
+from typing import Union, List
 
 warnings.filterwarnings("ignore")
 
 cntx = None
-dash, views, libs, deltas, varidxs, hors, rcps, stats = \
-    None, None, None, None, None, None, None, None
-view_updated, lib_updated, delta_updated, varidx_updated, hor_updated, rcp_updated, stat_updated = \
-    True, True, True, True, True, True, True
+dash, projects, views, libs, deltas, varidxs, hors, rcps, stats = \
+    None, None, None, None, None, None, None, None, None
 
 
-def view_updated_event():
-
+def init_components():
+    
     """
     --------------------------------------------------------------------------------------------------------------------
-    View updated event.
+    Initialize components.
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    global view_updated
-    view_updated = True
+    global projects, views, libs, deltas, varidxs, hors, rcps, stats
+
+    # Projects.
+    projects = pn.Column(pn.pane.Markdown("<b>Choisir le projet</b>"),
+                         pnw.RadioBoxGroup(name="RadioBoxGroup", options=[""], inline=False))
+    projects[1].param.watch(field_updated, ["value"], onlychanged=True)
+
+    # Views.
+    views = pn.Column(pn.pane.Markdown("<b>Choisir la vue</b>"),
+                      pnw.RadioBoxGroup(name="RadioBoxGroup", options=[""], inline=False))
+    views[1].param.watch(field_updated, ["value"], onlychanged=True)
+
+    # Libraries.
+    libs = pn.Column(pn.pane.Markdown("<b>Choisir la librairie graphique</b>"),
+                     pnw.RadioBoxGroup(name="RadioBoxGroup", options=[""], inline=False))
+    libs[1].param.watch(field_updated, ["value"], onlychanged=True)
+
+    # Deltas
+    deltas = pn.Column(pn.pane.Markdown("<b>Afficher les anomalies</b>"),
+                       pnw.Checkbox(value=False))
+    deltas[1].param.watch(field_updated, ["value"], onlychanged=True)
+
+    # Variables and indices.
+    varidxs = pn.Column(pn.pane.Markdown("<b>Variable or index</b>"),
+                        pnw.Select(options=[""], width=250))
+    varidxs[1].param.watch(field_updated, ["value"], onlychanged=True)
+
+    # Horizons.
+    hors = pn.Column(pn.pane.Markdown("<b>Horizon</b>"),
+                     pnw.Select(options=[""], width=100))
+    hors[1].param.watch(field_updated, ["value"], onlychanged=True)
+
+    # Emission scenarios.
+    rcps = pn.Column(pn.pane.Markdown("<b>Scénario d'émission</b>"),
+                     pnw.Select(options=[""], width=250))
+    rcps[1].param.watch(field_updated, ["value"], onlychanged=True)
+
+    # Statistics.
+    stats = pn.Column(pn.pane.Markdown("<b>Statistique</b>"),
+                      pnw.Select(options=[""], width=250))
+    stats[1].param.watch(field_updated, ["value"], onlychanged=True)
+
+
+def field_updated(event):
+    """
+    --------------------------------------------------------------------------------------------------------------------
+    Field updated.
+    --------------------------------------------------------------------------------------------------------------------
+    """
+
     refresh()
 
 
-def lib_updated_event():
-
-    """
-    --------------------------------------------------------------------------------------------------------------------
-    Plotting library updated event.
-    --------------------------------------------------------------------------------------------------------------------
-    """
-
-    global lib_updated
-    lib_updated = True
-    refresh()
-
-
-def delta_updated_event():
-
-    """
-    --------------------------------------------------------------------------------------------------------------------
-    Deltac updated event.
-    --------------------------------------------------------------------------------------------------------------------
-    """
-
-    global delta_updated
-    delta_updated = True
-    refresh()
-
-
-def varidx_updated_event():
-
-    """
-    --------------------------------------------------------------------------------------------------------------------
-    Variable updated event.
-    --------------------------------------------------------------------------------------------------------------------
-    """
-
-    global varidx_updated
-    varidx_updated = True
-    refresh()
-
-
-def hor_updated_event():
-
-    """
-    --------------------------------------------------------------------------------------------------------------------
-    Horizon updated event.
-    --------------------------------------------------------------------------------------------------------------------
-    """
-
-    global hor_updated
-    hor_updated = True
-    refresh()
-
-
-def rcp_updated_event():
-
-    """
-    --------------------------------------------------------------------------------------------------------------------
-    RCP updated event.
-    --------------------------------------------------------------------------------------------------------------------
-    """
-
-    global rcp_updated
-    rcp_updated = True
-    refresh()
-
-
-def stat_updated_event():
-    """
-    --------------------------------------------------------------------------------------------------------------------
-    Statistic updated event.
-    --------------------------------------------------------------------------------------------------------------------
-    """
-
-    global stat_updated
-    stat_updated = True
-    refresh()
-
-
-def refresh():
+def refresh(i: int = 1):
 
     """
     --------------------------------------------------------------------------------------------------------------------
@@ -132,11 +102,11 @@ def refresh():
     """
 
     global cntx
-    global dash, views, libs, deltas, varidxs, hors, rcps, stats
-    global view_updated, lib_updated, delta_updated, varidx_updated, hor_updated, rcp_updated, stat_updated
+    global dash, projects, views, libs, deltas, varidxs, hors, rcps, stats
 
     # Initialize context.
     if cntx is None:
+        init_components()
         cntx = context_def.Context()
         cntx.platform = "jupyter"
         cntx.views = view_def.Views()
@@ -144,121 +114,108 @@ def refresh():
         cntx.varidxs = vi.VarIdxs()
         cntx.hors = hor_def.Hors()
         cntx.rcps = rcp_def.RCPs()
-        cntx.stats = stat_def.Stats()
-        cntx.project = project_def.Project("sn")
-        stat_def.mode_q_low = "q" + cntx.project.get_quantiles_as_str()[0]
-        stat_def.mode_q_high = "q" + cntx.project.get_quantiles_as_str()[1]
+
+    # Projects.
+    cntx.projects = project_def.Projects(cntx=cntx)
+    projects_l = cntx.projects.get_desc_l()
+    if projects[1].value not in projects_l:
+        projects[1].options = projects_l
+        projects[1].value = projects_l[0]
+    cntx.project = project_def.Project(code=projects[1].value, cntx=cntx)
 
     # Views.
     cntx.views = view_def.Views(cntx)
-    if views is None:
-        views = pnw.RadioBoxGroup(name="RadioBoxGroup", options=cntx.views.get_desc_l(), inline=False)
-        views.param.watch(view_updated_event, ["value"], onlychanged=True)
-    cntx.view = view_def.View(cntx.views.get_code(views.value))
+    views_l = cntx.views.get_desc_l()
+    if views[1].value not in views_l:
+        views[1].options = views_l
+        views[1].value = views_l[0]
+    cntx.view = view_def.View(cntx.views.get_code(views[1].value))
 
-    # Plotting libraries.
+    # Libraries.
     cntx.libs = lib_def.Libs(cntx.view.get_code())
-    if view_updated:
-        libs = pn.Column(pn.pane.Markdown("<b>Choisir la librairie graphique</b>"),
-                         pnw.RadioBoxGroup(name="RadioBoxGroup", options=cntx.libs.get_desc_l(), inline=False))
-        libs[1].param.watch(lib_updated_event, ["value"], onlychanged=True)
+    libs_l = cntx.libs.get_desc_l()
+    if libs[1].value not in libs_l:
+        libs[1].options = libs_l
+        libs[1].value = libs_l[0]
     cntx.lib = lib_def.Lib(cntx.libs.get_code(libs[1].value))
 
     # Deltas.
-    if (deltas is None) and (cntx.view.get_code() != view_def.mode_box):
-        deltas = pnw.Checkbox(value=False)
-        deltas.param.watch(delta_updated_event, ["value"], onlychanged=True)
-    cntx.delta = deltas.value
+    if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_tbl, view_def.mode_map]:
+        cntx.delta = deltas[1].value
+    else:
+        cntx.delta = False
 
     # Variables and indices.
     cntx.varidxs = vi.VarIdxs(cntx)
-    if view_updated:
-        if varidxs is None:
-            varidxs = pnw.Select(options=cntx.varidxs.get_desc_l(), width=250)
-            varidxs.param.watch(varidx_updated_event, ["value"], onlychanged=True)
-        else:
-            varidxs.options = cntx.varidxs.get_desc_l()
-    cntx.varidx = vi.VarIdx(cntx.varidxs.get_code(varidxs.value))
+    varidxs_l = cntx.varidxs.get_desc_l()
+    if varidxs[1].value not in varidxs_l:
+        varidxs[1].options = varidxs_l
+        varidxs[1].value = varidxs_l[0]
+    cntx.varidx = vi.VarIdx(cntx.varidxs.get_code(varidxs[1].value))
+    cntx.project.set_quantiles(cntx.project.get_code(), cntx)
 
     # Horizons.
     if cntx.view.get_code() in [view_def.mode_tbl, view_def.mode_map]:
         cntx.hors = hor_def.Hors(cntx)
-    if view_updated or varidx_updated:
-        hors = pnw.Select(options=cntx.hors.get_code_l(), width=100)
-        hors.param.watch(hor_updated_event, ["value"], onlychanged=True)
-    if cntx.view.get_code() in [view_def.mode_tbl, view_def.mode_map]:
-        cntx.hor = hor_def.Hor(hors.value)
+        hors_l = cntx.hors.get_code_l()
+        if hors[1].value not in hors_l:
+            hors[1].options = hors_l
+            hors[1].value = hors_l[0]
+        cntx.hor = hor_def.Hor(hors[1].value)
+    else:
+        cntx.hor = None
 
     # Emission scenarios.
-    cntx.rcps = rcp_def.RCPs(cntx)
-    if (view_updated or varidx_updated or hor_updated) and \
-       (cntx.view.get_code() == view_def.mode_map):
-        rcps = pnw.Select(options=cntx.rcps.get_desc_l(), width=250)
-        rcps.param.watch(rcp_updated_event, ["value"], onlychanged=True)
-    if cntx.view.get_code() == view_def.mode_map:
-        cntx.rcp = rcp_def.RCP(cntx.rcps.get_code(rcps.value))
+    if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_map]:
+        cntx.rcps = rcp_def.RCPs(cntx)
+        if cntx.view.get_code() == view_def.mode_map:
+            rcps_l = cntx.rcps.get_desc_l()
+            if rcps[1].value not in rcps_l:
+                rcps[1].options = rcps_l
+                rcps[1].value = rcps_l[0]
+            cntx.rcp = rcp_def.RCP(cntx.rcps.get_code(rcps[1].value))
+    else:
+        cntx.rcp = None
 
     # Statistics.
     if cntx.view.get_code() == view_def.mode_map:
         cntx.stats = stat_def.Stats(cntx)
-    if (view_updated or varidx_updated or hor_updated or rcp_updated) and \
-       (cntx.view.get_code() == view_def.mode_map):
-        stats = pnw.Select(options=cntx.stats.get_desc_l(), width=250)
-        stats.param.watch(stat_updated_event, ["value"], onlychanged=True)
-    if cntx.view.get_code() == view_def.mode_map:
-        cntx.stat = stat_def.Stat(cntx.stats.get_code(stats.value))
+        stats_l = cntx.stats.get_desc_l()
+        if stats[1].value not in stats_l:
+            stats[1].options = stats_l
+            stats[1].value = stats_l[0]
+        cntx.stat = stat_def.Stat(cntx.stats.get_code(stats[1].value))
+    else:
+        cntx.stat = None
+
+    # Reference value.
+    val_ref = pn.Row("\n\nValeur de référence : ", plot.get_ref_val(cntx))
 
     # Time series.
     tab_ts = None
-    if (view_updated or lib_updated or delta_updated or varidx_updated) and \
-       (cntx.view.get_code() == view_def.mode_ts):
-        tab_ts = pn.Row(pn.Column(pn.pane.Markdown("<b>Variable</b>"),
-                                  varidxs,
-                                  plot.gen_ts(cntx),
+    if cntx.view.get_code() == view_def.mode_ts:
+        tab_ts = pn.Row(pn.Column(varidxs, plot.gen_ts(cntx),
                                   pn.pane.Markdown("<br><br><br>" if cntx.lib.get_code() == lib_def.mode_alt else ""),
-                                  pn.Row("Valeur de référence : ", plot.get_ref_val(cntx))))
+                                  val_ref))
 
     # Table.
     tab_tbl = None
-    if (view_updated or delta_updated or varidx_updated or hor_updated) and \
-       (cntx.view.get_code() == view_def.mode_tbl):
-        tab_tbl = pn.Row(pn.Column(pn.pane.Markdown("<b>Variable</b>"),
-                                   varidxs,
-                                   pn.pane.Markdown("<b>Horizon</b>"),
-                                   hors,
-                                   pn.Column(plot.gen_tbl(cntx), width=500),
-                                   pn.Row("Valeur de référence : ", plot.get_ref_val(cntx))))
+    if cntx.view.get_code() == view_def.mode_tbl:
+        tab_tbl = pn.Row(pn.Column(varidxs, hors, pn.Column(plot.gen_tbl(cntx), width=500), val_ref))
 
     # Map.
     tab_map = None
-    if (view_updated or lib_updated or delta_updated or
-        varidx_updated or hor_updated or rcp_updated or stat_updated) and \
-       (cntx.view.get_code() == view_def.mode_map):
-        tab_map = pn.Row(pn.Column(pn.pane.Markdown("<b>Variable</b>"),
-                                   varidxs,
-                                   pn.pane.Markdown("<b>Horizon</b>"),
-                                   hors,
-                                   pn.pane.Markdown("<b>Scénario d'émission</b>"),
-                                   rcps,
-                                   pn.pane.Markdown("<b>Statistique</b>"),
-                                   stats,
-                                   plot.gen_map(cntx)))
+    if cntx.view.get_code() == view_def.mode_map:
+        tab_map = pn.Row(pn.Column(varidxs, hors, rcps, stats, plot.gen_map(cntx)))
 
     # Box plot.
     tab_box = None
-    if (view_updated or lib_updated or varidx_updated) and \
-       (cntx.view.get_code() == view_def.mode_box):
-        tab_box = pn.Row(pn.Column(pn.pane.Markdown("<b>Variable</b>"),
-                                   varidxs,
-                                   plot.gen_box(cntx)))
+    if cntx.view.get_code() == view_def.mode_box:
+        tab_box = pn.Row(pn.Column(varidxs, plot.gen_box(cntx)))
 
     # Sidebar.
     sidebar = pn.Column(pn.Column(pn.pane.PNG(utils.get_p_logo(cntx), height=50)),
-                        pn.pane.Markdown("<b>Choisir la vue</b>"),
-                        views,
-                        libs,
-                        pn.pane.Markdown("<b>Afficher les anomalies</b>"),
-                        deltas,
+                        projects, views, libs, deltas,
                         pn.Spacer(background=cf.col_sb_fill, sizing_mode="stretch_both"),
                         background=cf.col_sb_fill,
                         width=200)
@@ -277,8 +234,7 @@ def refresh():
         else:
             dash[1] = tab_box
 
-    view_updated, lib_updated, delta_updated, varidx_updated, hor_updated, rcp_updated, stat_updated = \
-        False, False, False, False, False, False, False
+    refresh(i+1)
 
 
 refresh()

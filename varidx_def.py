@@ -212,7 +212,7 @@ code_props = {
                                  "Cumul",
                                  "mm", 0],
     var_evspsbl:                ["Évapotranspiration",
-                                 "Cumul.",
+                                 "Cumul",
                                  "mm", 0],
     var_evspsblpot:             ["Évapotranspiration potentielle",
                                  "Cumul",
@@ -459,14 +459,16 @@ class VarIdxs(object_def.Objs):
         code_l = []
 
         if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_tbl, view_def.mode_box]:
-            p = utils.get_d_data(cntx, cntx.view) + "*.csv"
-            f_l = list(glob.glob(p))
-            for f in f_l:
-                code_l.append(os.path.basename(f).replace(".csv", ""))
+            p = utils.get_d_data(cntx) + "<view>/*.csv"
+            p = p.replace("<view>/", cntx.view.get_code() + "/")
+            p_l = list(glob.glob(p))
+            for p_i in p_l:
+                code_l.append(os.path.basename(p_i).replace(".csv", ""))
             code_l.sort()
 
         else:
-            p = utils.get_d_data(cntx, cntx.view)
+            p = utils.get_d_data(cntx) + "<view>/"
+            p = p.replace("<view>/", cntx.view.get_code() + "/")
             code_l = utils.list_dir(p)
 
         self.add(code_l)

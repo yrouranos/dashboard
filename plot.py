@@ -156,13 +156,13 @@ def gen_ts_alt(
             df_rcp = pd.DataFrame()
             if rcp.get_code() == rcp_def.rcp_ref:
                 df_rcp["Année"] = df["year"]
-                df_rcp["RCP"] = [rcp.get_desc()] * len(df)
+                df_rcp["Scénario"] = [rcp.get_desc()] * len(df)
                 df_rcp["Min"] = df[rcp_def.rcp_ref]
                 df_rcp["Moy"] = df[rcp_def.rcp_ref]
                 df_rcp["Max"] = df[rcp_def.rcp_ref]
             else:
                 df_rcp["Année"] = df["year"]
-                df_rcp["RCP"] = [rcp.get_desc()] * len(df)
+                df_rcp["Scénario"] = [rcp.get_desc()] * len(df)
                 df_rcp["Min"] = df[str(rcp.get_code() + "_min")]
                 df_rcp["Moy"] = df[str(rcp.get_code() + "_moy")]
                 df_rcp["Max"] = df[str(rcp.get_code() + "_max")]
@@ -171,11 +171,11 @@ def gen_ts_alt(
             n_dec = cntx.varidx.get_precision()
             df_rcp["Moyenne"] = utils.round_values(df_rcp["Moy"], n_dec)
             if rcp.get_code() == rcp_def.rcp_ref:
-                tooltip = ["Année", "RCP", "Moyenne"]
+                tooltip = ["Année", "Scénario", "Moyenne"]
             else:
                 df_rcp["Minimum"] = utils.round_values(df_rcp["Min"], n_dec)
                 df_rcp["Maximum"] = utils.round_values(df_rcp["Max"], n_dec)
-                tooltip = ["Année", "RCP", "Minimum", "Moyenne", "Maximum"]
+                tooltip = ["Année", "Scénario", "Minimum", "Moyenne", "Maximum"]
 
             # Draw area.
             area = None
@@ -185,7 +185,7 @@ def gen_ts_alt(
                     x=alt.X("Année", axis=x_axis),
                     y=alt.Y("Min", axis=y_axis, scale=y_scale),
                     y2="Max",
-                    color=alt.Color("RCP", scale=col_scale)
+                    color=alt.Color("Scénario", scale=col_scale)
                 )
             
             # Draw curve.
@@ -193,7 +193,7 @@ def gen_ts_alt(
                 curve = alt.Chart(df_rcp).mark_line(opacity=1.0, text=rcp.get_desc()).encode(
                     x=alt.X("Année", axis=x_axis),
                     y=alt.Y("Moy", axis=y_axis, scale=y_scale),
-                    color=alt.Color("RCP", scale=col_scale, legend=col_legend),
+                    color=alt.Color("Scénario", scale=col_scale, legend=col_legend),
                     tooltip=tooltip
                 ).interactive()
 
@@ -252,7 +252,7 @@ def gen_ts_hv(
             # Subset and rename columns.
             df_rcp = pd.DataFrame()
             df_rcp["Année"] = df["year"]
-            df_rcp["RCP"] = [rcp.get_desc()] * len(df_rcp)
+            df_rcp["Scénario"] = [rcp.get_desc()] * len(df_rcp)
             if str(rcp.get_code() + "_min") in df.columns:
                 df_rcp["Minimum"] = df[str(rcp.get_code() + "_min")]
             if rcp_def.rcp_ref in df.columns:
@@ -266,11 +266,11 @@ def gen_ts_hv(
             n_dec = cntx.varidx.get_precision()
             df_rcp["Moyenne"] = np.array(utils.round_values(df_rcp["Moyenne"], n_dec)).astype(float)
             if rcp.get_code() == rcp_def.rcp_ref:
-                hover_cols = ["Année", "RCP", "Moyenne"]
+                hover_cols = ["Année", "Scénario", "Moyenne"]
             else:
                 df_rcp["Minimum"] = np.array(utils.round_values(df_rcp["Minimum"], n_dec)).astype(float)
                 df_rcp["Maximum"] = np.array(utils.round_values(df_rcp["Maximum"], n_dec)).astype(float)
-                hover_cols = ["Année", "RCP", "Minimum", "Moyenne", "Maximum"]
+                hover_cols = ["Année", "Scénario", "Minimum", "Moyenne", "Maximum"]
 
             # Draw area.
             area = None
@@ -416,7 +416,7 @@ def gen_tbl(
 
     # List of statistics (in a column).
     stat_l, stat_desc_l = [], []
-    for code in list(stat_def.code_desc.keys()):
+    for code in list(stat_def.get_code_desc().keys()):
         if code in [stat_def.mode_min, stat_def.mode_max, stat_def.mode_mean]:
             stat_l.append([code, -1])
         elif code == "q" + cntx.project.get_quantiles_as_str()[0]:
@@ -425,7 +425,7 @@ def gen_tbl(
             stat_l.append(["quantile", cntx.project.get_quantiles()[1]])
         else:
             stat_l.append(["quantile", 0.5])
-        stat_desc_l.append(stat_def.code_desc[code])
+        stat_desc_l.append(stat_def.get_code_desc()[code])
 
     # Initialize resulting dataframe.
     df_res = pd.DataFrame()
@@ -646,8 +646,8 @@ def gen_map_hv(
     # Generate plot.
     df.rename(columns={cntx.varidx.get_name(): "Valeur", "longitude": "Longitude", "latitude": "Latitude"},
               inplace=True)
-    heatmap = df.hvplot.heatmap(x="Longitude", y="Latitude", C="Valeur", aspect="equal", vmin=v_range[0],
-                                vmax=v_range[1]).opts(cmap=cmap, clim=(v_range[0], v_range[1]))
+    heatmap = df.hvplot.heatmap(x="Longitude", y="Latitude", C="Valeur", aspect="equal").\
+        opts(cmap=cmap, clim=(v_range[0], v_range[1]))
 
     # Adjust ticks.
     if cf.opt_map_discrete:
@@ -1192,7 +1192,7 @@ def gen_box_hv(
 
     # Generate plot.
     fig = df.hvplot.box(y="Valeur", by="Mois", height=375, width=730, legend=False,
-                        box_fill_color="white", hover_cols=["Mois", "Valeur"], showfliers=False).\
+                        box_fill_color="white", hover_cols=["Mois", "Valeur"]).\
         opts(tools=["hover"], ylabel=cntx.varidx.get_label())
 
     return fig
