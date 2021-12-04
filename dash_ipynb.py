@@ -33,7 +33,7 @@ dash, projects, views, libs, deltas, varidxs, hors, rcps, stats = \
 
 
 def init_components():
-    
+
     """
     --------------------------------------------------------------------------------------------------------------------
     Initialize components.

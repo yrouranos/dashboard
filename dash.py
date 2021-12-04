@@ -19,7 +19,6 @@ import project_def
 import rcp_def
 import stat_def
 import streamlit as st
-import test
 import utils
 import varidx_def as vi
 import view_def
@@ -119,11 +118,5 @@ def refresh():
         tbl_ref = plot.get_ref_val(cntx)
         st.write("Valeur de référence : " + tbl_ref)
 
-
-# Tests:
-# test.test_gen_ts("sn")
-# test.test_gen_tbl("sn")
-# test.test_gen_map("sn")
-test.test_gen_box("sn")
 
 refresh()
