@@ -148,6 +148,7 @@ class Projects(object_def.Objs):
         """
 
         code_l = utils.list_dir(utils.d_data)
+        code_l.sort()
 
         self.add(code_l)
 
