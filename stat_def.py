@@ -94,9 +94,9 @@ class Stats(object_def.Objs):
         p = p.replace("<view>", cntx.view.get_code())
         p = p.replace("<varidx_code>", cntx.varidx.get_code())
         p = p.replace("<varidx_name>", cntx.varidx.get_code())
-        p = p.replace("<rcp>", cntx.rcp.get_code())
-        p = p.replace("<hor_>", cntx.hor.get_code().replace("-", "_"))
-        p = p.replace("<hor>", cntx.hor.get_code())
+        p = p.replace("<rcp>", "" if cntx.rcp is None else cntx.rcp.get_code())
+        p = p.replace("<hor_>", "" if cntx.hor is None else cntx.hor.get_code().replace("-", "_"))
+        p = p.replace("<hor>", "" if cntx.hor is None else cntx.hor.get_code())
         p = p.replace("_<delta>", "" if cntx.delta is False else "_delta")
         
         code_l = []

@@ -161,7 +161,7 @@ def test_gen_map(
                             plot.gen_map(cntx)
 
 
-def test_gen_box(
+def test_gen_disp(
     project_code: str
 ):
 
@@ -172,7 +172,7 @@ def test_gen_box(
     Parameters
     ----------
     project_code : str
-        Project code.
+        Project code..
     --------------------------------------------------------------------------------------------------------------------
     """
 
@@ -180,36 +180,21 @@ def test_gen_box(
     cntx.platform = "streamlit"
     cntx.project = project_def.Project(code=project_code, cntx=cntx)
     cntx.views = view_def.Views()
-    cntx.view = view_def.View("box")
+    cntx.view = view_def.View("disp")
     cntx.libs = lib_def.Libs(cntx.view.get_code())
+    cntx.delta = False
 
     for lib in cntx.libs.get_code_l():
 
         cntx.lib = lib_def.Lib(lib)
 
-        for delta in [False, True]:
-            cntx.delta = delta
+        cntx.varidxs = vi.VarIdxs(cntx)
+        for varidx in cntx.varidxs.get_code_l():
 
-            cntx.varidxs = vi.VarIdxs(cntx)
-            for varidx in cntx.varidxs.get_code_l():
+            cntx.varidx = vi.VarIdx(varidx)
 
-                cntx.varidx = vi.VarIdx(varidx)
+            cntx.projects = project_def.Projects(cntx=cntx)
+            cntx.project = project_def.Project(code=project_code, cntx=cntx)
 
-                cntx.hors = hor_def.Hors(cntx)
-                for hor in cntx.hors.get_code_l():
-
-                    cntx.hor = hor_def.Hor(hor)
-
-                    cntx.rcps = rcp_def.RCPs(cntx)
-                    for rcp in cntx.rcps.get_code_l():
-
-                        cntx.rcp = rcp_def.RCP(rcp)
-                        cntx.projects = project_def.Projects(cntx=cntx)
-                        cntx.project = project_def.Project(code=project_code, cntx=cntx)
-
-                        cntx.stats = stat_def.Stats(cntx)
-                        for stat in cntx.stats.get_code_l():
-
-                            cntx.stat = stat_def.Stat(stat)
-
-                            plot.gen_box(cntx)
+            plot.gen_disp_ms(cntx)
+            plot.gen_disp_d(cntx)

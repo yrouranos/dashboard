@@ -47,7 +47,7 @@ def refresh():
         cntx.hors = hor_def.Hors()
         cntx.rcps = rcp_def.RCPs()
 
-    st.sidebar.image(Image.open(utils.get_p_logo(cntx)), width=150)
+    st.sidebar.image(Image.open(utils.get_p_logo()), width=150)
 
     # Projects.
     cntx.projects = project_def.Projects(cntx=cntx)
@@ -110,10 +110,18 @@ def refresh():
         else:
             st.write(hv.render(plot.gen_map(cntx)), backend="bokeh")
     else:
-        if cntx.lib.get_code() == lib_def.mode_mat:
-            st.write(plot.gen_box(cntx))
-        else:
-            st.write(hv.render(plot.gen_box(cntx)), backend="bokeh")
+        disp_ms = plot.gen_disp_ms(cntx)
+        if disp_ms is not None:
+            if cntx.lib.get_code() == lib_def.mode_mat:
+                st.write(disp_ms)
+            else:
+                st.write(hv.render(disp_ms), backend="bokeh")
+        disp_d = plot.gen_disp_d(cntx)
+        if disp_d is not None:
+            if cntx.lib.get_code() == lib_def.mode_mat:
+                st.write(disp_d)
+            else:
+                st.write(hv.render(disp_d), backend="bokeh")
     if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_tbl]:
         tbl_ref = plot.get_ref_val(cntx)
         st.write("Valeur de référence : " + tbl_ref)

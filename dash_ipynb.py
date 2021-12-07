@@ -208,10 +208,10 @@ def refresh():
     if cntx.view.get_code() == view_def.mode_map:
         tab_map = pn.Row(pn.Column(varidxs, hors, rcps, stats, plot.gen_map(cntx)))
 
-    # Box plot.
-    tab_box = None
-    if cntx.view.get_code() == view_def.mode_box:
-        tab_box = pn.Row(pn.Column(varidxs, plot.gen_box(cntx)))
+    # Dispersion plots.
+    tab_disp = None
+    if cntx.view.get_code() == view_def.mode_disp:
+        tab_disp = pn.Row(pn.Column(varidxs, plot.gen_disp_ms(cntx), plot.gen_disp_d(cntx)))
 
     # Sidebar.
     sidebar = pn.Column(pn.Column(pn.pane.PNG(utils.get_p_logo(cntx), height=50)),
@@ -232,7 +232,7 @@ def refresh():
         elif cntx.view.get_code() == view_def.mode_map:
             dash[1] = tab_map
         else:
-            dash[1] = tab_box
+            dash[1] = tab_disp
 
 
 refresh()

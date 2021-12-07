@@ -28,7 +28,8 @@ d_data = "./data/"
 
 
 def load_data(
-    cntx: context_def.Context
+    cntx: context_def.Context,
+    cat: Optional[str] = ""
 ) -> pd.DataFrame:
 
     """
@@ -39,6 +40,8 @@ def load_data(
     ----------
     cntx : context_def.Context
         Context.
+    cat : Optional[str]
+        Data category. This is required if several types of elements are comprised in a view.
     
     Returns
     -------
@@ -48,11 +51,11 @@ def load_data(
     """
     
     # Load data.
-    if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_tbl, view_def.mode_box]:
+    if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_tbl, view_def.mode_disp]:
         p = get_d_data(cntx) + "<view>/<varidx_code>.csv"
     else:
         p = get_d_data(cntx) + "<view>/<varidx_code>/<hor>/<varidx_name>_<rcp>_<hor_>_<stat>_<delta>.csv"
-    p = p.replace("<view>", cntx.view.get_code())
+    p = p.replace("<view>", cntx.view.get_code() + ("-" + cat.lower() if cat != "" else ""))
     p = p.replace("<varidx_code>", cntx.varidx.get_code())
     if cntx.view.get_code() == view_def.mode_map:
         p = p.replace("<varidx_name>", cntx.varidx.get_code())
@@ -61,14 +64,17 @@ def load_data(
         p = p.replace("<hor>", cntx.hor.get_code())
         p = p.replace("<stat>", cntx.stat.get_code())
         p = p.replace("_<delta>", "" if cntx.delta is False else "_delta")
-    df = pd.read_csv(p)
+
+    if not os.path.exists(p):
+        return None
+    else:
+        df = pd.read_csv(p)
 
     # Round values.
     n_dec = cntx.varidx.get_precision()
-    if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_box]:
-        for col in df.columns:
-            if col != "year":
-                df.loc[:, col] = df.copy()[col].round(n_dec).to_numpy()
+    if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_disp]:
+        for col in df.select_dtypes("float64").columns:
+            df.loc[:, col] = df.copy()[col].round(n_dec).to_numpy()
     elif cntx.view.get_code() == view_def.mode_tbl:
         df["val"] = df["val"].round(decimals=n_dec)
     else:
@@ -257,17 +263,10 @@ def get_d_data(
     return d
 
 
-def get_p_logo(
-    cntx: context_def.Context
-) -> str:
+def get_p_logo() -> str:
 
     """
     Get path of logo.
-
-    Parameters
-    ----------
-    cntx : context_def.Context
-        Context.
 
     Returns
     -------

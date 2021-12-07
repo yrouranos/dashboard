@@ -36,7 +36,7 @@ from bokeh.models import FixedTicker
 from descartes import PolygonPatch
 from matplotlib.lines import Line2D
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-from typing import Union, List, Tuple
+from typing import Union, List, Tuple, Optional
 
 import view_def
 
@@ -1117,7 +1117,7 @@ def rgb_to_dec(
     return [v/256 for v in value]
 
 
-def gen_box(
+def gen_disp_ms(
     cntx: context_def.Context
 ) -> Union[any, plt.Figure]:
 
@@ -1137,16 +1137,22 @@ def gen_box(
     --------------------------------------------------------------------------------------------------------------------
     """
 
+    # Load data.
+    df = utils.load_data(cntx, "MS")
+    if df is None:
+        return None
+    
     if cntx.lib.get_code() == lib_def.mode_hv:
-        fig = gen_box_hv(cntx)
+        fig = gen_disp_ms_hv(cntx, df)
     else:
-        fig = gen_box_mat(cntx)
+        fig = gen_disp_ms_mat(cntx, df)
 
     return fig
 
 
-def gen_box_hv(
-    cntx: context_def.Context
+def gen_disp_ms_hv(
+    cntx: context_def.Context,
+    df: pd.DataFrame
 ) -> any:
 
     """
@@ -1157,6 +1163,8 @@ def gen_box_hv(
     ----------
     cntx: context_def.Context
         Context.
+    df: pd.DataFrame
+        Dataframe.
 
     Returns
     -------
@@ -1164,9 +1172,6 @@ def gen_box_hv(
         Figure.
     --------------------------------------------------------------------------------------------------------------------
     """
-
-    # Load data.
-    df = utils.load_data(cntx)
 
     # Collect data.
     col_year = []
@@ -1198,8 +1203,9 @@ def gen_box_hv(
     return fig
 
 
-def gen_box_mat(
-    cntx: context_def.Context
+def gen_disp_ms_mat(
+    cntx: context_def.Context,
+    df: pd.DataFrame
 ) -> plt.Figure:
 
     """
@@ -1210,16 +1216,15 @@ def gen_box_mat(
     ----------
     cntx: context_def.Context
         Context.
-
+    df: pd.DataFrame
+        Dataframe.
+        
     Returns
     -------
     plt.Figure
         Figure.
     --------------------------------------------------------------------------------------------------------------------
     """
-
-    # Load data.
-    df = utils.load_data(cntx)
 
     # Collect data.
     data = []
@@ -1233,16 +1238,175 @@ def gen_box_mat(
     bp = ax.boxplot(data, showfliers=False)
 
     # Format.
-    fs = 10
-    plt.title("")
+    fs_axes = 8
     plt.xticks([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
                ["Jan", "Fév", "Mar", "Avr", "Mai", "Jui", "Jul", "Aoû", "Sep", "Oct", "Nov", "Déc"], rotation=0)
-    plt.xlabel("Mois", fontsize=fs)
-    plt.ylabel(cntx.varidx.get_label(), fontsize=fs)
+    plt.xlabel("Mois", fontsize=fs_axes)
+    plt.ylabel(cntx.varidx.get_label(), fontsize=fs_axes)
     plt.setp(bp["medians"], color="black")
-    plt.show(block=False)
+    plt.tick_params(axis="x", labelsize=fs_axes)
+    plt.tick_params(axis="y", labelsize=fs_axes)
 
     # Close plot.
-    plt.close("all")
+    plt.close(fig)
 
+    return fig
+
+
+def gen_disp_d(
+    cntx: context_def.Context
+) -> Union[any, plt.Figure]:
+    
+    """
+    --------------------------------------------------------------------------------------------------------------------
+    Generate a time series of daily values.
+
+    Parameters
+    ----------
+    cntx: context_def.Context
+        Context.
+    df: pd.DataFrame
+        Dataframe.
+
+    Returns
+    -------
+    Union[any, plt.Figure]
+        Figure.
+    --------------------------------------------------------------------------------------------------------------------
+    """
+
+    # Load data.
+    df = utils.load_data(cntx, "D")
+    if df is None:
+        return None
+
+    if cntx.lib.get_code() == lib_def.mode_hv:
+        fig = gen_disp_d_hv(cntx, df)
+    else:
+        fig = gen_disp_d_mat(cntx, df)
+
+    return fig
+
+
+def gen_disp_d_hv(
+        cntx: context_def.Context,
+        df: pd.DataFrame,
+        plt_type: Optional[int] = 1
+) -> plt.Figure:
+    """
+    --------------------------------------------------------------------------------------------------------------------
+    Generate a time series of daily values using hvplot
+
+    Parameters
+    ----------
+    cntx: context_def.Context
+        Context.
+    df: pd.DataFrame
+        Dataframe.
+    plt_type: Optional[int]
+        Plot type {1=line, 2=bar}
+        If the value
+
+    Returns
+    -------
+    plt.Figure
+        Figure.
+    --------------------------------------------------------------------------------------------------------------------
+    """
+
+    # Rename columns.
+    df.rename(columns={"day": "Jour", "mean": "Moyenne", "min": "Minimum", "max": "Maximum"}, inplace=True)
+
+    # Draw area.
+    area = df.hvplot.area(x="Jour", y="Minimum", y2="Maximum",
+                          color="darkgrey", alpha=0.3, line_alpha=0, xlabel="Jour", ylabel=cntx.varidx.get_label())
+
+    # Draw curve.
+    hover_cols = ["Jour", "Minimum", "Moyenne", "Maximum"]
+    curve = df.hvplot.line(x="Jour", y="Moyenne", color="black", alpha=0.7, hover_cols=hover_cols)
+
+    # Combine components.
+    plot = area * curve
+
+    # Add legend.
+    plot = plot.opts(legend_position="top_left", legend_opts={"click_policy": "hide", "orientation": "horizontal"},
+                     frame_height=300, frame_width=645, border_line_alpha=0.0, background_fill_alpha=0.0)
+
+    return plot
+
+    
+def gen_disp_d_mat(
+    cntx: context_def.Context,
+    df: pd.DataFrame,
+    plt_type: Optional[int] = 1
+) -> plt.Figure:
+
+    """
+    --------------------------------------------------------------------------------------------------------------------
+    Generate a time series of daily values using matplotlib.
+
+    Parameters
+    ----------
+    cntx: context_def.Context
+        Context.
+    df: pd.DataFrame
+        Dataframe.
+    plt_type: Optional[int]
+        Plot type {1=line, 2=bar}
+        If the value
+        
+    Returns
+    -------
+    plt.Figure
+        Figure.
+    --------------------------------------------------------------------------------------------------------------------
+    """
+
+    # Load data.
+    df = utils.load_data(cntx, "D")
+    if df is None:
+        return None
+
+    # Plot.
+    fs_axes = 10
+    fs_legend = 10
+
+    # Number of values on the x-axis.
+    n = len(df)
+
+    # Draw curve (mean values) and shadow (zone between minimum and maximum values).
+    fig, ax = plt.subplots(figsize=(9.95, 5), dpi=cf.dpi)
+    plt.subplots_adjust(top=0.93, bottom=0.13, left=0.08, right=0.98, hspace=0.10, wspace=0.10)
+
+    # Draw areas.
+    ref_color = rcp_def.RCP(rcp_def.rcp_ref).get_color()
+    rcp_color = "darkgrey"
+    if plt_type == 1:
+        ax.plot(range(1, n + 1), df["mean"], color=ref_color, alpha=1.0)
+        ax.fill_between(np.array(range(1, n + 1)), df["mean"], df["max"], color=rcp_color, alpha=1.0)
+        ax.fill_between(np.array(range(1, n + 1)), df["mean"], df["min"], color=rcp_color, alpha=1.0)
+    else:
+        bar_width = 1.0
+        plt.bar(range(1, n + 1), df["max"], width=bar_width, color=rcp_color)
+        plt.bar(range(1, n + 1), df["mean"], width=bar_width, color=rcp_color)
+        plt.bar(range(1, n + 1), df["min"], width=bar_width, color="white")
+        ax.plot(range(1, n + 1), df["mean"], color=ref_color, alpha=1.0)
+        y_lim_lower = min(df["min"])
+        y_lim_upper = max(df["max"])
+        plt.ylim([y_lim_lower, y_lim_upper])
+
+    # Format.
+    plt.xlim([1, n])
+    plt.xticks(np.arange(1, n + 1, 30))
+    plt.xlabel("Jour", fontsize=fs_axes)
+    plt.ylabel(cntx.varidx.get_label(), fontsize=fs_axes)
+    plt.tick_params(axis="x", labelsize=fs_axes)
+    plt.tick_params(axis="y", labelsize=fs_axes)
+
+    # Format.
+    plt.legend(["Valeur moyenne", "Étendue des valeurs"], fontsize=fs_legend)
+
+    # Close plot.
+    plt.close(fig)
+    
     return fig

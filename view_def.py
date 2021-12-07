@@ -11,20 +11,20 @@
 
 import config as cf
 import context_def
+import glob
 import object_def
-import os
 import utils
 from typing import List, Union
 
 mode_ts = "ts"
 mode_tbl = "tbl"
 mode_map = "map"
-mode_box = "box"
+mode_disp = "disp"
 
 code_desc = {mode_ts: "Série temporelle",
              mode_tbl: "Tableau",
              mode_map: "Carte",
-             mode_box: "Diagramme à moustache"}
+             mode_disp: "Dispersion"}
 
 
 class View(object_def.Obj):
@@ -41,6 +41,7 @@ class View(object_def.Obj):
         # Contructor.
         """
 
+        code = code.split("-")[0]
         desc = "" if code == "" else code_desc[code]
         super(View, self).__init__(code=code, desc=desc)
 
@@ -83,7 +84,7 @@ class Views(object_def.Objs):
 
         code_l = []
         for code in list(code_desc.keys()):
-            if os.path.exists(utils.get_d_data(cntx) + code + "/"):
+            if len(list(glob.glob(utils.get_d_data(cntx) + code + "*/"))) > 0:
                 code_l.append(code)
 
         self.add(code_l)
