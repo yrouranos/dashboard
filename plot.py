@@ -669,15 +669,18 @@ def gen_map_hv(
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    # Generate plot.
-    df.rename(columns={cntx.varidx.get_name(): "Valeur", "longitude": "Longitude", "latitude": "Latitude"},
-              inplace=True)
-    heatmap = df.hvplot.heatmap(x="Longitude", y="Latitude", C="Valeur", aspect="equal").\
-        opts(cmap=cmap, clim=(v_range[0], v_range[1]))
-
     # Font size.
     fs_labels      = 10
     fs_annotations = 8
+
+    # Label.
+    label = ("Δ" if cntx.delta else "") + cntx.varidx.get_label()
+
+    # Generate mesh.
+    df.rename(columns={cntx.varidx.get_name(): "Valeur", "longitude": "Longitude", "latitude": "Latitude"},
+              inplace=True)
+    heatmap = df.hvplot.heatmap(x="Longitude", y="Latitude", C="Valeur", aspect="equal").\
+        opts(cmap=cmap, clim=(v_range[0], v_range[1]), clabel=label)
 
     # Adjust ticks.
     if cf.opt_map_discrete:
@@ -758,6 +761,9 @@ def gen_map_mat(
     if cntx.delta:
         fs_ticks_cbar = fs_ticks_cbar - 1
 
+    # Label.
+    label = ("Δ" if cntx.delta else "") + cntx.varidx.get_label()
+
     # Initialize figure and axes.
     if "streamlit" in cntx.platform:
         fig = plt.figure(figsize=(9, 4.45), dpi=cf.dpi)
@@ -771,9 +777,6 @@ def gen_map_mat(
     specs = gridspec.GridSpec(ncols=1, nrows=1, figure=fig)
     ax = fig.add_subplot(specs[:], aspect="equal")
 
-    # Format.
-    label = ("Δ" if cntx.delta else "") + cntx.varidx.get_label()
-
     # Convert to DataArray.
     df = pd.DataFrame(df, columns=["longitude", "latitude", cntx.varidx.get_code()])
     df = df.sort_values(by=["latitude", "longitude"])
@@ -784,7 +787,7 @@ def gen_map_mat(
     arr = np.reshape(list(df[cntx.varidx.get_code()]), (len(lat), len(lon)))
     da = xr.DataArray(data=arr, dims=["latitude", "longitude"], coords=[("latitude", lat), ("longitude", lon)])
 
-    # Create mesh.
+    # Generate mesh.
     cbar_ax = make_axes_locatable(ax).append_axes("right", size="5%", pad=0.05)
     da.plot.pcolormesh(cbar_ax=cbar_ax, add_colorbar=True, add_labels=True,
                        ax=ax, cbar_kwargs=dict(orientation="vertical", pad=0.05, label=label, ticks=ticks),
