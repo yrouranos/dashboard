@@ -30,7 +30,9 @@ class Hor(object_def.Obj):
     def __init__(self, code):
 
         """
+        ----------------------------------------
         Contructor.
+        ----------------------------------------
         """
 
         super(Hor, self).__init__(code=code, desc=code)
@@ -47,7 +49,9 @@ class Hors(object_def.Objs):
     def __init__(self, *args):
 
         """
+        ----------------------------------------
         Contructor.
+        ----------------------------------------
         """
 
         super(Hors, self).__init__()
@@ -61,6 +65,7 @@ class Hors(object_def.Objs):
     def load(self, args):
 
         """
+        ----------------------------------------
         Load items.
 
         Parameters
@@ -68,13 +73,15 @@ class Hors(object_def.Objs):
         args :
             args[0] = cntx : context_def.Context
                 Context.
+        ----------------------------------------
         """
         
         cntx = args[0]
         
         code_l = []
 
-        # List all items.
+        # The items are extracted from directory names.
+        # ~/<project_code>/map/<varidx_code>/*
         if cntx.view.get_code() == view_def.mode_map:
             p = utils.get_d_data(cntx) + "<view>/<varidx_code>/*/*_<delta>.csv"
             p = p.replace("<view>", cntx.view.get_code())
@@ -84,10 +91,16 @@ class Hors(object_def.Objs):
                 code = os.path.basename(os.path.dirname(p))
                 if code not in code_l:
                     code_l.append(code)
+
+        # The items are extracted from the 'hor' column of data files.
+        # ~/<project_code>/tbl/<varidx_code>.csv
         elif cntx.view.get_code() == view_def.mode_tbl:
             df = utils.load_data(cntx)
             code_l = list(dict.fromkeys(list(df["hor"])))
             code_l.remove(df[df["rcp"] == rcp_def.rcp_ref]["hor"][0])
+
+        # The items are extracted from directory names.
+        # ~/<project_code>/disp*/*
         elif cntx.view.get_code() == view_def.mode_disp:
             p = utils.get_d_data(cntx) + "<view>/<varidx_code>/*"
             p = p.replace("<view>/", cntx.view.get_code() + "*/")
@@ -99,7 +112,8 @@ class Hors(object_def.Objs):
 
         code_l.sort()
 
-        # Remove the items that includes all years.
+        # Remove the items that include all years. For instance, if the horizons are 1981-2010, 2021-2050, 2051-2080
+        # and 1981-2080, the last horizon needs to be removed.
         if len(code_l) > 0:
             min_yr, max_yr = None, None
             for code in code_l:
@@ -123,6 +137,7 @@ class Hors(object_def.Objs):
     ):
         
         """
+        ----------------------------------------
         Add one or several items.
         
         Parameters
@@ -131,6 +146,7 @@ class Hors(object_def.Objs):
             Code or list of codes.
         inplace : bool
             If True, modifies the current instance.
+        ----------------------------------------
         """        
         
         code_l = code

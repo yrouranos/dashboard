@@ -180,7 +180,7 @@ idx_groups = [[idx_rain_season,
 -------------------------------------------------------------------------------------------------------------------------
 """
 
-# TODO: Replace X and Y by real values.
+# TODO: Replace X,Y,Z below with threshold values, would need to be provided in a configuration file.
 
 # Properties of variables and indices.
 code_props = {
@@ -339,7 +339,9 @@ class VarIdx(object_def.Obj):
     def __init__(self, code):
 
         """
+        ----------------------------------------
         Contructor.
+        ----------------------------------------
         """
 
         desc = "" if code == "" else code_props[code][0]
@@ -348,12 +350,14 @@ class VarIdx(object_def.Obj):
     def get_name(self) -> str:
 
         """
+        ----------------------------------------
         Extract name.
 
         Returns
         -------
         str
             Name.
+        ----------------------------------------
         """
 
         pos = self.code.rfind("_")
@@ -367,12 +371,14 @@ class VarIdx(object_def.Obj):
     def get_unit(self) -> str:
     
         """
+        ----------------------------------------
         Get unit.
 
         Returns
         -------
         str
             Unit.
+        ----------------------------------------
         """
 
         return code_props[self.get_code()][2]
@@ -380,12 +386,14 @@ class VarIdx(object_def.Obj):
     def get_precision(self) -> int:
 
         """
+        ----------------------------------------
         Get precision (number of decimals).
 
         Returns
         -------
         int
             Precision (number of decimals).
+        ----------------------------------------
         """
 
         return code_props[self.get_code()][3]
@@ -393,12 +401,14 @@ class VarIdx(object_def.Obj):
     def get_label(self) -> str:
 
         """
+        ----------------------------------------
         Combine description and unit.
 
         Returns
         -------
         str
             Combine description and unit.
+        ----------------------------------------
         """
 
         desc = code_props[self.get_code()][1]
@@ -411,7 +421,9 @@ class VarIdx(object_def.Obj):
     def is_var(self) -> bool:
         
         """
+        ----------------------------------------
         Determine if the instance is a variable.
+        ----------------------------------------
         """
 
         var_l = [var_tas, var_tasmin, var_tasmax, var_pr, var_uas, var_vas, var_sfcwindmax,
@@ -431,7 +443,9 @@ class VarIdxs(object_def.Objs):
     def __init__(self, *args):
 
         """
+        ----------------------------------------
         Contructor.
+        ----------------------------------------
         """
 
         super().__init__()
@@ -445,6 +459,7 @@ class VarIdxs(object_def.Objs):
     def load(self, args):
 
         """
+        ----------------------------------------
         Load items.
 
         Parameters
@@ -452,22 +467,28 @@ class VarIdxs(object_def.Objs):
         args :
             args[0] : cntx: context_def.Context
                 Context.
+        ----------------------------------------
         """
 
         cntx = args[0]
         
         code_l = []
 
+        # The items are extracted from directory names.
+        # ~/<project_code>/<view_code>/*
         if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_tbl]:
-            p = utils.get_d_data(cntx) + "<view>/*.csv"
-            p = p.replace("<view>/", cntx.view.get_code().split("-")[0] + "*/")
+            p = utils.get_d_data(cntx) + "<view_code>/*.csv"
+            p = p.replace("<view_code>/", cntx.view.get_code().split("-")[0] + "*/")
             for p_i in list(glob.glob(p)):
                 code = os.path.basename(p_i).replace(".csv", "")
                 if code not in code_l:
                     code_l.append(code)
+
+        # The items are extracted from directory names.
+        # ~/<project_code>/<view_code>/<varidx_code>/*
         elif cntx.view.get_code() in [view_def.mode_map, view_def.mode_disp]:
-            p = utils.get_d_data(cntx) + "<view>*/*"
-            p = p.replace("<view>", cntx.view.get_code())
+            p = utils.get_d_data(cntx) + "<view_code>*/*"
+            p = p.replace("<view_code>", cntx.view.get_code())
             for p_i in list(glob.glob(p)):
                 code = os.path.basename(p_i)
                 if (code not in code_l) and (os.path.isdir(p_i)):
@@ -483,6 +504,7 @@ class VarIdxs(object_def.Objs):
     ):
 
         """
+        ----------------------------------------
         Add one or several items.
 
         Parameters
@@ -491,6 +513,7 @@ class VarIdxs(object_def.Objs):
             Code or list of codes.
         inplace : bool
             If True, modifies the current instance.
+        ----------------------------------------
         """
 
         code_l = code
@@ -506,12 +529,14 @@ class VarIdxs(object_def.Objs):
     def get_desc_l(self) -> List[str]:
 
         """
+        ----------------------------------------
         Get a list of descriptions.
 
         Returns
         -------
         List[str]
             Descriptions.
+        ----------------------------------------
         """
 
         desc_l = super(VarIdxs, self).get_desc_l()

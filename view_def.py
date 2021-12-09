@@ -38,7 +38,9 @@ class View(object_def.Obj):
     def __init__(self, code):
 
         """
-        # Contructor.
+        ----------------------------------------
+        Contructor.
+        ----------------------------------------
         """
 
         code = code.split("-")[0]
@@ -57,7 +59,9 @@ class Views(object_def.Objs):
     def __init__(self, *args):
 
         """
+        ----------------------------------------
         Constructor.
+        ----------------------------------------
         """
 
         super(Views, self).__init__()
@@ -71,6 +75,7 @@ class Views(object_def.Objs):
     def load(self, args):
 
         """
+        ----------------------------------------
         Load items.
 
         Parameters
@@ -78,11 +83,15 @@ class Views(object_def.Objs):
         args :
             args[0] : cntx: context_def.Context
                 Context.
+        ----------------------------------------
         """
 
         cntx = args[0]
 
         code_l = []
+
+        # The items are extracted from directory names. They must be comprised in 'code_desc'.
+        # ~/<project_code>/*
         for code in list(code_desc.keys()):
             if len(list(glob.glob(utils.get_d_data(cntx) + code + "*/"))) > 0:
                 code_l.append(code)
@@ -96,6 +105,7 @@ class Views(object_def.Objs):
     ):
 
         """
+        ----------------------------------------
         Add one or several items.
 
         Parameters
@@ -104,6 +114,7 @@ class Views(object_def.Objs):
             Code or list of codes.
         inplace : bool
             If True, modifies the current instance.
+        ----------------------------------------
         """
 
         code_l = code

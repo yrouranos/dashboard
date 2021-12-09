@@ -30,7 +30,9 @@ class Obj:
     def __init__(self, code, desc):
 
         """
+        ----------------------------------------
         Constructor.
+        ----------------------------------------
         """
 
         self.code = code
@@ -39,12 +41,14 @@ class Obj:
     def get_code(self) -> str:
     
         """
+        ----------------------------------------
         Get code.
 
         Returns
         -------
         str
             Code.
+        ----------------------------------------
         """
 
         return self.code
@@ -52,12 +56,14 @@ class Obj:
     def get_desc(self) -> str:
 
         """
+        ----------------------------------------
         Get description.
 
         Returns
         -------
         str
             Description.
+        ----------------------------------------
         """
 
         return self.desc
@@ -65,12 +71,14 @@ class Obj:
     def copy(self):
 
         """
+        ----------------------------------------
         Copy instance.
 
         Returns
         -------
         View
             Copy of instance.
+        ----------------------------------------
         """
 
         return copy.deepcopy(self)
@@ -90,20 +98,36 @@ class Objs:
     def __init__(self, *args):
 
         """
+        ----------------------------------------
         Constructor.
+        ----------------------------------------
         """
 
         self.items = []
 
     def set_items(self, items):
+
+        """
+        ----------------------------------------
+        Set items.
+        ----------------------------------------
+        """
+
         self.items = items
 
     def get_items(self):
+
+        """
+        ----------------------------------------
+        Get items.
+        ----------------------------------------
+        """
         return self.items
 
     def get_code(self, desc: str) -> str:
 
         """
+        ----------------------------------------
         Get code.
 
         Paramters
@@ -115,6 +139,7 @@ class Objs:
         -------
         str
             Code.
+        ----------------------------------------
         """
 
         for item in self.items:
@@ -126,6 +151,7 @@ class Objs:
     def get_desc(self, code: str) -> str:
 
         """
+        ----------------------------------------
         Get description.
 
         Paramters
@@ -137,6 +163,7 @@ class Objs:
         -------
         str
             Description.
+        ----------------------------------------
         """
 
         for item in self.items:
@@ -148,12 +175,14 @@ class Objs:
     def get_code_l(self) -> List[str]:
 
         """
+        ----------------------------------------
         Get a list of codes.
 
         Returns
         -------
         List[str]
             Codes.
+        ----------------------------------------
         """
 
         code_l = []
@@ -166,12 +195,14 @@ class Objs:
     def get_desc_l(self) -> List[str]:
 
         """
+        ----------------------------------------
         Get a list of descriptions.
 
         Returns
         -------
         List[str]
             Descriptions.
+        ----------------------------------------
         """
 
         desc_l = []
@@ -188,6 +219,7 @@ class Objs:
     ):
 
         """
+        ----------------------------------------
         Add one or several items.
 
         Paramters
@@ -195,7 +227,8 @@ class Objs:
         items : Union[any, List[any]]
             Item or list of items.
         inplace : bool
-            If True, modifieds the current instanc
+            If True, modifies the current instance.
+        ----------------------------------------
         """
 
         new = self.copy()
@@ -212,6 +245,7 @@ class Objs:
     ):
 
         """
+        ----------------------------------------
         Remove one or several items (based on code).
 
         Paramters
@@ -219,7 +253,8 @@ class Objs:
         code : Union[str, List[str]]
             Code or list of codes.
         inplace : bool
-            If True, modifieds the current instance.
+            If True, modifies the current instance.
+        ----------------------------------------
         """
 
         code_l = code
@@ -241,12 +276,14 @@ class Objs:
     def copy(self):
 
         """
+        ----------------------------------------
         Copy instance.
 
         Returns
         -------
         View
             Copy of instance.
+        ----------------------------------------
         """
 
         return copy.deepcopy(self)

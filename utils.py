@@ -36,7 +36,62 @@ def load_data(
     """
     --------------------------------------------------------------------------------------------------------------------
     Load data.
-    
+
+    Structure of data directory:
+    +-- ouranos.png
+    |
+    +-- <project_code>
+        |
+        +-- disp-d
+        |   |
+        |   +-- <varidx_code>  ex: pr
+        |       |
+        |       +-- <hor_code>  ex: 2021-2050
+        |           |
+        |           +-- <varidx_name>_<RCM>_<domain>_<GCM>_<rcp_code>_<hor_code.start>_<hor_code.end>_daily.csv
+        |                 ex: pr_HIRHAM5_AFR-44_ICHEC-EC-EARTH_rcp45_2021_2050_daily.csv
+        |               columns: day,mean,min,max,var
+        |                    ex: 1,7.244016214648855e-06,-3.332919823397555e-08,0.00021562011394048503,pr
+        |
+        +-- disp-m
+        |   |
+        |   +-- <varidx_code>  ex: pr
+        |       |
+        |       +-- <hor_code>  ex: 2021-2050
+        |           |
+        |           +-- <varidx_name>_<RCM>_<domain>_<GCM>_<rcp_code>_<hor_code.start>_<hor_code.end>_monthly.csv
+        |                 ex: pr_HIRHAM5_AFR-44_ICHEC-EC-EARTH_rcp45_2021_2050_monthly.csv
+        |               columns: year,1,2,3,4,5,6,7,8,9,10,11,12
+        |                    ex: 2021,0.003668,0.000196,0.014072,1.344051,3.065682,28.971143,...
+        +-- ts
+        |   |
+        |   +-- <varidx_code>.csv
+        |         ex: pr.csv
+        |       columns: year,ref,rcp45_moy,rcp45_min,rcp45_max,rcp85_moy,rcp85_min,rcp85_max
+        |            ex: 1981,545.37,475.40,358.05,602.77,469.10,350.61,601.30
+        |
+        +-- tbl
+        |   |
+        |   +-- <varidx_code>.csv
+        |         ex: pr.csv
+        |       columns: stn, var, rcp, hor, stat, q, val
+        |            ex: era5_land, pr, rcp45, 2021-2050, mean, -1, 486.53
+        +-- map
+            |
+            +-- <varidx_code>  ex: pr
+            |   |
+            |   +-- <hor_code>  ex: 2021-2050
+            |       |
+            |       +-- <varidx_name>_<rcp_code>_<hor_code.start>_<hor_code.end>_<stat_code>.csv
+            |             ex: pr_rcp45_2021_2050_mean.csv
+            |             ex: pr_rcp45_2021_2050_q10.csv
+            |             ex: pr_rcp45_2021_2050_q90_delta.csv
+            |           columns: longitude,latitude,pr
+            |                ex: -17.30,14.8,226.06
+            |
+            +-- boundaries.geojson
+            +-- locations.csv
+
     Parameters
     ----------
     cntx : context_def.Context
@@ -140,7 +195,7 @@ def get_min_max(
 
     """
     --------------------------------------------------------------------------------------------------------------------
-    Generate a plot of time series.
+    Extract the minimum and maximum values, considering all the maps for a single variable.
     
     Parameters
     ----------
@@ -187,33 +242,6 @@ def get_min_max(
     return min_val, max_val
 
 
-def round_values(vals: List[float], n_dec: int) -> List[str]:
-
-    """
-    --------------------------------------------------------------------------------------------------------------------
-    Round values.
-
-    Parameters
-    ----------
-    vals : List[float]
-        Values.
-    n_dec : int
-        Number of decimals.
-
-    Returns
-    -------
-    List[str]
-        Rounded values.
-    --------------------------------------------------------------------------------------------------------------------
-    """
-
-    for i in range(len(vals)):
-        if not np.isnan(vals[i]):
-            vals[i] = str("{:." + str(n_dec) + "f}").format(float(vals[i]))
-
-    return vals
-
-
 def list_dir(
     p: str
 ) -> List[str]:
@@ -251,6 +279,7 @@ def get_d_data(
 ) -> str:
 
     """
+    --------------------------------------------------------------------------------------------------------------------
     Get the base directory of data.
 
     Parameters
@@ -262,10 +291,11 @@ def get_d_data(
     -------
     str
         Base directory of data.
+    --------------------------------------------------------------------------------------------------------------------
     """
 
-    d = d_data + "<project>/"
-    d = d.replace("<project>/", "" if cntx.project is None else cntx.project.get_code() + "/")
+    d = d_data + "<project_code>/"
+    d = d.replace("<project_code>/", "" if cntx.project is None else cntx.project.get_code() + "/")
 
     return d
 
@@ -289,6 +319,7 @@ def get_p_locations(
 ) -> str:
 
     """
+    --------------------------------------------------------------------------------------------------------------------
     Get the path of the file defining locations.
 
     Parameters
@@ -300,6 +331,7 @@ def get_p_locations(
     -------
     str
         Path of CSV file containing region boundaries.
+    --------------------------------------------------------------------------------------------------------------------
     """
 
     p = get_d_data(cntx) + "map/locations.csv"
@@ -312,6 +344,7 @@ def get_p_bounds(
 ) -> str:
 
     """
+    --------------------------------------------------------------------------------------------------------------------
     Get the path of the file defining region boundaries.
 
     Parameters
@@ -323,9 +356,37 @@ def get_p_bounds(
     -------
     str
         Path of geojson file containing region boundaries.
+    --------------------------------------------------------------------------------------------------------------------
     """
 
-    p = get_d_data(cntx) + "<view>/boundaries.geojson"
-    p = p.replace("<view>", cntx.view.get_code())
+    p = get_d_data(cntx) + "<view_code>/boundaries.geojson"
+    p = p.replace("<view_code>", cntx.view.get_code())
 
     return p
+
+
+def round_values(vals: List[float], n_dec: int) -> List[str]:
+
+    """
+    --------------------------------------------------------------------------------------------------------------------
+    Round values.
+
+    Parameters
+    ----------
+    vals : List[float]
+        Values.
+    n_dec : int
+        Number of decimals.
+
+    Returns
+    -------
+    List[str]
+        Rounded values.
+    --------------------------------------------------------------------------------------------------------------------
+    """
+
+    for i in range(len(vals)):
+        if not np.isnan(vals[i]):
+            vals[i] = str("{:." + str(n_dec) + "f}").format(float(vals[i]))
+
+    return vals

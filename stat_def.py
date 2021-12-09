@@ -28,6 +28,19 @@ mode_max = "max"
 
 def get_code_desc():
 
+    """
+    --------------------------------------------------------------------------------------------------------------------
+    Get a dictionary of codes and descriptions.
+
+    Note that 'mode_q_low' and 'mode_q_high' vary with the context, in particular, project and variable.
+
+    Returns
+    -------
+    dict
+        Dictionary of codes and descriptions.
+    --------------------------------------------------------------------------------------------------------------------
+    """
+
     return {
         mode_min: "Minimum",
         mode_q_low: mode_q_low.replace("q", "") + "e percentile",
@@ -49,7 +62,9 @@ class Stat(object_def.Obj):
     def __init__(self, code):
 
         """
+        ----------------------------------------
         Contructor.
+        ----------------------------------------
         """
 
         desc = "" if code == "" else get_code_desc()[code]
@@ -67,7 +82,9 @@ class Stats(object_def.Objs):
     def __init__(self, *args):
 
         """
+        ----------------------------------------
         Constructor.
+        ----------------------------------------
         """
 
         super(Stats, self).__init__()
@@ -81,6 +98,7 @@ class Stats(object_def.Objs):
     def load(self, args):
 
         """
+        ----------------------------------------
         Load items.
         
         Parameters
@@ -88,21 +106,24 @@ class Stats(object_def.Objs):
         args :
             args[0] = cntx : context_def.Context
                 Context.
+        ----------------------------------------
         """
 
         cntx = args[0]
 
         code_l = []
 
-        # The list of items is within file structure.
+        # The items are extracted from file names.
+        # ~/<project_code>/map/<varidx_code>/<hor_code>/*.csv"
         if cntx.view.get_code() == view_def.mode_map:
-            p = utils.get_d_data(cntx) + "<view>/<varidx_code>/<hor>/<varidx_name>_<rcp>_<hor_>_<stat>_<delta>.csv"
-            p = p.replace("<view>", cntx.view.get_code())
+            p = utils.get_d_data(cntx) +\
+                "<view_code>/<varidx_code>/<hor_code>/<varidx_name>_<rcp_code>_<hor_code_>_<stat>_<delta>.csv"
+            p = p.replace("<view_code>", cntx.view.get_code())
             p = p.replace("<varidx_code>", cntx.varidx.get_code())
             p = p.replace("<varidx_name>", cntx.varidx.get_code())
-            p = p.replace("<rcp>", "" if cntx.rcp is None else cntx.rcp.get_code())
-            p = p.replace("<hor_>", "" if cntx.hor is None else cntx.hor.get_code().replace("-", "_"))
-            p = p.replace("<hor>", "" if cntx.hor is None else cntx.hor.get_code())
+            p = p.replace("<rcp_code>", "" if cntx.rcp is None else cntx.rcp.get_code())
+            p = p.replace("<hor_code_>", "" if cntx.hor is None else cntx.hor.get_code().replace("-", "_"))
+            p = p.replace("<hor_code>", "" if cntx.hor is None else cntx.hor.get_code())
             p = p.replace("_<delta>", "" if cntx.delta is False else "_delta")
 
             is_rcp_ref = cntx.rcp.get_code() == rcp_def.rcp_ref
@@ -120,6 +141,7 @@ class Stats(object_def.Objs):
     ):
 
         """
+        ----------------------------------------
         Add one or several items.
 
         Parameters
@@ -128,6 +150,7 @@ class Stats(object_def.Objs):
             Code or list of codes.
         inplace : bool
             If True, modifies the current instance.
+        ----------------------------------------
         """
 
         code_l = code

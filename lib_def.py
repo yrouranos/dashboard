@@ -35,7 +35,9 @@ class Lib(object_def.Obj):
     def __init__(self, code):
 
         """
+        ----------------------------------------
         Contructor.
+        ----------------------------------------
         """
 
         desc = "" if code == "" else code_desc[code]
@@ -53,7 +55,9 @@ class Libs(object_def.Objs):
     def __init__(self, *args):
 
         """
+        ----------------------------------------
         Contructor.
+        ----------------------------------------
         """
 
         super(Libs, self).__init__()
@@ -75,12 +79,14 @@ class Libs(object_def.Objs):
     ):
         
         """
+        ----------------------------------------
         Add one or several items.
         
         Paramters
         ---------
         code : Union[str, List[str]]
             Code or list of codes.
+        ----------------------------------------
         """        
         
         code_l = code

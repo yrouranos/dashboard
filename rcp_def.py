@@ -17,27 +17,22 @@ import utils
 import view_def
 from typing import List, Union
 
-# Reference period.
+# Emission scenarios.
+# The last item means all RCPs.
 rcp_ref = "ref"
-
-# Future period RCP 2.6.
 rcp_26 = "rcp26"
-
-# Future period RCP 4.5.
 rcp_45 = "rcp45"
-
-# Future period RCP 8.5.
 rcp_85 = "rcp85"
-
-# Any type of RCP.
 rcp_xx = "rcpxx"
 
 # Properties of emission scenarios.
-code_props = {rcp_ref: ["Référence", "black"],
-              rcp_26: ["RCP 2.6", "blue"],
-              rcp_45: ["RCP 4.5", "green"],
-              rcp_85: ["RCP 8.5", "red"],
-              rcp_xx: ["Tous", "pink"]}
+code_props = {
+    rcp_ref: ["Référence", "black"],
+    rcp_26: ["RCP 2.6", "blue"],
+    rcp_45: ["RCP 4.5", "green"],
+    rcp_85: ["RCP 8.5", "red"],
+    rcp_xx: ["Tous", "pink"]
+}
 
 
 class RCP(object_def.Obj):
@@ -51,7 +46,9 @@ class RCP(object_def.Obj):
     def __init__(self, code):
 
         """
+        ----------------------------------------
         Contructor.
+        ----------------------------------------
         """
 
         desc = "" if code == "" else code_props[code][0]
@@ -61,12 +58,14 @@ class RCP(object_def.Obj):
     def get_color(self) -> str:
         
         """
+        ----------------------------------------
         Get color.
         
         Returns
         -------
         str
             Color.
+        ----------------------------------------
         """
             
         return self.color
@@ -83,7 +82,9 @@ class RCPs(object_def.Objs):
     def __init__(self, *args):
 
         """
+        ----------------------------------------
         Contructor.
+        ----------------------------------------
         """
 
         super(RCPs, self).__init__()
@@ -97,6 +98,7 @@ class RCPs(object_def.Objs):
     def load(self, args):
 
         """
+        ----------------------------------------
         Load items.
 
         Parameters
@@ -104,11 +106,15 @@ class RCPs(object_def.Objs):
         args :
             args[0] = cntx : context_def.Context
                 Context.
+        ----------------------------------------
         """
 
         cntx = args[0]
 
-        # The list of items is within data files.
+        # The items are extracted from column names of data files ('ts' view).
+        # ~/<project_code>/ts/<varidx_code>/*.csv
+        # The items are extracted from the 'rcp' column of data files ('tbl' view).
+        # ~/<project_code>/tbl/<varidx_code>/*.csv
         if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_tbl]:
             p = utils.get_d_data(cntx) + "/<view_code>/<varidx_code>.csv"
             p = p.replace("<view_code>", cntx.view.get_code())
@@ -121,13 +127,17 @@ class RCPs(object_def.Objs):
             if cntx.delta and (rcp_ref in item_l):
                 item_l.remove(rcp_ref)
 
-        # The list of items is within file structure.
+        # The items are extracted from file names.
+        # ~/<project_code>/map/<varidx_code>/<hor_code>/*
         elif cntx.view.get_code() == view_def.mode_map:
-            p = utils.get_d_data(cntx) + "<view_code>/<varidx_code>/<hor>/*.csv"
+            p = utils.get_d_data(cntx) + "<view_code>/<varidx_code>/<hor_code>/*.csv"
             p = p.replace("<view_code>", cntx.view.get_code())
             p = p.replace("<varidx_code>", cntx.varidx.get_code())
-            p = p.replace("<hor>", cntx.hor.get_code())
+            p = p.replace("<hor_code>", cntx.hor.get_code())
             item_l = list(glob.glob(p))
+
+        # The items are extracted from file names.
+        # ~/<project_code>/disp*/<varidx_code>/<hor_code>/*.csv
         elif cntx.view.get_code() == view_def.mode_disp:
             p = utils.get_d_data(cntx) + "<view_code>*/<varidx_code>/<hor_code>/*.csv"
             p = p.replace("<view_code>", cntx.view.get_code())
@@ -139,6 +149,7 @@ class RCPs(object_def.Objs):
             item_l = []
 
         # Extract RCPs.
+        # Sort items, but let the reference emission scenario be first.
         code_l = []
         rcp_ref_found = False
         for item in item_l:
@@ -166,6 +177,7 @@ class RCPs(object_def.Objs):
     ):
 
         """
+        ----------------------------------------
         Add one or several items.
 
         Parameters
@@ -174,6 +186,7 @@ class RCPs(object_def.Objs):
             Code or list of codes.
         inplace : bool
             If True, modifies the current instance.
+        ----------------------------------------
         """
 
         code_l = code
@@ -189,12 +202,14 @@ class RCPs(object_def.Objs):
     def get_code_l(self) -> List[str]:
 
         """
+        ----------------------------------------
         Get a list of codes.
 
         Returns
         -------
         List[str]
             Codes.
+        ----------------------------------------
         """
 
         code_l = super(RCPs, self).get_code_l()
@@ -208,12 +223,14 @@ class RCPs(object_def.Objs):
     def get_desc_l(self) -> List[str]:
 
         """
+        ----------------------------------------
         Get a list of descriptions.
 
         Returns
         -------
         List[str]
             Descriptions.
+        ----------------------------------------
         """
 
         desc_l = super(RCPs, self).get_desc_l()
@@ -229,12 +246,14 @@ class RCPs(object_def.Objs):
     ) -> List[str]:
     
         """
+        ----------------------------------------
         Get colors.
     
         Returns
         -------
         List[str]
             Colors.
+        ----------------------------------------
         """
     
         color_l = []

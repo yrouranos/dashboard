@@ -28,8 +28,11 @@ class Model(object_def.Obj):
     """
 
     def __init__(self, code):
+
         """
+        ----------------------------------------
         Contructor.
+        ----------------------------------------
         """
 
         desc = rcp_def.RCP(rcp_def.rcp_ref).get_desc() if code == rcp_def.rcp_ref else code
@@ -47,7 +50,9 @@ class Models(object_def.Objs):
     def __init__(self, *args):
 
         """
+        ----------------------------------------
         Constructor.
+        ----------------------------------------
         """
 
         super(Models, self).__init__()
@@ -61,6 +66,7 @@ class Models(object_def.Objs):
     def load(self, args):
 
         """
+        ----------------------------------------
         Load items.
 
         Parameters
@@ -68,16 +74,21 @@ class Models(object_def.Objs):
         args :
             args[0] = cntx : context_def.Context
                 Context.
+        ----------------------------------------
         """
 
         cntx = args[0]
 
-        p = utils.get_d_data(cntx) + "<view>*/<varidx_code>/<hor_code>/*<rcp_code>*.csv"
-        p = p.replace("<view>", cntx.view.get_code())
+        # The items are extracted from file names.
+        # ~/<project_code>/<view_code>*/<varidx_code>/<hor_code>/*.csv
+        # The result only makes sense in the context of the 'disp' view.
+        p = utils.get_d_data(cntx) + "<view_code>*/<varidx_code>/<hor_code>/*<rcp_code>*.csv"
+        p = p.replace("<view_code>", cntx.view.get_code())
         p = p.replace("<varidx_code>", cntx.varidx.get_code())
         p = p.replace("<hor_code>", cntx.hor.get_code())
         p = p.replace("<rcp_code>", cntx.rcp.get_code())
 
+        # The code of each model is set to <RCM>_<GCM>.
         code_l = []
         rcp_ref_found = False
         for p in list(glob.glob(p)):
@@ -101,6 +112,7 @@ class Models(object_def.Objs):
     ):
 
         """
+        ----------------------------------------
         Add one or several items.
 
         Parameters
@@ -109,6 +121,7 @@ class Models(object_def.Objs):
             Code or list of codes.
         inplace : bool
             If True, modifies the current instance.
+        ----------------------------------------
         """
 
         code_l = code

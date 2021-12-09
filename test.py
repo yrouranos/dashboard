@@ -40,7 +40,7 @@ def test_gen_ts(
     cntx.platform = "streamlit"
     cntx.project = project_def.Project(code=project_code, cntx=cntx)
     cntx.views = view_def.Views()
-    cntx.view = view_def.View("ts")
+    cntx.view = view_def.View(view_def.mode_ts)
     cntx.libs = lib_def.Libs(cntx.view.get_code())
 
     for lib in cntx.libs.get_code_l():
@@ -80,7 +80,7 @@ def test_gen_tbl(
     cntx.platform = "streamlit"
     cntx.project = project_def.Project(code=project_code, cntx=cntx)
     cntx.views = view_def.Views()
-    cntx.view = view_def.View("tbl")
+    cntx.view = view_def.View(view_def.mode_tbl)
 
     cntx.libs = lib_def.Libs(cntx.view.get_code())
     for lib in cntx.libs.get_code_l():
@@ -126,7 +126,7 @@ def test_gen_map(
     cntx.platform = "streamlit"
     cntx.project = project_def.Project(code=project_code, cntx=cntx)
     cntx.views = view_def.Views()
-    cntx.view = view_def.View("map")
+    cntx.view = view_def.View(view_def.mode_map)
 
     cntx.libs = lib_def.Libs(cntx.view.get_code())
     for lib in cntx.libs.get_code_l():
@@ -181,7 +181,7 @@ def test_gen_disp(
     cntx.platform = "streamlit"
     cntx.project = project_def.Project(code=project_code, cntx=cntx)
     cntx.views = view_def.Views()
-    cntx.view = view_def.View("disp")
+    cntx.view = view_def.View(view_def.mode_disp)
     cntx.libs = lib_def.Libs(cntx.view.get_code())
     cntx.delta = False
 
@@ -213,3 +213,24 @@ def test_gen_disp(
 
                         plot.gen_disp_ms(cntx)
                         plot.gen_disp_d(cntx)
+
+
+def test_all(
+    project_code: str
+):
+
+    """
+    --------------------------------------------------------------------------------------------------------------------
+    Launch all test functions.
+
+    Parameters
+    ----------
+    project_code : str
+        Project code.
+    --------------------------------------------------------------------------------------------------------------------
+    """
+
+    test_gen_ts(project_code)
+    test_gen_tbl(project_code)
+    test_gen_map(project_code)
+    test_gen_disp(project_code)

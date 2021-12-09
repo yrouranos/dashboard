@@ -23,7 +23,9 @@ class Context(object_def.Obj):
     def __init__(self):
 
         """
+        ----------------------------------------
         Constructor.
+        ----------------------------------------
         """
 
         # Project.
@@ -57,7 +59,7 @@ class Context(object_def.Obj):
         # Models (selected and all).
         self.model = None
         self.models = None
-        
+
         # Platform.
         self.platform = ""
 

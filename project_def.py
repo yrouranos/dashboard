@@ -30,7 +30,9 @@ class Project(object_def.Obj):
     def __init__(self, code="", cntx: context_def.Context = None):
 
         """
+        ----------------------------------------
         Contructor.
+        ----------------------------------------
         """
 
         super(Project, self).__init__(code=code, desc=code)
@@ -43,6 +45,7 @@ class Project(object_def.Obj):
     def set_quantiles(self, code: int, cntx: context_def.Context):
 
         """
+        ----------------------------------------
         Get quantiles (low and high).
 
         Parameters
@@ -51,19 +54,22 @@ class Project(object_def.Obj):
             Code.
         cntx : context_def.Context
             Context.
+        ----------------------------------------
         """
 
         quantiles = []
 
         if cntx.view.get_code() in [view_def.mode_map, view_def.mode_tbl]:
 
-            # Quantiles are comprised in a column.
+            # The items are extracted from the 'q' column of data files.
+            # ~/<project_code>/tbl/<varidx_code>.csv
             if cntx.view.get_code() == view_def.mode_tbl:
                 df = utils.load_data(cntx)
                 df = df[(df["q"] > 0.01) & (df["q"] < 0.99) & (df["q"] != 0.5)]["q"]
                 quantiles = [min(df), max(df)]
 
-            # Quantiles are comprised in file names.
+            # The items are extracted from file names.
+            # ~/<project_code>/map/<varidx_code>/*/*_q*.csv
             elif cntx.view.get_code() == view_def.mode_map:
                 p = utils.d_data + "<project_code>/<view_code>/<varidx_code>"
                 p = p.replace("<project_code>", code)
@@ -78,7 +84,7 @@ class Project(object_def.Obj):
                 if len(quantiles) > 0:
                     quantiles.sort()
 
-        # Does not apply to these views.
+        # Does not apply to the other views.
         else:
             quantiles = [0, 1]
 
@@ -89,12 +95,14 @@ class Project(object_def.Obj):
     def get_quantiles(self):
 
         """
+        ----------------------------------------
         Get quantiles (low and high).
 
         Returns
         -------
         List[str]
             Quantiles.
+        ----------------------------------------
         """
 
         return self.quantiles
@@ -102,12 +110,14 @@ class Project(object_def.Obj):
     def get_quantiles_as_str(self) -> List[str]:
 
         """
+        ----------------------------------------
         Get quantiles as string (low and high).
 
         Returns
         -------
         List[str]
             Formatted quantiles.
+        ----------------------------------------
         """
 
         q_low = str(math.ceil(self.get_quantiles()[0] * 100))
@@ -124,27 +134,29 @@ class Projects(object_def.Objs):
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    # Constructors.
     def __init__(self, code: Union[str, List[str]] = "", cntx: context_def.Context = None):
+
+        """
+        ----------------------------------------
+        Constructor.
+        ----------------------------------------
+        """
+
         super(Projects, self).__init__()
 
         if cntx is not None:
-            self.load(cntx)
+            self.load()
         elif code != "":
             self.add(code, cntx)
 
     def load(
-        self,
-        cntx: context_def.Context
+        self
     ):
 
         """
+        ----------------------------------------
         Load items.
-
-        Parameters
-        ----------
-        cntx: context_def.Context
-            Context.
+        ----------------------------------------
         """
 
         code_l = utils.list_dir(utils.d_data)
@@ -160,6 +172,7 @@ class Projects(object_def.Objs):
     ):
 
         """
+        ----------------------------------------
         Add one or several items.
 
         Parameters
@@ -170,6 +183,7 @@ class Projects(object_def.Objs):
             Context.
         inplace : Optional[bool]
             If True, modifies the current instance.
+        ----------------------------------------
         """
 
         code_l = code
