@@ -133,6 +133,4 @@ def refresh():
         st.write("Valeur de référence : " + tbl_ref)
 
 
-# import test
-# test.test_gen_map("sn")
 refresh()

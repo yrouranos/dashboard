@@ -24,7 +24,7 @@ mode_disp = "disp"
 code_desc = {mode_ts: "Série temporelle",
              mode_tbl: "Tableau",
              mode_map: "Carte",
-             mode_disp: "Dispersion"}
+             mode_disp: "Cycle annuel"}
 
 
 class View(object_def.Obj):
