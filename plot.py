@@ -23,6 +23,7 @@ import matplotlib.colors as colors
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 import pandas as pd
 import panel as pn
 import plotly.graph_objects as go
@@ -74,6 +75,7 @@ def gen_ts(
         for col in df.columns[2:]:
             if col != rcp_def.rcp_ref:
                 df[col] = df[col] - df[rcp_def.rcp_ref].mean()
+        del df[rcp_def.rcp_ref]
 
     # Extract minimum and maximum x-values (round to lower and upper decades).
     x_min = math.floor(min(df["year"]) / 10) * 10
@@ -209,7 +211,8 @@ def gen_ts_alt(
                 else:
                     plot = plot + curve
 
-    return plot.configure_axis(grid=False).properties(height=365, width=705)
+    height = 362 if cntx.platform == "streamlit" else 300
+    return plot.configure_axis(grid=False).properties(height=height, width=650)
 
 
 def gen_ts_hv(
@@ -315,7 +318,7 @@ def gen_ts_mat(
     y_label: str,
     x_range: List[float],
     y_range: List[float]
-) -> plt.figure:
+) -> plt.Figure:
 
     """
     --------------------------------------------------------------------------------------------------------------------
@@ -338,17 +341,30 @@ def gen_ts_mat(
         
     Returns
     -------
-    plt.figure :
+    plt.Figure :
         Plot of time series.
     --------------------------------------------------------------------------------------------------------------------
     """
-    
-    # Initialize plot.
-    fig = plt.figure(figsize=(9, 4.45), dpi=cf.dpi)
+
+    # Font size.
+    fs            = 9 if cntx.platform == "streamlit" else 10
+    fs_labels     = fs
+    fs_ticks      = fs
+
+    # Initialize figure and axes.
+    if "streamlit" in cntx.platform:
+        fig = plt.figure(figsize=(9, 4.4), dpi=cf.dpi)
+    else:
+        fig = plt.figure(figsize=(10.6, 4.8), dpi=cf.dpi)
+        plt.subplots_adjust(top=0.98, bottom=0.10, left=0.08, right=0.92, hspace=0.0, wspace=0.0)
     specs = gridspec.GridSpec(ncols=1, nrows=1, figure=fig)
     ax = fig.add_subplot(specs[:])
+
+    # Format.
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
+    ax.tick_params(axis="x", labelsize=fs_ticks, length=5)
+    ax.tick_params(axis="y", labelsize=fs_ticks, length=5)
     ax.set_xticks(range(x_range[0], x_range[1] + 10, 10), minor=False)
     ax.set_xticks(range(x_range[0], x_range[1] + 5, 5), minor=True)
     plt.xlim(x_range[0], x_range[1])
@@ -383,9 +399,10 @@ def gen_ts_mat(
         leg_labels.append(rcp.get_desc())    
         leg_lines.append(Line2D([0], [0], color=color, lw=2))
 
-    # Build legend.
-    ax.legend(leg_lines, leg_labels, loc="upper left", ncol=len(leg_labels), mode="expland", frameon=False)
-    
+    # Legend.
+    ax.legend(leg_lines, leg_labels, loc="upper left", ncol=len(leg_labels), mode="expland", frameon=False,
+              fontsize=fs_labels)
+
     plt.close(fig)
     
     return fig
@@ -599,11 +616,17 @@ def gen_map(
     else:
         cmap = plt.cm.get_cmap(cmap_name, n_cluster)
 
+    # Load locations.
+    p = utils.get_p_locations(cntx)
+    df_loc = None
+    if os.path.exists(p):
+        df_loc = pd.read_csv(p)
+
     # Generate map.
     if cntx.lib.get_code() == lib_def.mode_hv:
-        map = gen_map_hv(cntx, df, v_range, cmap, ticks, tick_labels)
+        map = gen_map_hv(cntx, df, df_loc, v_range, cmap, ticks, tick_labels)
     else:
-        map = gen_map_mat(cntx, df, v_range, cmap, ticks, tick_labels)
+        map = gen_map_mat(cntx, df, df_loc, v_range, cmap, ticks, tick_labels)
 
     return map
 
@@ -611,6 +634,7 @@ def gen_map(
 def gen_map_hv(
     cntx: context_def.Context,
     df: pd.DataFrame,
+    df_loc: pd.DataFrame,
     v_range: List[float],
     cmap: plt.cm,
     ticks: List[float],
@@ -626,6 +650,8 @@ def gen_map_hv(
     cntx : context_def.Context
         Context.
     df : pd.DataFrame
+        Dataframe.
+    df_loc : pd.DataFrame
         Dataframe.
     v_range : List[float]
         Minimum and maximum values in colorbar.
@@ -649,6 +675,10 @@ def gen_map_hv(
     heatmap = df.hvplot.heatmap(x="Longitude", y="Latitude", C="Valeur", aspect="equal").\
         opts(cmap=cmap, clim=(v_range[0], v_range[1]))
 
+    # Font size.
+    fs_labels      = 10
+    fs_annotations = 8
+
     # Adjust ticks.
     if cf.opt_map_discrete:
         ticker = FixedTicker(ticks=ticks)
@@ -661,8 +691,23 @@ def gen_map_hv(
     y_lim = (min(df_curve["latitude"]), max(df_curve["latitude"]))
     curve = df_curve.hvplot.line(x="longitude", y="latitude", color="black", alpha=0.7, xlim=x_lim, ylim=y_lim)
 
+    # Create locations.
+    points = None
+    labels = None
+    if (df_loc is not None) and (len(df_loc) > 0):
+        df_loc.rename(columns={"longitude": "Longitude", "latitude": "Latitude", "desc": "Emplacement"}, inplace=True)
+        points = df_loc.hvplot.points(x="Longitude", y="Latitude", color="black", hover_cols=["Emplacement"])
+        labels = hv.Labels(data=df_loc, x="Longitude", y="Latitude", text="Emplacement").\
+            opts(xoffset=0.05, yoffset=0.1, padding=0.2, text_color="black", text_align="left",
+                 text_font_style="italic", text_font_size=str(fs_annotations) + "pt")
+
+    # Combine layers.
+    plot = (heatmap * curve)
+    if points is not None:
+        plot = plot * points * labels
+
     # Add legend.
-    plot = (heatmap * curve).opts(height=400, width=740)
+    plot = plot.opts(height=400, width=740, xlabel="Longitude (°C)", ylabel="Latitude (°C)", fontsize=fs_labels)
 
     return plot
 
@@ -670,6 +715,7 @@ def gen_map_hv(
 def gen_map_mat(
     cntx: context_def.Context,
     df: pd.DataFrame,
+    df_loc: pd.DataFrame,
     v_range: List[float],
     cmap: plt.cm,
     ticks: List[float],
@@ -685,6 +731,8 @@ def gen_map_mat(
     cntx : context_def.Context
         Context.
     df : pd.DataFrame
+        Dataframe.
+    df_loc : pd.DataFrame
         Dataframe.
     v_range : List[float]
         Minimum and maximum values in colorbar..
@@ -703,20 +751,28 @@ def gen_map_mat(
     """
 
     # Font size.
-    fs_title      = 5
-    fs_labels     = 5
-    fs_ticks      = 5
-    fs_ticks_cbar = 5
+    fs            = 6 if cntx.platform == "streamlit" else 10
+    fs_labels     = fs
+    fs_ticks      = fs
+    fs_ticks_cbar = fs
     if cntx.delta:
         fs_ticks_cbar = fs_ticks_cbar - 1
 
-    # Title and label.
-    title = ""
-    label = ("Δ" if cntx.delta else "") + cntx.varidx.get_label()
+    # Initialize figure and axes.
+    if "streamlit" in cntx.platform:
+        fig = plt.figure(figsize=(9, 4.45), dpi=cf.dpi)
+    else:
+        fig = plt.figure(dpi=cf.dpi)
+        width = 10
+        w_to_d_ratio = fig.get_figwidth() / fig.get_figheight()
+        fig.set_figwidth(width)
+        fig.set_figheight(width / w_to_d_ratio)
+        plt.subplots_adjust(top=0.98, bottom=0.10, left=0.08, right=0.92, hspace=0.0, wspace=0.0)
+    specs = gridspec.GridSpec(ncols=1, nrows=1, figure=fig)
+    ax = fig.add_subplot(specs[:], aspect="equal")
 
-    # Create figure.
-    fig = plt.figure(figsize=(4.5, 4), dpi=cf.dpi)
-    ax = fig.add_subplot(1, 1, 1, aspect="equal")
+    # Format.
+    label = ("Δ" if cntx.delta else "") + cntx.varidx.get_label()
 
     # Convert to DataArray.
     df = pd.DataFrame(df, columns=["longitude", "latitude", cntx.varidx.get_code()])
@@ -731,22 +787,31 @@ def gen_map_mat(
     # Create mesh.
     cbar_ax = make_axes_locatable(ax).append_axes("right", size="5%", pad=0.05)
     da.plot.pcolormesh(cbar_ax=cbar_ax, add_colorbar=True, add_labels=True,
-                       ax=ax, cbar_kwargs=dict(orientation='vertical', pad=0.05, label=label, ticks=ticks),
+                       ax=ax, cbar_kwargs=dict(orientation="vertical", pad=0.05, label=label, ticks=ticks),
                        cmap=cmap, vmin=v_range[0], vmax=v_range[1])
 
     # Format.
-    ax.set_title(title, fontsize=fs_title)
     ax.set_xlabel("Longitude (º)", fontsize=fs_labels)
     ax.set_ylabel("Latitude (º)", fontsize=fs_labels)
-    ax.tick_params(axis="x", labelsize=fs_ticks, length=0, rotation=90)
-    ax.tick_params(axis="y", labelsize=fs_ticks, length=0)
-    cbar_ax.set_ylabel(label, fontsize=fs_labels)
-    cbar_ax.tick_params(labelsize=fs_ticks_cbar, length=0)
+    ax.tick_params(axis="x", labelsize=fs_ticks, length=5, rotation=90)
+    ax.tick_params(axis="y", labelsize=fs_ticks, length=5)
+    ax.set_xticks(ax.get_xticks(), minor=True)
+    ax.set_yticks(ax.get_yticks(), minor=True)
     if cf.opt_map_discrete:
         cbar_ax.set_yticklabels(tick_labels)
+    cbar_ax.set_ylabel(label, fontsize=fs_labels)
+    cbar_ax.tick_params(labelsize=fs_ticks_cbar, length=0)
 
     # Draw region boundary.
     draw_region_boundary(cntx, ax)
+
+    # Draw locations.
+    if df_loc is not None:
+        ax.scatter(df_loc["longitude"], df_loc["latitude"], c="black", s=10)
+        for i in range(len(df_loc)):
+            offset = 0.05
+            ax.text(df_loc["longitude"][i] + offset, df_loc["latitude"][i] + offset, df_loc["desc"][i],
+                    fontdict=dict(color="black", size=fs_labels, style="italic"))
 
     plt.close(fig)
     
@@ -1231,14 +1296,19 @@ def gen_disp_ms_mat(
     for m in range(1, 13):
         data.append(df[str(m)])
 
+    # Font size.
+    fs = 10
+    fs_axes = fs
+
     # Draw.
-    fig = plt.figure(figsize=(9, 4.48), dpi=cf.dpi)
+    height = 5.45 if cntx.platform == "streamlit" else 5.15
+    fig = plt.figure(figsize=(9.95, height), dpi=cf.dpi)
+    plt.subplots_adjust(top=0.99, bottom=0.13, left=0.08, right=0.98, hspace=0.10, wspace=0.10)
     specs = gridspec.GridSpec(ncols=1, nrows=1, figure=fig)
     ax = fig.add_subplot(specs[:])
     bp = ax.boxplot(data, showfliers=False)
 
     # Format.
-    fs_axes = 8
     plt.xticks([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
                ["Jan", "Fév", "Mar", "Avr", "Mai", "Jui", "Jul", "Aoû", "Sep", "Oct", "Nov", "Déc"], rotation=0)
     plt.xlabel("Mois", fontsize=fs_axes)
@@ -1367,16 +1437,18 @@ def gen_disp_d_mat(
     if df is None:
         return None
 
-    # Plot.
-    fs_axes = 10
-    fs_legend = 10
+    # Font size.
+    fs = 10
+    fs_axes = fs
+    fs_legend = fs
 
     # Number of values on the x-axis.
     n = len(df)
 
     # Draw curve (mean values) and shadow (zone between minimum and maximum values).
-    fig, ax = plt.subplots(figsize=(9.95, 5), dpi=cf.dpi)
-    plt.subplots_adjust(top=0.93, bottom=0.13, left=0.08, right=0.98, hspace=0.10, wspace=0.10)
+    height = 5.45 if cntx.platform == "streamlit" else 5.15
+    fig, ax = plt.subplots(figsize=(9.95, height), dpi=cf.dpi)
+    plt.subplots_adjust(top=0.99, bottom=0.13, left=0.08, right=0.98, hspace=0.10, wspace=0.10)
 
     # Draw areas.
     ref_color = rcp_def.RCP(rcp_def.rcp_ref).get_color()

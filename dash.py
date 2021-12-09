@@ -14,6 +14,7 @@ import context_def
 import holoviews as hv
 import hor_def
 import lib_def
+import model_def
 import plot
 import project_def
 import rcp_def
@@ -51,7 +52,7 @@ def refresh():
 
     # Projects.
     cntx.projects = project_def.Projects(cntx=cntx)
-    projects = st.sidebar.radio("Choisir le projet", cntx.projects.get_desc_l())
+    projects = st.sidebar.selectbox("Choisir le projet", options=cntx.projects.get_desc_l())
     cntx.project = project_def.Project(code=projects, cntx=cntx)
 
     # Views.
@@ -73,28 +74,33 @@ def refresh():
 
     # Variables and indices.
     cntx.varidxs = vi.VarIdxs(cntx)
-    varidxs = st.selectbox("Variable", options=cntx.varidxs.get_desc_l())
+    varidxs = st.selectbox("Variable ou indice", options=cntx.varidxs.get_desc_l())
     cntx.varidx = vi.VarIdx(cntx.varidxs.get_code(varidxs))
     cntx.project.set_quantiles(cntx.project.get_code(), cntx)
 
     # Horizons.
-    if cntx.view.get_code() in [view_def.mode_tbl, view_def.mode_map]:
+    if cntx.view.get_code() in [view_def.mode_tbl, view_def.mode_map, view_def.mode_disp]:
         cntx.hors = hor_def.Hors(cntx)
         hors = st.selectbox("Horizon", options=cntx.hors.get_code_l())
         cntx.hor = hor_def.Hor(hors)
         
     # Emission scenarios.
     cntx.rcps = rcp_def.RCPs(cntx)
-    if cntx.view.get_code() == view_def.mode_map:
+    if cntx.view.get_code() in [view_def.mode_map, view_def.mode_disp]:
         rcps = st.selectbox("Scénario d'émissions", options=cntx.rcps.get_desc_l())
         cntx.rcp = rcp_def.RCP(cntx.rcps.get_code(rcps))
 
     # Statistics.
     if cntx.view.get_code() == view_def.mode_map:
         cntx.stats = stat_def.Stats(cntx)
-    if cntx.view.get_code() == view_def.mode_map:
         stats = st.selectbox("Statistique", options=cntx.stats.get_desc_l())
         cntx.stat = stat_def.Stat(cntx.stats.get_code(stats))
+
+    # Models.
+    if cntx.view.get_code() == view_def.mode_disp:
+        cntx.models = model_def.Models(cntx)
+        models = st.selectbox("Modèle", options=cntx.models.get_desc_l())
+        cntx.model = model_def.Model(cntx.models.get_code(models))
 
     # Components.
     if cntx.view.get_code() == view_def.mode_ts:
@@ -127,4 +133,6 @@ def refresh():
         st.write("Valeur de référence : " + tbl_ref)
 
 
+# import test
+# test.test_gen_map("sn")
 refresh()

@@ -108,41 +108,56 @@ class RCPs(object_def.Objs):
 
         cntx = args[0]
 
-        # The list of RCPs is within data files.
+        # The list of items is within data files.
         if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_tbl]:
-            p = utils.get_d_data(cntx) + "/<view>/<varidx_code>.csv"
-            p = p.replace("<view>", cntx.view.get_code())
+            p = utils.get_d_data(cntx) + "/<view_code>/<varidx_code>.csv"
+            p = p.replace("<view_code>", cntx.view.get_code())
             p = p.replace("<varidx_code>", cntx.varidx.get_code())
             df = pd.read_csv(p)
             if cntx.view.get_code() == view_def.mode_ts:
-                code_l = list(df.columns)
+                item_l = list(df.columns)
             else:
-                code_l = df["rcp"]
-            if cntx.delta and (rcp_ref in code_l):
-                code_l.remove(rcp_ref)
+                item_l = df["rcp"]
+            if cntx.delta and (rcp_ref in item_l):
+                item_l.remove(rcp_ref)
 
-        # The list of RCPs is within file structure.
+        # The list of items is within file structure.
         elif cntx.view.get_code() == view_def.mode_map:
-            p = utils.get_d_data(cntx) + "<view>/<varidx_code>/<hor>/*.csv"
-            p = p.replace("<view>", cntx.view.get_code())
+            p = utils.get_d_data(cntx) + "<view_code>/<varidx_code>/<hor>/*.csv"
+            p = p.replace("<view_code>", cntx.view.get_code())
             p = p.replace("<varidx_code>", cntx.varidx.get_code())
             p = p.replace("<hor>", cntx.hor.get_code())
-            code_l = list(glob.glob(p))
+            item_l = list(glob.glob(p))
+        elif cntx.view.get_code() == view_def.mode_disp:
+            p = utils.get_d_data(cntx) + "<view_code>*/<varidx_code>/<hor_code>/*.csv"
+            p = p.replace("<view_code>", cntx.view.get_code())
+            p = p.replace("<varidx_code>", cntx.varidx.get_code())
+            p = p.replace("<hor_code>", cntx.hor.get_code())
+            item_l = glob.glob(p)
 
         else:
-            code_l = []
+            item_l = []
 
         # Extract RCPs.
-        code_clean_l = []
-        for code in code_l:
-            if ("rcp" in code) or (rcp_ref in code):
-                i_token = 0 if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_tbl] else 1
-                code = code.split("_")[i_token]
-                if code not in code_clean_l:
-                    code_clean_l.append(code)
-        code_clean_l.sort()
+        code_l = []
+        rcp_ref_found = False
+        for item in item_l:
+            code = ""
+            if "rcp" not in item:
+                rcp_ref_found = True
+            elif rcp_26 in item:
+                code = rcp_26
+            elif rcp_45 in item:
+                code = rcp_45
+            elif rcp_85 in item:
+                code = rcp_85
+            if (code != "") and (code not in code_l):
+                code_l.append(code)
+        code_l.sort()
+        if rcp_ref_found and not cntx.delta:
+            code_l = [rcp_ref] + code_l
 
-        self.add(code_clean_l)
+        self.add(code_l)
 
     def add(
         self,

@@ -458,20 +458,21 @@ class VarIdxs(object_def.Objs):
         
         code_l = []
 
-        if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_tbl, view_def.mode_disp]:
+        if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_tbl]:
             p = utils.get_d_data(cntx) + "<view>/*.csv"
             p = p.replace("<view>/", cntx.view.get_code().split("-")[0] + "*/")
-            p_l = list(glob.glob(p))
-            for p_i in p_l:
+            for p_i in list(glob.glob(p)):
                 code = os.path.basename(p_i).replace(".csv", "")
                 if code not in code_l:
                     code_l.append(code)
-            code_l.sort()
-
-        else:
-            p = utils.get_d_data(cntx) + "<view>/"
-            p = p.replace("<view>/", cntx.view.get_code() + "/")
-            code_l = utils.list_dir(p)
+        elif cntx.view.get_code() in [view_def.mode_map, view_def.mode_disp]:
+            p = utils.get_d_data(cntx) + "<view>*/*"
+            p = p.replace("<view>", cntx.view.get_code())
+            for p_i in list(glob.glob(p)):
+                code = os.path.basename(p_i)
+                if (code not in code_l) and (os.path.isdir(p_i)):
+                    code_l.append(code)
+        code_l.sort()
 
         self.add(code_l)
 

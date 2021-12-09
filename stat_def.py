@@ -13,7 +13,9 @@ import config as cf
 import context_def
 import object_def
 import os
+import rcp_def
 import utils
+import view_def
 from typing import List, Union
         
 mode_min = "min"
@@ -90,19 +92,24 @@ class Stats(object_def.Objs):
 
         cntx = args[0]
 
-        p = utils.get_d_data(cntx) + "<view>/<varidx_code>/<hor>/<varidx_name>_<rcp>_<hor_>_<stat>_<delta>.csv"
-        p = p.replace("<view>", cntx.view.get_code())
-        p = p.replace("<varidx_code>", cntx.varidx.get_code())
-        p = p.replace("<varidx_name>", cntx.varidx.get_code())
-        p = p.replace("<rcp>", "" if cntx.rcp is None else cntx.rcp.get_code())
-        p = p.replace("<hor_>", "" if cntx.hor is None else cntx.hor.get_code().replace("-", "_"))
-        p = p.replace("<hor>", "" if cntx.hor is None else cntx.hor.get_code())
-        p = p.replace("_<delta>", "" if cntx.delta is False else "_delta")
-        
         code_l = []
-        for code in list(get_code_desc().keys()):
-            if os.path.exists(p.replace("<stat>", code)):
-                code_l.append(code)
+
+        # The list of items is within file structure.
+        if cntx.view.get_code() == view_def.mode_map:
+            p = utils.get_d_data(cntx) + "<view>/<varidx_code>/<hor>/<varidx_name>_<rcp>_<hor_>_<stat>_<delta>.csv"
+            p = p.replace("<view>", cntx.view.get_code())
+            p = p.replace("<varidx_code>", cntx.varidx.get_code())
+            p = p.replace("<varidx_name>", cntx.varidx.get_code())
+            p = p.replace("<rcp>", "" if cntx.rcp is None else cntx.rcp.get_code())
+            p = p.replace("<hor_>", "" if cntx.hor is None else cntx.hor.get_code().replace("-", "_"))
+            p = p.replace("<hor>", "" if cntx.hor is None else cntx.hor.get_code())
+            p = p.replace("_<delta>", "" if cntx.delta is False else "_delta")
+
+            is_rcp_ref = cntx.rcp.get_code() == rcp_def.rcp_ref
+            for code in list(get_code_desc().keys()):
+                if os.path.exists(p.replace("<stat>", code)) and\
+                   ((not is_rcp_ref) or (is_rcp_ref and (code == mode_mean))):
+                    code_l.append(code)
 
         self.add(code_l)
 

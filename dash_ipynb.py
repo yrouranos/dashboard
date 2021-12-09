@@ -13,6 +13,7 @@ import config as cf
 import context_def
 import hor_def
 import lib_def
+import model_def
 import panel as pn
 import panel.widgets as pnw
 import plot
@@ -20,173 +21,291 @@ import project_def
 import rcp_def
 import stat_def
 import utils
-import varidx_def as vi
+import varidx_def
 import view_def
 import warnings
 from typing import Union, List
 
-warnings.filterwarnings("ignore")
+# warnings.filterwarnings("ignore")
 
 cntx = None
-dash, projects, views, libs, deltas, varidxs, hors, rcps, stats = \
-    None, None, None, None, None, None, None, None, None
+dash, project_f, view_f, lib_f, delta_f, varidx_f, hor_f, rcp_f, stat_f, model_f = \
+    None, None, None, None, None, None, None, None, None, None
 
 
-def init_components():
+def update_field(field: str, item_l: List[str]):
+    global project_f, view_f, lib_f, delta_f, varidx_f, hor_f, rcp_f, stat_f, model_f
 
-    """
-    --------------------------------------------------------------------------------------------------------------------
-    Initialize components.
-    --------------------------------------------------------------------------------------------------------------------
-    """
+    if field == "project":
+        if project_f is None:
+            project_f = pn.Column(pn.pane.Markdown("<b>Choisir le projet</b>"),
+                                  pnw.Select(options=item_l, width=150))
+            project_f[1].param.watch(project_updated, ["value"], onlychanged=True)
+        else:
+            project_f[1].options = item_l
+        project_f[1].value = project_f[1].options[0]
 
-    global projects, views, libs, deltas, varidxs, hors, rcps, stats
+    elif field == "view":
+        if view_f is None:
+            view_f = pn.Column(pn.pane.Markdown("<b>Choisir la vue</b>"),
+                               pnw.RadioBoxGroup(name="RadioBoxGroup", options=item_l, inline=False))
+            view_f[1].param.watch(view_updated, ["value"], onlychanged=True)
+        else:
+            view_f[1].options = item_l
+        view_f[1].value = view_f[1].options[0]
 
-    # Projects.
-    projects = pn.Column(pn.pane.Markdown("<b>Choisir le projet</b>"),
-                         pnw.RadioBoxGroup(name="RadioBoxGroup", options=[""], inline=False))
-    projects[1].param.watch(field_updated, ["value"], onlychanged=True)
+    elif field == "lib":
+        if lib_f is None:
+            lib_f = pn.Column(pn.pane.Markdown("<b>Choisir la librairie graphique</b>"),
+                              pnw.RadioBoxGroup(name="RadioBoxGroup", options=item_l, inline=False))
+            lib_f[1].param.watch(lib_updated, ["value"], onlychanged=True)
+        else:
+            lib_f[1].options = item_l
+        lib_f[1].value = lib_f[1].options[0]
 
-    # Views.
-    views = pn.Column(pn.pane.Markdown("<b>Choisir la vue</b>"),
-                      pnw.RadioBoxGroup(name="RadioBoxGroup", options=[""], inline=False))
-    views[1].param.watch(field_updated, ["value"], onlychanged=True)
+    elif field == "delta":
+        if delta_f is None:
+            delta_f = pn.Column(pn.pane.Markdown("<b>Afficher les anomalies</b>"),
+                                pnw.Checkbox(value=False))
+            delta_f[1].param.watch(delta_updated, ["value"], onlychanged=True)
 
-    # Libraries.
-    libs = pn.Column(pn.pane.Markdown("<b>Choisir la librairie graphique</b>"),
-                     pnw.RadioBoxGroup(name="RadioBoxGroup", options=[""], inline=False))
-    libs[1].param.watch(field_updated, ["value"], onlychanged=True)
+    elif field == "varidx":
+        if varidx_f is None:
+            varidx_f = pn.Column(pn.pane.Markdown("<b>Variable or index</b>"),
+                                 pnw.Select(options=item_l, width=700))
+            varidx_f[1].param.watch(varidx_updated, ["value"], onlychanged=True)
+        else:
+            varidx_f[1].options = item_l
+        varidx_f[1].value = varidx_f[1].options[0]
 
-    # Deltas
-    deltas = pn.Column(pn.pane.Markdown("<b>Afficher les anomalies</b>"),
-                       pnw.Checkbox(value=False))
-    deltas[1].param.watch(field_updated, ["value"], onlychanged=True)
+    elif field == "hor":
+        if hor_f is None:
+            hor_f = pn.Column(pn.pane.Markdown("<b>Horizon</b>"),
+                              pnw.Select(options=item_l, width=700))
+            hor_f[1].param.watch(hor_updated, ["value"], onlychanged=True)
+        else:
+            hor_f[1].options = item_l
+        hor_f[1].value = hor_f[1].options[0]
 
-    # Variables and indices.
-    varidxs = pn.Column(pn.pane.Markdown("<b>Variable or index</b>"),
-                        pnw.Select(options=[""], width=250))
-    varidxs[1].param.watch(field_updated, ["value"], onlychanged=True)
+    elif field == "rcp":
+        if rcp_f is None:
+            rcp_f = pn.Column(pn.pane.Markdown("<b>Scénario d'émission</b>"),
+                              pnw.Select(options=item_l, width=700))
+            rcp_f[1].param.watch(rcp_updated, ["value"], onlychanged=True)
+        else:
+            rcp_f[1].options = item_l
+        rcp_f[1].value = rcp_f[1].options[0]
 
-    # Horizons.
-    hors = pn.Column(pn.pane.Markdown("<b>Horizon</b>"),
-                     pnw.Select(options=[""], width=100))
-    hors[1].param.watch(field_updated, ["value"], onlychanged=True)
+    elif field == "stat":
+        if stat_f is None:
+            stat_f = pn.Column(pn.pane.Markdown("<b>Statistique</b>"),
+                               pnw.Select(options=item_l, width=700))
+            stat_f[1].param.watch(stat_updated, ["value"], onlychanged=True)
+        else:
+            stat_f[1].options = item_l
+        stat_f[1].value = stat_f[1].options[0]
 
-    # Emission scenarios.
-    rcps = pn.Column(pn.pane.Markdown("<b>Scénario d'émission</b>"),
-                     pnw.Select(options=[""], width=250))
-    rcps[1].param.watch(field_updated, ["value"], onlychanged=True)
+    elif field == "model":
+        if model_f is None:
+            model_f = pn.Column(pn.pane.Markdown("<b>Modèle</b>"),
+                                pnw.Select(options=item_l, width=700))
+            model_f[1].param.watch(model_updated, ["value"], onlychanged=True)
+        else:
+            model_f[1].options = item_l
+        model_f[1].value = model_f[1].options[0]
 
-    # Statistics.
-    stats = pn.Column(pn.pane.Markdown("<b>Statistique</b>"),
-                      pnw.Select(options=[""], width=250))
-    stats[1].param.watch(field_updated, ["value"], onlychanged=True)
+
+# Initialize context.
+def init_context():
+    global cntx
+    cntx = context_def.Context()
+    cntx.platform = "jupyter"
+    cntx.views = view_def.Views()
+    cntx.libs = lib_def.Libs()
+    cntx.varidxs = varidx_def.VarIdxs()
+    cntx.hors = hor_def.Hors()
+    cntx.rcps = rcp_def.RCPs()
 
 
-def field_updated(event):
-    """
-    --------------------------------------------------------------------------------------------------------------------
-    Field updated.
-    --------------------------------------------------------------------------------------------------------------------
-    """
+# Initialize projects.
+def init_project():
+    global cntx, project_f
+    cntx.projects = project_def.Projects(cntx=cntx)
+    project_l = cntx.projects.get_desc_l()
+    update_field("project", project_l)
+    cntx.project = project_def.Project(code=project_f[1].value, cntx=cntx)
 
+
+# Update view.
+def update_view():
+    global cntx, view_f
+    cntx.views = view_def.Views(cntx)
+    view_l = cntx.views.get_desc_l()
+    update_field("view", view_l)
+    cntx.view = view_def.View(cntx.views.get_code(view_f[1].value))
+
+
+# Update library.
+def update_lib():
+    global cntx, lib_f
+    cntx.libs = lib_def.Libs(cntx.view.get_code())
+    lib_l = cntx.libs.get_desc_l()
+    update_field("lib", lib_l)
+    cntx.lib = lib_def.Lib(cntx.libs.get_code(lib_f[1].value))
+
+
+# Update delta.
+def update_delta():
+    global cntx, delta_f
+    update_field("delta", [""])
+    cntx.delta = delta_f[1].value
+
+
+# Update variable or index.
+def update_varidx():
+    global cntx, varidx_f
+    cntx.varidxs = varidx_def.VarIdxs(cntx)
+    varidx_l = cntx.varidxs.get_desc_l()
+    update_field("varidx", varidx_l)
+    cntx.varidx = varidx_def.VarIdx(cntx.varidxs.get_code(varidx_f[1].value))
+    cntx.project.set_quantiles(cntx.project.get_code(), cntx)
+
+
+# Update horizon.
+def update_hor():
+    global cntx, hor_f
+    if cntx.view.get_code() in [view_def.mode_tbl, view_def.mode_map, view_def.mode_disp]:
+        cntx.hors = hor_def.Hors(cntx)
+        hor_l = cntx.hors.get_desc_l()
+        update_field("hor", hor_l)
+    if hor_f is not None:
+        cntx.hor = hor_def.Hor(hor_f[1].value)
+
+
+# Update emission scenario.
+def update_rcp():
+    global cntx, rcp_f
+    if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_map, view_def.mode_disp]:
+        cntx.rcps = rcp_def.RCPs(cntx)
+        rcp_l = cntx.rcps.get_desc_l()
+        update_field("rcp", rcp_l)
+    if rcp_f is not None:
+        cntx.rcp = rcp_def.RCP(cntx.rcps.get_code(rcp_f[1].value))
+
+
+# Update statistic.
+def update_stat():
+    global cntx, stat_f
+    if cntx.view.get_code() == view_def.mode_map:
+        cntx.stats = stat_def.Stats(cntx)
+        stat_l = cntx.stats.get_desc_l()
+        update_field("stat", stat_l)
+    if stat_f is not None:
+        cntx.stat = stat_def.Stat(cntx.stats.get_code(stat_f[1].value))
+
+
+# Update models.
+def update_model():
+    global cntx, model_f
+    if cntx.view.get_code() == view_def.mode_disp:
+        cntx.models = model_def.Models(cntx)
+        model_l = cntx.models.get_desc_l()
+        update_field("model", model_l)
+    if model_f is not None:
+        cntx.model = model_def.Model(model_f[1].value)
+
+
+# Events ---------------------------------------------------------------------------------------------------------------
+
+def project_updated(event):
+    global cntx, project_f
+    cntx.project = project_def.Project(code=project_f[1].value, cntx=cntx)
+    update_view()
+    view_updated(event)
+
+
+def view_updated(event):
+    global cntx, view_f
+    cntx.view = view_def.View(cntx.views.get_code(view_f[1].value))
+    update_lib()
+    lib_updated(event)
+
+
+def lib_updated(event):
+    global cntx, lib_f
+    cntx.lib = lib_def.Lib(cntx.libs.get_code(lib_f[1].value))
+    update_varidx()
+    varidx_updated(event)
+
+
+def delta_updated(event):
+    global cntx, delta_f
+    cntx.delta = delta_f[1].value
+    if cntx.view.get_code() == [view_def.mode_ts, view_def.mode_map]:
+        update_hor()
+        hor_updated(event)
+    else:
+        refresh()
+
+
+def varidx_updated(event):
+    global cntx, varidx_f
+    cntx.varidx = varidx_def.VarIdx(cntx.varidxs.get_code(varidx_f[1].value))
+    if cntx.view.get_code() in [view_def.mode_tbl, view_def.mode_map, view_def.mode_disp]:
+        update_hor()
+        hor_updated(event)
+    else:
+        refresh()
+
+
+def hor_updated(event):
+    global cntx, hor_f
+    cntx.hor = hor_def.Hor(hor_f[1].value)
+    if cntx.view.get_code() in [view_def.mode_map, view_def.mode_disp]:
+        update_rcp()
+        rcp_updated(event)
+    else:
+        refresh()
+
+
+def rcp_updated(event):
+    global cntx, rcp_f
+    cntx.rcp = rcp_def.RCP(cntx.rcps.get_code(rcp_f[1].value))
+    if cntx.view.get_code() in [view_def.mode_tbl, view_def.mode_map]:
+        update_stat()
+        stat_updated(event)
+    if cntx.view.get_code() == view_def.mode_disp:
+        update_model()
+        model_updated(event)
+    else:
+        refresh()
+
+
+def stat_updated(event):
+    global cntx, stat_f
+    cntx.stat = stat_def.Stat(cntx.stats.get_code(stat_f[1].value))
+    refresh()
+
+
+def model_updated(event):
+    global cntx, model_f
+    cntx.model = model_def.Model(cntx.models.get_code(model_f[1].value))
     refresh()
 
 
 def refresh():
-
-    """
-    --------------------------------------------------------------------------------------------------------------------
-    Refresh GUI.
-    --------------------------------------------------------------------------------------------------------------------
-    """
-
     global cntx
-    global dash, projects, views, libs, deltas, varidxs, hors, rcps, stats
+    global dash, project_f, view_f, lib_f, delta_f, varidx_f, hor_f, rcp_f, stat_f, model_f
 
-    # Initialize context.
     if cntx is None:
-        init_components()
-        cntx = context_def.Context()
-        cntx.platform = "jupyter"
-        cntx.views = view_def.Views()
-        cntx.libs = lib_def.Libs()
-        cntx.varidxs = vi.VarIdxs()
-        cntx.hors = hor_def.Hors()
-        cntx.rcps = rcp_def.RCPs()
-
-    # Projects.
-    cntx.projects = project_def.Projects(cntx=cntx)
-    projects_l = cntx.projects.get_desc_l()
-    if projects[1].value not in projects_l:
-        projects[1].options = projects_l
-        projects[1].value = projects_l[0]
-    cntx.project = project_def.Project(code=projects[1].value, cntx=cntx)
-
-    # Views.
-    cntx.views = view_def.Views(cntx)
-    views_l = cntx.views.get_desc_l()
-    if views[1].value not in views_l:
-        views[1].options = views_l
-        views[1].value = views_l[0]
-    cntx.view = view_def.View(cntx.views.get_code(views[1].value))
-
-    # Libraries.
-    cntx.libs = lib_def.Libs(cntx.view.get_code())
-    libs_l = cntx.libs.get_desc_l()
-    if libs[1].value not in libs_l:
-        libs[1].options = libs_l
-        libs[1].value = libs_l[0]
-    cntx.lib = lib_def.Lib(cntx.libs.get_code(libs[1].value))
-
-    # Deltas.
-    if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_tbl, view_def.mode_map]:
-        cntx.delta = deltas[1].value
-    else:
-        cntx.delta = False
-
-    # Variables and indices.
-    cntx.varidxs = vi.VarIdxs(cntx)
-    varidxs_l = cntx.varidxs.get_desc_l()
-    if varidxs[1].value not in varidxs_l:
-        varidxs[1].options = varidxs_l
-        varidxs[1].value = varidxs_l[0]
-    cntx.varidx = vi.VarIdx(cntx.varidxs.get_code(varidxs[1].value))
-    cntx.project.set_quantiles(cntx.project.get_code(), cntx)
-
-    # Horizons.
-    if cntx.view.get_code() in [view_def.mode_tbl, view_def.mode_map]:
-        cntx.hors = hor_def.Hors(cntx)
-        hors_l = cntx.hors.get_code_l()
-        if hors[1].value not in hors_l:
-            hors[1].options = hors_l
-            hors[1].value = hors_l[0]
-        cntx.hor = hor_def.Hor(hors[1].value)
-    else:
-        cntx.hor = None
-
-    # Emission scenarios.
-    if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_map]:
-        cntx.rcps = rcp_def.RCPs(cntx)
-        if cntx.view.get_code() == view_def.mode_map:
-            rcps_l = cntx.rcps.get_desc_l()
-            if rcps[1].value not in rcps_l:
-                rcps[1].options = rcps_l
-                rcps[1].value = rcps_l[0]
-            cntx.rcp = rcp_def.RCP(cntx.rcps.get_code(rcps[1].value))
-    else:
-        cntx.rcp = None
-
-    # Statistics.
-    if cntx.view.get_code() == view_def.mode_map:
-        cntx.stats = stat_def.Stats(cntx)
-        stats_l = cntx.stats.get_desc_l()
-        if stats[1].value not in stats_l:
-            stats[1].options = stats_l
-            stats[1].value = stats_l[0]
-        cntx.stat = stat_def.Stat(cntx.stats.get_code(stats[1].value))
-    else:
-        cntx.stat = None
+        init_context()
+        init_project()
+        update_view()
+        update_lib()
+        update_delta()
+        update_varidx()
+        update_hor()
+        update_rcp()
 
     # Reference value.
     val_ref = pn.Row("\n\nValeur de référence : ", plot.get_ref_val(cntx))
@@ -194,35 +313,39 @@ def refresh():
     # Time series.
     tab_ts = None
     if cntx.view.get_code() == view_def.mode_ts:
-        tab_ts = pn.Row(pn.Column(varidxs, plot.gen_ts(cntx),
+        tab_ts = pn.Row(pn.Column(varidx_f, plot.gen_ts(cntx),
                                   pn.pane.Markdown("<br><br><br>" if cntx.lib.get_code() == lib_def.mode_alt else ""),
                                   val_ref))
 
     # Table.
     tab_tbl = None
     if cntx.view.get_code() == view_def.mode_tbl:
-        tab_tbl = pn.Row(pn.Column(varidxs, hors, pn.Column(plot.gen_tbl(cntx), width=500), val_ref))
+        tab_tbl = pn.Row(pn.Column(varidx_f, hor_f, pn.Column(plot.gen_tbl(cntx), width=500), val_ref))
 
     # Map.
     tab_map = None
     if cntx.view.get_code() == view_def.mode_map:
-        tab_map = pn.Row(pn.Column(varidxs, hors, rcps, stats, plot.gen_map(cntx)))
+        tab_map = pn.Row(pn.Column(varidx_f, hor_f, rcp_f, stat_f,
+                                   plot.gen_map(cntx)))
 
     # Dispersion plots.
     tab_disp = None
     if cntx.view.get_code() == view_def.mode_disp:
-        tab_disp = pn.Row(pn.Column(varidxs, plot.gen_disp_ms(cntx), plot.gen_disp_d(cntx)))
+        tab_disp = pn.Row(pn.Column(varidx_f, hor_f, rcp_f, model_f,
+                                    plot.gen_disp_ms(cntx), plot.gen_disp_d(cntx)))
 
     # Sidebar.
-    sidebar = pn.Column(pn.Column(pn.pane.PNG(utils.get_p_logo(cntx), height=50)),
-                        projects, views, libs, deltas,
+    show_delta_f = cntx.view.get_code() in [view_def.mode_ts, view_def.mode_tbl, view_def.mode_map]
+    sidebar = pn.Column(pn.Column(pn.pane.PNG(utils.get_p_logo(), height=50)),
+                        project_f, view_f, lib_f,
+                        delta_f if show_delta_f else "",
                         pn.Spacer(background=cf.col_sb_fill, sizing_mode="stretch_both"),
                         background=cf.col_sb_fill,
                         width=200)
 
-    # Dashboard.
     if dash is None:
         dash = pn.Row(sidebar, tab_ts)
+        display(dash)
     else:
         dash[0] = sidebar
         if cntx.view.get_code() == view_def.mode_ts:

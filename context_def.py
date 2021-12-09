@@ -54,6 +54,10 @@ class Context(object_def.Obj):
         self.stat = None
         self.stats = None
 
+        # Models (selected and all).
+        self.model = None
+        self.models = None
+        
         # Platform.
         self.platform = ""
 

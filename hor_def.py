@@ -80,9 +80,7 @@ class Hors(object_def.Objs):
             p = p.replace("<view>", cntx.view.get_code())
             p = p.replace("<varidx_code>", cntx.varidx.get_code())
             p = p.replace("_<delta>", "" if cntx.delta is False else "_delta")
-            p_l = glob.glob(p)
-            code_l = []
-            for p in p_l:
+            for p in glob.glob(p):
                 code = os.path.basename(os.path.dirname(p))
                 if code not in code_l:
                     code_l.append(code)
@@ -90,6 +88,15 @@ class Hors(object_def.Objs):
             df = utils.load_data(cntx)
             code_l = list(dict.fromkeys(list(df["hor"])))
             code_l.remove(df[df["rcp"] == rcp_def.rcp_ref]["hor"][0])
+        elif cntx.view.get_code() == view_def.mode_disp:
+            p = utils.get_d_data(cntx) + "<view>/<varidx_code>/*"
+            p = p.replace("<view>/", cntx.view.get_code() + "*/")
+            p = p.replace("<varidx_code>", cntx.varidx.get_code())
+            for p_i in list(glob.glob(p)):
+                code = os.path.basename(p_i)
+                if code not in code_l:
+                    code_l.append(code)
+
         code_l.sort()
 
         # Remove the items that includes all years.

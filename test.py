@@ -12,6 +12,7 @@
 import context_def
 import hor_def
 import lib_def
+import model_def
 import plot
 import project_def
 import rcp_def
@@ -193,8 +194,22 @@ def test_gen_disp(
 
             cntx.varidx = vi.VarIdx(varidx)
 
-            cntx.projects = project_def.Projects(cntx=cntx)
-            cntx.project = project_def.Project(code=project_code, cntx=cntx)
+            cntx.hors = hor_def.Hors(cntx)
+            for hor in cntx.hors.get_code_l():
 
-            plot.gen_disp_ms(cntx)
-            plot.gen_disp_d(cntx)
+                cntx.hor = hor_def.Hor(hor)
+
+                cntx.rcps = rcp_def.RCPs(cntx)
+                for rcp in cntx.rcps.get_code_l():
+
+                    cntx.rcp = rcp_def.RCP(rcp)
+
+                    cntx.models = model_def.Models(cntx)
+                    for model in cntx.models.get_code_l():
+                        cntx.model = model_def.Model(model)
+
+                        cntx.projects = project_def.Projects(cntx=cntx)
+                        cntx.project = project_def.Project(code=project_code, cntx=cntx)
+
+                        plot.gen_disp_ms(cntx)
+                        plot.gen_disp_d(cntx)

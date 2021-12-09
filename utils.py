@@ -15,6 +15,7 @@ import glob
 import numpy as np
 import os
 import pandas as pd
+import rcp_def
 import simplejson
 import view_def
 import warnings
@@ -51,19 +52,25 @@ def load_data(
     """
     
     # Load data.
-    if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_tbl, view_def.mode_disp]:
+    p = ""
+    if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_tbl]:
         p = get_d_data(cntx) + "<view>/<varidx_code>.csv"
-    else:
-        p = get_d_data(cntx) + "<view>/<varidx_code>/<hor>/<varidx_name>_<rcp>_<hor_>_<stat>_<delta>.csv"
+    elif cntx.view.get_code() == view_def.mode_map:
+        p = get_d_data(cntx) + "<view>/<varidx_code>/<hor_code>/*_<rcp_code>_*_<stat>_<delta>.csv"
+    elif cntx.view.get_code() == view_def.mode_disp:
+        p = get_d_data(cntx) + "<view>/<varidx_code>/<hor_code>/*<model_code>*<rcp_code>*.csv"
     p = p.replace("<view>", cntx.view.get_code() + ("-" + cat.lower() if cat != "" else ""))
     p = p.replace("<varidx_code>", cntx.varidx.get_code())
-    if cntx.view.get_code() == view_def.mode_map:
-        p = p.replace("<varidx_name>", cntx.varidx.get_code())
-        p = p.replace("<rcp>", cntx.rcp.get_code())
-        p = p.replace("<hor_>", cntx.hor.get_code().replace("-", "_"))
-        p = p.replace("<hor>", cntx.hor.get_code())
-        p = p.replace("<stat>", cntx.stat.get_code())
-        p = p.replace("_<delta>", "" if cntx.delta is False else "_delta")
+    if cntx.view.get_code() in [view_def.mode_map, view_def.mode_disp]:
+        p = p.replace("<hor_code>", cntx.hor.get_code())
+        p = p.replace("<rcp_code>", cntx.rcp.get_code())
+        if cntx.view.get_code() == view_def.mode_map:
+            p = p.replace("<stat>", cntx.stat.get_code())
+            p = p.replace("_<delta>", "" if cntx.delta is False else "_delta")
+        elif cntx.view.get_code() == view_def.mode_disp:
+            model_code = cntx.model.get_code() if cntx.rcp.get_code() != rcp_def.rcp_ref else ""
+            p = p.replace("<model_code>", model_code)
+        p = list(glob.glob(p))[0]
 
     if not os.path.exists(p):
         return None
@@ -277,12 +284,35 @@ def get_p_logo() -> str:
     return "./data/ouranos.png"
 
 
+def get_p_locations(
+    cntx: context_def.Context
+) -> str:
+
+    """
+    Get the path of the file defining locations.
+
+    Parameters
+    ----------
+    cntx : context_def.Context
+        Context
+
+    Returns
+    -------
+    str
+        Path of CSV file containing region boundaries.
+    """
+
+    p = get_d_data(cntx) + "map/locations.csv"
+
+    return p
+
+
 def get_p_bounds(
     cntx: context_def.Context
 ) -> str:
 
     """
-    Get region boundaries.
+    Get the path of the file defining region boundaries.
 
     Parameters
     ----------
@@ -295,8 +325,7 @@ def get_p_bounds(
         Path of geojson file containing region boundaries.
     """
 
-    p = get_d_data(cntx) + "<view>/<project_code>_boundaries.geojson"
+    p = get_d_data(cntx) + "<view>/boundaries.geojson"
     p = p.replace("<view>", cntx.view.get_code())
-    p = p.replace("<project_code>", cntx.project.get_code())
 
     return p
