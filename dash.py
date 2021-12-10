@@ -32,7 +32,73 @@ def refresh():
 
     """
     --------------------------------------------------------------------------------------------------------------------
-    Refresh GUI.
+    Assemble and refresh GUI.
+
+    Flow:
+
+    project (list) = <detected>
+    project (selected) = <user_input>
+    |
+    +-- view (options) = <detected>
+        |
+        +-> view (selected) = ts (time series)
+        |   |
+        |   +-> lib (options) = {altair, hvplot, matplotlib}
+        |   |   lib (selected) = <user_input>
+        |   +-> delta (selected) = <user_input>
+        |   |   |
+        |   |   hor (options) = <detected> ----------->----------+
+        |   |                                                    |
+        |   +-> varidx (options) = <detected>                    ˅
+        |       varidx (selected) = <user_input> --------------> figure
+        |
+        +-> view (selected) = tbl (table)
+        |   |
+        |   +-> lib (options) = {plotly}
+        |   |   lib (selected) = plotly
+        |   +-> delta (selected) = <user_input>
+        |   +-> varidx (options) = <detected>
+        |       varidx (selected) = <user_input>
+        |       |
+        |       +-> hor (options) = <detected>
+        |           hor (selected) = <user_input> -------------> figure
+        |
+        +-- view (selected) = map
+        |   |
+        |   +-> lib (options) = {hvplot, matplotlib}
+        |   |   lib (selected) = <user_input>
+        |   +-> delta (selected) = <user_input>
+        |   |   |
+        |   |   hor (options) = <detected> ----------------------+
+        |   |                                                    |
+        |   +-> varidx (options) = <detected>                    |
+        |       varidx (selected) = <user_input>                 |
+        |       |                                                |
+        |       +-> hor (options) = <detected>                   |
+        |           hor (selected) = <user_input>                |
+        |           |                                            |
+        |           +-> rcp (options) = <detected>               |
+        |               rcp (selected) = <user_input>            |
+        |               |                                        |
+        |               +-> stat (options) = <detected>          ˅
+        |                   stat (selected) = <user_input> ----> figure
+        |
+        +-> view (selected) = disp (annual cycle)
+            |
+            +-> lib (options) = {hvplot, matplotlib}
+            |   lib (selected) = <user_input>
+            +-> varidx (options) = <detected>
+                varidx (selected) = <user_input>
+                |
+                +-> hor (options) = <detected>
+                    hor (selected) = <user_input>
+                    |
+                    +-> rcp (options) = <detected>
+                        rcp (selected) = <user_input>
+                        |
+                        +-> model (options) = <detected>
+                            model (selected) = <user_input> ---> figure
+
     --------------------------------------------------------------------------------------------------------------------
     """
 
@@ -102,7 +168,7 @@ def refresh():
         model_f = st.selectbox("Modèle", options=cntx.models.get_desc_l())
         cntx.model = model_def.Model(cntx.models.get_code(model_f))
 
-    # Components.
+    # GUI components.
     if cntx.view.get_code() == view_def.mode_ts:
         if cntx.lib.get_code() in [lib_def.mode_alt, lib_def.mode_mat]:
             st.write(plot.gen_ts(cntx))
