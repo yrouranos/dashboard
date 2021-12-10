@@ -51,6 +51,7 @@ def refresh():
         |   |                                                    |
         |   +-> varidx (options) = <detected>                    ˅
         |       varidx (selected) = <user_input> --------------> figure
+        |                                                        reference value
         |
         +-> view (selected) = tbl (table)
         |   |
@@ -62,6 +63,7 @@ def refresh():
         |       |
         |       +-> hor (options) = <detected>
         |           hor (selected) = <user_input> -------------> figure
+        |                                                        reference value
         |
         +-- view (selected) = map
         |   |
