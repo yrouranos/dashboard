@@ -9,7 +9,6 @@
 # (C) 2021 Ouranos Inc., Canada
 # ----------------------------------------------------------------------------------------------------------------------
 
-import config as cf
 import context_def
 import holoviews as hv
 import hor_def

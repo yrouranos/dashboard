@@ -9,7 +9,6 @@
 # (C) 2021 Ouranos Inc., Canada
 # ----------------------------------------------------------------------------------------------------------------------
 
-import config as cf
 import glob
 import object_def
 import pandas as pd

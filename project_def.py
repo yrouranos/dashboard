@@ -42,7 +42,7 @@ class Project(object_def.Obj):
         elif code != "":
             self.quantiles = [-1, -1]
 
-    def set_quantiles(self, code: int, cntx: context_def.Context):
+    def set_quantiles(self, code: str, cntx: context_def.Context):
 
         """
         ----------------------------------------
@@ -50,7 +50,7 @@ class Project(object_def.Obj):
 
         Parameters
         ----------
-        code : int
+        code : str
             Code.
         cntx : context_def.Context
             Context.
@@ -100,7 +100,7 @@ class Project(object_def.Obj):
 
         Returns
         -------
-        List[str]
+        List[float]
             Quantiles.
         ----------------------------------------
         """

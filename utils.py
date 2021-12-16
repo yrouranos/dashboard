@@ -9,7 +9,6 @@
 # (C) 2021 Ouranos Inc., Canada
 # ----------------------------------------------------------------------------------------------------------------------
 
-import config as cf
 import context_def
 import glob
 import numpy as np
@@ -19,7 +18,6 @@ import rcp_def
 import simplejson
 import view_def
 import warnings
-from pandas.core.common import SettingWithCopyWarning
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
@@ -31,7 +29,7 @@ d_data = "./data/"
 def load_data(
     cntx: context_def.Context,
     cat: Optional[str] = ""
-) -> pd.DataFrame:
+) -> Union[pd.DataFrame, None]:
 
     """
     --------------------------------------------------------------------------------------------------------------------
@@ -147,8 +145,8 @@ def load_data(
 
 def load_geojson(
     p: str,
-    format: str = "vertices-coords"
-) -> Union[pd.DataFrame, Tuple[List[float]]]:
+    out_format: str = "vertices-coords"
+) -> Union[pd.DataFrame, Tuple[List[float], any]]:
 
     """
     --------------------------------------------------------------------------------------------------------------------
@@ -158,7 +156,7 @@ def load_geojson(
     ----------
     p : str
         Path.
-    format : str
+    out_format : str
         Format = {"vertices-coordinates", "pandas"}
 
     Returns
@@ -178,7 +176,7 @@ def load_geojson(
     if len(vertices) == 2:
         coordinates = pydata["features"][0]["geometry"]["coordinates"]
         vertices = coordinates[0]
-    if format == "vertices":
+    if out_format == "vertices":
         return vertices, coordinates
 
     # Create dataframe.
@@ -385,8 +383,12 @@ def round_values(vals: List[float], n_dec: int) -> List[str]:
     --------------------------------------------------------------------------------------------------------------------
     """
 
+    vals_str = []
+
     for i in range(len(vals)):
         if not np.isnan(vals[i]):
-            vals[i] = str("{:." + str(n_dec) + "f}").format(float(vals[i]))
+            vals_str.append(str("{:." + str(n_dec) + "f}").format(float(vals[i])))
+        else:
+            vals_str.append("nan")
 
-    return vals
+    return vals_str

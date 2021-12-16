@@ -9,8 +9,6 @@
 # (C) 2021 Ouranos Inc., Canada
 # ----------------------------------------------------------------------------------------------------------------------
 
-import config as cf
-import context_def
 import object_def
 import os
 import rcp_def
