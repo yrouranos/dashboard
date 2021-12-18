@@ -9,18 +9,17 @@
 # (C) 2021 Ouranos Inc., Canada
 # ----------------------------------------------------------------------------------------------------------------------
 
-import config as cf
 import context_def
+import dash_plot
+import dash_utils
 import hor_def
 import lib_def
 import model_def
 import panel as pn
 import panel.widgets as pnw
-import plot
 import project_def
 import rcp_def
 import stat_def
-import utils
 import varidx_def
 import view_def
 import warnings
@@ -163,8 +162,7 @@ def init_context():
 
     global cntx
 
-    cntx = context_def.Context()
-    cntx.platform = "jupyter"
+    cntx = context_def.Context(context_def.code_jupyter)
     cntx.views = view_def.Views()
     cntx.libs = lib_def.Libs()
     cntx.varidxs = varidx_def.VarIdxs()
@@ -261,7 +259,7 @@ def update_hor():
 
     global cntx, hor_f
 
-    if cntx.view.get_code() in [view_def.mode_tbl, view_def.mode_map, view_def.mode_disp]:
+    if cntx.view.get_code() in [view_def.mode_tbl, view_def.mode_map, view_def.mode_cycle]:
         cntx.hors = hor_def.Hors(cntx)
         hor_l = cntx.hors.get_desc_l()
         update_field("hor", hor_l)
@@ -279,7 +277,7 @@ def update_rcp():
 
     global cntx, rcp_f
 
-    if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_map, view_def.mode_disp]:
+    if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_map, view_def.mode_cycle]:
         cntx.rcps = rcp_def.RCPs(cntx)
         rcp_l = cntx.rcps.get_desc_l()
         update_field("rcp", rcp_l)
@@ -315,7 +313,7 @@ def update_model():
 
     global cntx, model_f
 
-    if cntx.view.get_code() == view_def.mode_disp:
+    if cntx.view.get_code() == view_def.mode_cycle:
         cntx.models = model_def.Models(cntx)
         model_l = cntx.models.get_desc_l()
         update_field("model", model_l)
@@ -397,7 +395,7 @@ def varidx_updated(event):
     global cntx, varidx_f
 
     cntx.varidx = varidx_def.VarIdx(cntx.varidxs.get_code(varidx_f[1].value))
-    if cntx.view.get_code() in [view_def.mode_tbl, view_def.mode_map, view_def.mode_disp]:
+    if cntx.view.get_code() in [view_def.mode_tbl, view_def.mode_map, view_def.mode_cycle]:
         update_hor()
         hor_updated(event)
     else:
@@ -416,7 +414,7 @@ def hor_updated(event):
 
     if hor_f is not None:
         cntx.hor = hor_def.Hor(hor_f[1].value)
-    if cntx.view.get_code() in [view_def.mode_map, view_def.mode_disp]:
+    if cntx.view.get_code() in [view_def.mode_map, view_def.mode_cycle]:
         update_rcp()
         rcp_updated(event)
     else:
@@ -437,7 +435,7 @@ def rcp_updated(event):
     if cntx.view.get_code() in [view_def.mode_tbl, view_def.mode_map]:
         update_stat()
         stat_updated(event)
-    elif cntx.view.get_code() == view_def.mode_disp:
+    elif cntx.view.get_code() == view_def.mode_cycle:
         update_model()
         model_updated(event)
     else:
@@ -496,41 +494,49 @@ def refresh():
         update_rcp()
 
     # Reference value.
-    ref_val = pn.Row("\n\nValeur de référence : ", plot.get_ref_val(cntx))
+    ref_val = pn.Row("\n\nValeur de référence : ", dash_plot.get_ref_val(cntx))
 
     # Tab: time series.
     tab_ts = None
     if cntx.view.get_code() == view_def.mode_ts:
+        df = dash_utils.load_data(cntx)
         space = pn.pane.Markdown("<br><br><br>" if cntx.lib.get_code() == lib_def.mode_alt else "")
-        tab_ts = pn.Row(pn.Column(varidx_f, plot.gen_ts(cntx), space, ref_val))
+        tab_ts = pn.Row(pn.Column(varidx_f, dash_plot.gen_ts(cntx, df), space, ref_val))
 
     # Tab: table.
     tab_tbl = None
     if cntx.view.get_code() == view_def.mode_tbl:
-        tab_tbl = pn.Row(pn.Column(varidx_f, hor_f, pn.Column(plot.gen_tbl(cntx), width=500), ref_val))
+        tab_tbl = pn.Row(pn.Column(varidx_f, hor_f, pn.Column(dash_plot.gen_tbl(cntx), width=500), ref_val))
 
     # Tab: map.
     tab_map = None
     if cntx.view.get_code() == view_def.mode_map:
-        tab_map = pn.Row(pn.Column(varidx_f, hor_f, rcp_f, stat_f, plot.gen_map(cntx)))
+        cntx.p_bounds = dash_utils.get_p_bounds(cntx)
+        cntx.p_locations = dash_utils.get_p_locations(cntx)
+        df = dash_utils.load_data(cntx)
+        z_range = dash_utils.get_range(cntx)
+        tab_map = pn.Row(pn.Column(varidx_f, hor_f, rcp_f, stat_f, dash_plot.gen_map(cntx, df, z_range)))
 
-    # Tab: dispersion plots.
-    tab_disp = None
-    if cntx.view.get_code() == view_def.mode_disp:
-        tab_disp = pn.Row(pn.Column(varidx_f, hor_f, rcp_f, model_f, plot.gen_disp_ms(cntx), plot.gen_disp_d(cntx)))
+    # Tab: cycle plots.
+    tab_cycle = None
+    if cntx.view.get_code() == view_def.mode_cycle:
+        df_ms = dash_utils.load_data(cntx, "MS")
+        df_d = dash_utils.load_data(cntx, "D")
+        tab_cycle = pn.Row(pn.Column(varidx_f, hor_f, rcp_f, model_f,
+                                    dash_plot.gen_cycle_ms(cntx, df_ms), dash_plot.gen_cycle_d(cntx, df_d)))
 
     # Sidebar.
     show_delta_f = cntx.view.get_code() in [view_def.mode_ts, view_def.mode_tbl, view_def.mode_map]
-    sidebar = pn.Column(pn.Column(pn.pane.PNG(utils.get_p_logo(), height=50)),
+    sidebar = pn.Column(pn.Column(pn.pane.PNG(dash_utils.get_p_logo(), height=50)),
                         project_f, view_f, lib_f,
                         delta_f if show_delta_f else "",
-                        pn.Spacer(background=cf.col_sb_fill, sizing_mode="stretch_both"),
-                        background=cf.col_sb_fill,
+                        pn.Spacer(background=cntx.col_sb_fill, sizing_mode="stretch_both"),
+                        background=cntx.col_sb_fill,
                         width=200)
 
     if dash is None:
         dash = pn.Row(sidebar, pn.Column(tab_ts, width=500))
-        display(dash)
+        # display(dash)
     else:
         dash[0] = sidebar
         if cntx.view.get_code() == view_def.mode_ts:
@@ -540,7 +546,7 @@ def refresh():
         elif cntx.view.get_code() == view_def.mode_map:
             dash[1] = tab_map
         else:
-            dash[1] = tab_disp
+            dash[1] = tab_cycle
 
 
 refresh()

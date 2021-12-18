@@ -13,7 +13,7 @@ import glob
 import object_def
 import os
 import rcp_def
-import utils
+import dash_utils
 import view_def
 from typing import Union, List
 
@@ -82,7 +82,7 @@ class Hors(object_def.Objs):
         # The items are extracted from directory names.
         # ~/<project_code>/map/<varidx_code>/*
         if cntx.view.get_code() == view_def.mode_map:
-            p = utils.get_d_data(cntx) + "<view>/<varidx_code>/*/*_<delta>.csv"
+            p = dash_utils.get_d_data(cntx) + "<view>/<varidx_code>/*/*_<delta>.csv"
             p = p.replace("<view>", cntx.view.get_code())
             p = p.replace("<varidx_code>", cntx.varidx.get_code())
             p = p.replace("_<delta>", "" if cntx.delta is False else "_delta")
@@ -94,14 +94,14 @@ class Hors(object_def.Objs):
         # The items are extracted from the 'hor' column of data files.
         # ~/<project_code>/tbl/<varidx_code>.csv
         elif cntx.view.get_code() == view_def.mode_tbl:
-            df = utils.load_data(cntx)
+            df = dash_utils.load_data(cntx)
             code_l = list(dict.fromkeys(list(df["hor"])))
             code_l.remove(df[df["rcp"] == rcp_def.rcp_ref]["hor"][0])
 
         # The items are extracted from directory names.
-        # ~/<project_code>/disp*/*
-        elif cntx.view.get_code() == view_def.mode_disp:
-            p = utils.get_d_data(cntx) + "<view>/<varidx_code>/*"
+        # ~/<project_code>/cycle*/*
+        elif cntx.view.get_code() == view_def.mode_cycle:
+            p = dash_utils.get_d_data(cntx) + "<view>/<varidx_code>/*"
             p = p.replace("<view>/", cntx.view.get_code() + "*/")
             p = p.replace("<varidx_code>", cntx.varidx.get_code())
             for p_i in list(glob.glob(p)):

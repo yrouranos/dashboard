@@ -12,7 +12,7 @@
 import glob
 import object_def
 import pandas as pd
-import utils
+import dash_utils
 import view_def
 from typing import List, Union
 
@@ -46,7 +46,7 @@ class RCP(object_def.Obj):
 
         """
         ----------------------------------------
-        Contructor.
+        Constructor.
         ----------------------------------------
         """
 
@@ -82,7 +82,7 @@ class RCPs(object_def.Objs):
 
         """
         ----------------------------------------
-        Contructor.
+        Constructor.
         ----------------------------------------
         """
 
@@ -115,7 +115,7 @@ class RCPs(object_def.Objs):
         # The items are extracted from the 'rcp' column of data files ('tbl' view).
         # ~/<project_code>/tbl/<varidx_code>/*.csv
         if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_tbl]:
-            p = utils.get_d_data(cntx) + "/<view_code>/<varidx_code>.csv"
+            p = dash_utils.get_d_data(cntx) + "/<view_code>/<varidx_code>.csv"
             p = p.replace("<view_code>", cntx.view.get_code())
             p = p.replace("<varidx_code>", cntx.varidx.get_code())
             df = pd.read_csv(p)
@@ -129,16 +129,16 @@ class RCPs(object_def.Objs):
         # The items are extracted from file names.
         # ~/<project_code>/map/<varidx_code>/<hor_code>/*
         elif cntx.view.get_code() == view_def.mode_map:
-            p = utils.get_d_data(cntx) + "<view_code>/<varidx_code>/<hor_code>/*.csv"
+            p = dash_utils.get_d_data(cntx) + "<view_code>/<varidx_code>/<hor_code>/*.csv"
             p = p.replace("<view_code>", cntx.view.get_code())
             p = p.replace("<varidx_code>", cntx.varidx.get_code())
             p = p.replace("<hor_code>", cntx.hor.get_code())
             item_l = list(glob.glob(p))
 
         # The items are extracted from file names.
-        # ~/<project_code>/disp*/<varidx_code>/<hor_code>/*.csv
-        elif cntx.view.get_code() == view_def.mode_disp:
-            p = utils.get_d_data(cntx) + "<view_code>*/<varidx_code>/<hor_code>/*.csv"
+        # ~/<project_code>/cycle*/<varidx_code>/<hor_code>/*.csv
+        elif cntx.view.get_code() == view_def.mode_cycle:
+            p = dash_utils.get_d_data(cntx) + "<view_code>*/<varidx_code>/<hor_code>/*.csv"
             p = p.replace("<view_code>", cntx.view.get_code())
             p = p.replace("<varidx_code>", cntx.varidx.get_code())
             p = p.replace("<hor_code>", cntx.hor.get_code())

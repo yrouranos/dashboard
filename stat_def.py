@@ -12,7 +12,7 @@
 import object_def
 import os
 import rcp_def
-import utils
+import dash_utils
 import view_def
 from typing import List, Union
         
@@ -61,7 +61,7 @@ class Stat(object_def.Obj):
 
         """
         ----------------------------------------
-        Contructor.
+        Constructor.
         ----------------------------------------
         """
 
@@ -114,7 +114,7 @@ class Stats(object_def.Objs):
         # The items are extracted from file names.
         # ~/<project_code>/map/<varidx_code>/<hor_code>/*.csv"
         if cntx.view.get_code() == view_def.mode_map:
-            p = utils.get_d_data(cntx) +\
+            p = dash_utils.get_d_data(cntx) +\
                 "<view_code>/<varidx_code>/<hor_code>/<varidx_name>_<rcp_code>_<hor_code_>_<stat>_<delta>.csv"
             p = p.replace("<view_code>", cntx.view.get_code())
             p = p.replace("<varidx_code>", cntx.varidx.get_code())

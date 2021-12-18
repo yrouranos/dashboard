@@ -10,16 +10,16 @@
 # ----------------------------------------------------------------------------------------------------------------------
 
 import context_def
+import dash_plot
+import dash_utils
 import holoviews as hv
 import hor_def
 import lib_def
 import model_def
-import plot
 import project_def
 import rcp_def
 import stat_def
 import streamlit as st
-import utils
 import varidx_def as vi
 import view_def
 from PIL import Image
@@ -107,15 +107,14 @@ def refresh():
 
     # Initialize context.
     if cntx is None:
-        cntx = context_def.Context()
-        cntx.platform = "streamlit"
+        cntx = context_def.Context(context_def.code_streamlit)
         cntx.views = view_def.Views()
         cntx.libs = lib_def.Libs()
         cntx.varidxs = vi.VarIdxs()
         cntx.hors = hor_def.Hors()
         cntx.rcps = rcp_def.RCPs()
 
-    st.sidebar.image(Image.open(utils.get_p_logo()), width=150)
+    st.sidebar.image(Image.open(dash_utils.get_p_logo()), width=150)
 
     # Projects.
     cntx.projects = project_def.Projects(cntx=cntx)
@@ -146,14 +145,14 @@ def refresh():
     cntx.project.set_quantiles(cntx.project.get_code(), cntx)
 
     # Horizons.
-    if cntx.view.get_code() in [view_def.mode_tbl, view_def.mode_map, view_def.mode_disp]:
+    if cntx.view.get_code() in [view_def.mode_tbl, view_def.mode_map, view_def.mode_cycle]:
         cntx.hors = hor_def.Hors(cntx)
         hor_f = st.selectbox("Horizon", options=cntx.hors.get_code_l())
         cntx.hor = hor_def.Hor(hor_f)
         
     # Emission scenarios.
     cntx.rcps = rcp_def.RCPs(cntx)
-    if cntx.view.get_code() in [view_def.mode_map, view_def.mode_disp]:
+    if cntx.view.get_code() in [view_def.mode_map, view_def.mode_cycle]:
         rcp_f = st.selectbox("Scénario d'émissions", options=cntx.rcps.get_desc_l())
         cntx.rcp = rcp_def.RCP(cntx.rcps.get_code(rcp_f))
 
@@ -164,39 +163,46 @@ def refresh():
         cntx.stat = stat_def.Stat(cntx.stats.get_code(stat_f))
 
     # Models.
-    if cntx.view.get_code() == view_def.mode_disp:
+    if cntx.view.get_code() == view_def.mode_cycle:
         cntx.models = model_def.Models(cntx)
         model_f = st.selectbox("Modèle", options=cntx.models.get_desc_l())
         cntx.model = model_def.Model(cntx.models.get_code(model_f))
 
     # GUI components.
     if cntx.view.get_code() == view_def.mode_ts:
+        df = dash_utils.load_data(cntx)
         if cntx.lib.get_code() in [lib_def.mode_alt, lib_def.mode_mat]:
-            st.write(plot.gen_ts(cntx))
+            st.write(dash_plot.gen_ts(cntx, df))
         else:
-            st.write(hv.render(plot.gen_ts(cntx)), backend="bokeh")
+            st.write(hv.render(dash_plot.gen_ts(cntx, df)), backend="bokeh")
     elif cntx.view.get_code() == view_def.mode_tbl:
-        st.write(plot.gen_tbl(cntx))
+        st.write(dash_plot.gen_tbl(cntx))
     elif cntx.view.get_code() == view_def.mode_map:
+        cntx.p_bounds = dash_utils.get_p_bounds(cntx)
+        cntx.p_locations = dash_utils.get_p_locations(cntx)
+        df = dash_utils.load_data(cntx)
+        z_range = dash_utils.get_range(cntx)
         if cntx.lib.get_code() == lib_def.mode_mat:
-            st.write(plot.gen_map(cntx))
+            st.write(dash_plot.gen_map(cntx, df, z_range))
         else:
-            st.write(hv.render(plot.gen_map(cntx)), backend="bokeh")
+            st.write(hv.render(dash_plot.gen_map(cntx, df, z_range)), backend="bokeh")
     else:
-        disp_ms = plot.gen_disp_ms(cntx)
-        if disp_ms is not None:
+        df_ms = dash_utils.load_data(cntx, "MS")
+        cycle_ms = dash_plot.gen_cycle_ms(cntx, df_ms)
+        if cycle_ms is not None:
             if cntx.lib.get_code() == lib_def.mode_mat:
-                st.write(disp_ms)
+                st.write(cycle_ms)
             else:
-                st.write(hv.render(disp_ms), backend="bokeh")
-        disp_d = plot.gen_disp_d(cntx)
-        if disp_d is not None:
+                st.write(hv.render(cycle_ms), backend="bokeh")
+        df_d = dash_utils.load_data(cntx, "D")
+        cycle_d = dash_plot.gen_cycle_d(cntx, df_d)
+        if cycle_d is not None:
             if cntx.lib.get_code() == lib_def.mode_mat:
-                st.write(disp_d)
+                st.write(cycle_d)
             else:
-                st.write(hv.render(disp_d), backend="bokeh")
+                st.write(hv.render(cycle_d), backend="bokeh")
     if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_tbl]:
-        tbl_ref = plot.get_ref_val(cntx)
+        tbl_ref = dash_plot.get_ref_val(cntx)
         st.write("Valeur de référence : " + tbl_ref)
 
 

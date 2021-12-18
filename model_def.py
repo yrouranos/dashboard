@@ -11,8 +11,9 @@
 
 import glob
 import object_def
+import os
 import rcp_def
-import utils
+import dash_utils
 from typing import List, Union
 
 
@@ -28,7 +29,7 @@ class Model(object_def.Obj):
 
         """
         ----------------------------------------
-        Contructor.
+        Constructor.
         ----------------------------------------
         """
 
@@ -78,8 +79,8 @@ class Models(object_def.Objs):
 
         # The items are extracted from file names.
         # ~/<project_code>/<view_code>*/<varidx_code>/<hor_code>/*.csv
-        # The result only makes sense in the context of the 'disp' view.
-        p = utils.get_d_data(cntx) + "<view_code>*/<varidx_code>/<hor_code>/*<rcp_code>*.csv"
+        # The result only makes sense in the context of the 'cycle' view.
+        p = dash_utils.get_d_data(cntx) + "<view_code>*/<varidx_code>/<hor_code>/*<rcp_code>*.csv"
         p = p.replace("<view_code>", cntx.view.get_code())
         p = p.replace("<varidx_code>", cntx.varidx.get_code())
         p = p.replace("<hor_code>", cntx.hor.get_code())
@@ -92,7 +93,7 @@ class Models(object_def.Objs):
             if rcp_def.rcp_ref in p:
                 rcp_ref_found = True
             else:
-                tokens = p.split("_")
+                tokens = os.path.basename(p).split("_")
                 code = tokens[1] + "_" + tokens[2] + "_" + tokens[3]
                 if code not in code_l:
                     code_l.append(code)

@@ -14,7 +14,7 @@ import glob
 import math
 import object_def
 import stat_def
-import utils
+import dash_utils
 import view_def
 from typing import List, Union, Optional
 
@@ -31,7 +31,7 @@ class Project(object_def.Obj):
 
         """
         ----------------------------------------
-        Contructor.
+        Constructor.
         ----------------------------------------
         """
 
@@ -42,7 +42,7 @@ class Project(object_def.Obj):
         elif code != "":
             self.quantiles = [-1, -1]
 
-    def set_quantiles(self, code: str, cntx: context_def.Context):
+    def set_quantiles(self, code: str, cntx: context_def.Context, quantiles: Optional[Union[None, List[float]]] = None):
 
         """
         ----------------------------------------
@@ -54,39 +54,43 @@ class Project(object_def.Obj):
             Code.
         cntx : context_def.Context
             Context.
+        quantiles: Optional[Union[None, List[float]]]
+            Quantiles
         ----------------------------------------
         """
 
-        quantiles = []
+        if quantiles is None:
 
-        if cntx.view.get_code() in [view_def.mode_map, view_def.mode_tbl]:
+            if cntx.view.get_code() in [view_def.mode_map, view_def.mode_tbl]:
 
-            # The items are extracted from the 'q' column of data files.
-            # ~/<project_code>/tbl/<varidx_code>.csv
-            if cntx.view.get_code() == view_def.mode_tbl:
-                df = utils.load_data(cntx)
-                df = df[(df["q"] > 0.01) & (df["q"] < 0.99) & (df["q"] != 0.5)]["q"]
-                quantiles = [min(df), max(df)]
+                quantiles = []
 
-            # The items are extracted from file names.
-            # ~/<project_code>/map/<varidx_code>/*/*_q*.csv
-            elif cntx.view.get_code() == view_def.mode_map:
-                p = utils.d_data + "<project_code>/<view_code>/<varidx_code>"
-                p = p.replace("<project_code>", code)
-                p = p.replace("<view_code>", cntx.view.get_code())
-                p = p.replace("<varidx_code>", cntx.varidx.get_code())
-                p_l = glob.glob(p + "/*/*_q*.csv")
-                for p_i in p_l:
-                    tokens = p_i.replace(".csv", "").replace("_delta", "").split("_q")
-                    q = float(tokens[len(tokens) - 1])/100
-                    if q not in quantiles:
-                        quantiles.append(q)
-                if len(quantiles) > 0:
-                    quantiles.sort()
+                # The items are extracted from the 'q' column of data files.
+                # ~/<project_code>/tbl/<varidx_code>.csv
+                if cntx.view.get_code() == view_def.mode_tbl:
+                    df = dash_utils.load_data(cntx)
+                    df = df[(df["q"] > 0.01) & (df["q"] < 0.99) & (df["q"] != 0.5)]["q"]
+                    quantiles = [min(df), max(df)]
 
-        # Does not apply to the other views.
-        else:
-            quantiles = [0, 1]
+                # The items are extracted from file names.
+                # ~/<project_code>/map/<varidx_code>/*/*_q*.csv
+                elif cntx.view.get_code() == view_def.mode_map:
+                    p = dash_utils.d_data + "<project_code>/<view_code>/<varidx_code>"
+                    p = p.replace("<project_code>", code)
+                    p = p.replace("<view_code>", cntx.view.get_code())
+                    p = p.replace("<varidx_code>", cntx.varidx.get_code())
+                    p_l = glob.glob(p + "/*/*_q*.csv")
+                    for p_i in p_l:
+                        tokens = p_i.replace(".csv", "").replace("_delta", "").split("_q")
+                        q = float(tokens[len(tokens) - 1])/100
+                        if q not in quantiles:
+                            quantiles.append(q)
+                    if len(quantiles) > 0:
+                        quantiles.sort()
+
+            # Does not apply to the other views.
+            else:
+                quantiles = [0, 1]
 
         self.quantiles = quantiles
         stat_def.mode_q_low = "q" + self.get_quantiles_as_str()[0]
@@ -159,7 +163,7 @@ class Projects(object_def.Objs):
         ----------------------------------------
         """
 
-        code_l = utils.list_dir(utils.d_data)
+        code_l = dash_utils.list_dir(dash_utils.d_data)
         code_l.sort()
 
         self.add(code_l)

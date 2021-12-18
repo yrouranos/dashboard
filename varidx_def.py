@@ -9,12 +9,11 @@
 # (C) 2021 Ouranos Inc., Canada
 # ----------------------------------------------------------------------------------------------------------------------
 
-import config as cf
 import context_def
 import glob
 import object_def
 import os
-import utils
+import dash_utils
 import view_def
 from typing import List, Union
 
@@ -340,7 +339,7 @@ class VarIdx(object_def.Obj):
 
         """
         ----------------------------------------
-        Contructor.
+        Constructor.
         ----------------------------------------
         """
 
@@ -444,7 +443,7 @@ class VarIdxs(object_def.Objs):
 
         """
         ----------------------------------------
-        Contructor.
+        Constructor.
         ----------------------------------------
         """
 
@@ -477,7 +476,7 @@ class VarIdxs(object_def.Objs):
         # The items are extracted from directory names.
         # ~/<project_code>/<view_code>/*
         if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_tbl]:
-            p = utils.get_d_data(cntx) + "<view_code>/*.csv"
+            p = dash_utils.get_d_data(cntx) + "<view_code>/*.csv"
             p = p.replace("<view_code>/", cntx.view.get_code().split("-")[0] + "*/")
             for p_i in list(glob.glob(p)):
                 code = os.path.basename(p_i).replace(".csv", "")
@@ -486,8 +485,8 @@ class VarIdxs(object_def.Objs):
 
         # The items are extracted from directory names.
         # ~/<project_code>/<view_code>/<varidx_code>/*
-        elif cntx.view.get_code() in [view_def.mode_map, view_def.mode_disp]:
-            p = utils.get_d_data(cntx) + "<view_code>*/*"
+        elif cntx.view.get_code() in [view_def.mode_map, view_def.mode_cycle]:
+            p = dash_utils.get_d_data(cntx) + "<view_code>*/*"
             p = p.replace("<view_code>", cntx.view.get_code())
             for p_i in list(glob.glob(p)):
                 code = os.path.basename(p_i)

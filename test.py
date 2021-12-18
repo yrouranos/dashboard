@@ -10,10 +10,11 @@
 # ----------------------------------------------------------------------------------------------------------------------
 
 import context_def
+import dash_plot
+import dash_utils
 import hor_def
 import lib_def
 import model_def
-import plot
 import project_def
 import rcp_def
 import stat_def
@@ -36,8 +37,7 @@ def test_gen_ts(
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    cntx = context_def.Context()
-    cntx.platform = "streamlit"
+    cntx = context_def.Context(context_def.code_streamlit)
     cntx.project = project_def.Project(code=project_code, cntx=cntx)
     cntx.views = view_def.Views()
     cntx.view = view_def.View(view_def.mode_ts)
@@ -58,7 +58,8 @@ def test_gen_ts(
                 cntx.projects = project_def.Projects(cntx=cntx)
                 cntx.project = project_def.Project(code=project_code, cntx=cntx)
 
-                plot.gen_ts(cntx)
+                df = dash_utils.load_data(cntx)
+                dash_plot.gen_ts(cntx, df)
 
 
 def test_gen_tbl(
@@ -76,8 +77,7 @@ def test_gen_tbl(
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    cntx = context_def.Context()
-    cntx.platform = "streamlit"
+    cntx = context_def.Context(context_def.code_streamlit)
     cntx.project = project_def.Project(code=project_code, cntx=cntx)
     cntx.views = view_def.Views()
     cntx.view = view_def.View(view_def.mode_tbl)
@@ -104,7 +104,7 @@ def test_gen_tbl(
                     cntx.projects = project_def.Projects(cntx=cntx)
                     cntx.project = project_def.Project(code=project_code, cntx=cntx)
 
-                    plot.gen_tbl(cntx)
+                    dash_plot.gen_tbl(cntx)
 
 
 def test_gen_map(
@@ -122,8 +122,7 @@ def test_gen_map(
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    cntx = context_def.Context()
-    cntx.platform = "streamlit"
+    cntx = context_def.Context(context_def.code_streamlit)
     cntx.project = project_def.Project(code=project_code, cntx=cntx)
     cntx.views = view_def.Views()
     cntx.view = view_def.View(view_def.mode_map)
@@ -159,10 +158,14 @@ def test_gen_map(
 
                             cntx.stat = stat_def.Stat(stat)
 
-                            plot.gen_map(cntx)
+                            cntx.p_bounds = dash_utils.get_p_bounds(cntx)
+                            cntx.p_locations = dash_utils.get_p_locations(cntx)
+                            df = dash_utils.load_data(cntx)
+                            z_range = dash_utils.get_range(cntx)
+                            dash_plot.gen_map(cntx, df, z_range)
 
 
-def test_gen_disp(
+def test_gen_cycle(
     project_code: str
 ):
 
@@ -177,11 +180,10 @@ def test_gen_disp(
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    cntx = context_def.Context()
-    cntx.platform = "streamlit"
+    cntx = context_def.Context(context_def.code_streamlit)
     cntx.project = project_def.Project(code=project_code, cntx=cntx)
     cntx.views = view_def.Views()
-    cntx.view = view_def.View(view_def.mode_disp)
+    cntx.view = view_def.View(view_def.mode_cycle)
     cntx.libs = lib_def.Libs(cntx.view.get_code())
     cntx.delta = False
 
@@ -211,8 +213,11 @@ def test_gen_disp(
                         cntx.projects = project_def.Projects(cntx=cntx)
                         cntx.project = project_def.Project(code=project_code, cntx=cntx)
 
-                        plot.gen_disp_ms(cntx)
-                        plot.gen_disp_d(cntx)
+                        df_ms = dash_utils.load_data(cntx, "MS")
+                        dash_plot.gen_cycle_ms(cntx, df_ms)
+
+                        df_d = dash_utils.load_data(cntx, "D")
+                        dash_plot.gen_cycle_d(cntx, df_d)
 
 
 def test_all(
@@ -233,4 +238,4 @@ def test_all(
     test_gen_ts(project_code)
     test_gen_tbl(project_code)
     test_gen_map(project_code)
-    test_gen_disp(project_code)
+    test_gen_cycle(project_code)

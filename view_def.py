@@ -12,18 +12,18 @@
 import context_def
 import glob
 import object_def
-import utils
+import dash_utils
 from typing import List, Union
 
 mode_ts = "ts"
 mode_tbl = "tbl"
 mode_map = "map"
-mode_disp = "disp"
+mode_cycle = "cycle"
 
 code_desc = {mode_ts: "Série temporelle",
              mode_tbl: "Tableau",
              mode_map: "Carte",
-             mode_disp: "Cycle annuel"}
+             mode_cycle: "Cycle annuel"}
 
 
 class View(object_def.Obj):
@@ -38,7 +38,7 @@ class View(object_def.Obj):
 
         """
         ----------------------------------------
-        Contructor.
+        Constructor.
         ----------------------------------------
         """
 
@@ -92,7 +92,7 @@ class Views(object_def.Objs):
         # The items are extracted from directory names. They must be comprised in 'code_desc'.
         # ~/<project_code>/*
         for code in list(code_desc.keys()):
-            if len(list(glob.glob(utils.get_d_data(cntx) + code + "*/"))) > 0:
+            if len(list(glob.glob(dash_utils.get_d_data(cntx) + code + "*/"))) > 0:
                 code_l.append(code)
 
         self.add(code_l)
