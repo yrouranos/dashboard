@@ -28,7 +28,7 @@ d_data = "./data/"
 
 def load_data(
     cntx: context_def.Context,
-    cat: Optional[str] = ""
+    mode: Optional[str] = ""
 ) -> Union[pd.DataFrame, None]:
 
     """
@@ -40,7 +40,7 @@ def load_data(
     |
     +-- <project_code>
         |
-        +-- cycle-d
+        +-- cycle_d
         |   |
         |   +-- <vi_code>  ex: pr
         |       |
@@ -51,7 +51,7 @@ def load_data(
         |               columns: day,mean,min,max,var
         |                    ex: 1,7.244016214648855e-06,-3.332919823397555e-08,0.00021562011394048503,pr
         |
-        +-- cycle-m
+        +-- cycle_m
         |   |
         |   +-- <vi_code>  ex: pr
         |       |
@@ -63,8 +63,8 @@ def load_data(
         |                    ex: 2021,0.003668,0.000196,0.014072,1.344051,3.065682,28.971143,...
         +-- ts
         |   |
-        |   +-- <vi_code>.csv
-        |         ex: pr.csv
+        |   +-- <vi_code>_<mode>.csv
+        |         ex: pr_rcp.csv
         |       columns: year,ref,rcp45_moy,rcp45_min,rcp45_max,rcp85_moy,rcp85_min,rcp85_max
         |            ex: 1981,545.37,475.40,358.05,602.77,469.10,350.61,601.30
         |
@@ -94,9 +94,11 @@ def load_data(
     ----------
     cntx : context_def.Context
         Context.
-    cat : Optional[str]
-        Data category. This is required if several types of elements are comprised in a view.
-    
+    mode : Optional[str]
+        Mode.
+        ts:    mode = {"rcp", "sim"}
+        cycle: mode = {"MS", "D"}
+
     Returns
     -------
     pd.DataFrame
@@ -107,12 +109,16 @@ def load_data(
     # Load data.
     p = ""
     if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_tbl]:
-        p = get_d_data(cntx) + "<view_code>/<vi_code>.csv"
+        p = str(get_d_data(cntx)) + "<view_code>/<vi_code>_<mode>.csv"
+        p = p.replace("_<mode>", "_" + mode if cntx.view.get_code() == view_def.mode_ts else "")
     elif cntx.view.get_code() == view_def.mode_map:
-        p = get_d_data(cntx) + "<view_code>/<vi_code>/<hor_code>/*_<rcp_code>_*_<stat>_<delta>.csv"
+        p = str(get_d_data(cntx)) + "<view_code>/<vi_code>/<hor_code>/*_<rcp_code>_*_<stat>_<delta>.csv"
     elif cntx.view.get_code() == view_def.mode_cycle:
-        p = get_d_data(cntx) + "<view_code>/<vi_code>/<hor_code>/*<model_code>*<rcp_code>*.csv"
-    p = p.replace("<view_code>", cntx.view.get_code() + ("_" + cat.lower() if cat != "" else ""))
+        p = str(get_d_data(cntx)) + "<view_code>/<vi_code>/<hor_code>/*<model_code>*<rcp_code>*.csv"
+    view_code = cntx.view.get_code()
+    if cntx.view.get_code() == view_def.mode_cycle:
+        view_code += "_" + mode.lower()
+    p = p.replace("<view_code>", view_code)
     p = p.replace("<vi_code>", cntx.varidx.get_code())
     if cntx.view.get_code() in [view_def.mode_map, view_def.mode_cycle]:
         p = p.replace("<hor_code>", cntx.hor.get_code())
@@ -212,13 +218,13 @@ def get_range(
     if cntx.view.get_code() == view_def.mode_map:
         
         # Reference file.
-        p_ref = get_d_data(cntx) + "<view>/<vi_code>/*/<vi_code>_ref*_mean.csv"
+        p_ref = str(get_d_data(cntx)) + "<view>/<vi_code>/*/<vi_code>_ref*_mean.csv"
         p_ref = p_ref.replace("<view>", cntx.view.get_code())
         p_ref = p_ref.replace("<vi_code>", cntx.varidx.get_code())
         p_ref = glob.glob(p_ref)
 
         # RCP files.
-        p_rcp = get_d_data(cntx) + "<view>/<vi_code>/*/<vi_code>_rcp*_q<q>_<delta>.csv"
+        p_rcp = str(get_d_data(cntx)) + "<view>/<vi_code>/*/<vi_code>_rcp*_q<q>_<delta>.csv"
         p_rcp = p_rcp.replace("<view>", cntx.view.get_code())
         p_rcp = p_rcp.replace("<vi_code>", cntx.varidx.get_code())
         p_rcp = p_rcp.replace("_<delta>", "" if cntx.delta is False else "_delta")
@@ -332,7 +338,7 @@ def get_p_locations(
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    p = get_d_data(cntx) + "map/locations.csv"
+    p = str(get_d_data(cntx)) + "map/locations.csv"
 
     return p
 
@@ -357,7 +363,7 @@ def get_p_bounds(
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    p = get_d_data(cntx) + "<view_code>/boundaries.geojson"
+    p = str(get_d_data(cntx)) + "<view_code>/boundaries.geojson"
     p = p.replace("<view_code>", cntx.view.get_code())
 
     return p

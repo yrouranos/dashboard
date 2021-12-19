@@ -499,9 +499,12 @@ def refresh():
     # Tab: time series.
     tab_ts = None
     if cntx.view.get_code() == view_def.mode_ts:
-        df = dash_utils.load_data(cntx)
+        df_rcp = dash_utils.load_data(cntx, dash_plot.mode_rcp)
+        df_sim = dash_utils.load_data(cntx, dash_plot.mode_sim)
         space = pn.pane.Markdown("<br><br><br>" if cntx.lib.get_code() == lib_def.mode_alt else "")
-        tab_ts = pn.Row(pn.Column(varidx_f, dash_plot.gen_ts(cntx, df), space, ref_val))
+        tab_ts = pn.Row(pn.Column(varidx_f,
+                                  dash_plot.gen_ts(cntx, df_rcp, dash_plot.mode_rcp),
+                                  dash_plot.gen_ts(cntx, df_sim, dash_plot.mode_sim), space, ref_val))
 
     # Tab: table.
     tab_tbl = None

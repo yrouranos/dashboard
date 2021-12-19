@@ -491,6 +491,8 @@ class VarIdxs(object_def.Objs):
             p = p.replace("<view_code>/", cntx.view.get_code().split("-")[0] + "*/")
             for p_i in list(glob.glob(p)):
                 code = os.path.basename(p_i).replace(".csv", "")
+                if cntx.view.get_code() == view_def.mode_ts:
+                    code = code.replace("_rcp", "").replace("_sim", "")
                 if code not in code_l:
                     code_l.append(code)
 

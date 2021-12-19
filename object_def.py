@@ -214,7 +214,7 @@ class Objs:
 
     def add_items(
         self,
-        items: [any],
+        items: Union[any, List[any]],
         inplace: bool = True
     ):
 
@@ -230,6 +230,9 @@ class Objs:
             If True, modifies the current instance.
         ----------------------------------------
         """
+
+        if not isinstance(items, List):
+            items = [items]
 
         new = self.copy()
         new.items = new.items + items

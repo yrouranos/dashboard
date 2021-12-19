@@ -170,11 +170,14 @@ def refresh():
 
     # GUI components.
     if cntx.view.get_code() == view_def.mode_ts:
-        df = dash_utils.load_data(cntx)
+        df_rcp = dash_utils.load_data(cntx, dash_plot.mode_rcp)
+        df_sim = dash_utils.load_data(cntx, dash_plot.mode_sim)
         if cntx.lib.get_code() in [lib_def.mode_alt, lib_def.mode_mat]:
-            st.write(dash_plot.gen_ts(cntx, df))
+            st.write(dash_plot.gen_ts(cntx, df_rcp, dash_plot.mode_rcp))
+            st.write(dash_plot.gen_ts(cntx, df_sim, dash_plot.mode_sim))
         else:
-            st.write(hv.render(dash_plot.gen_ts(cntx, df)), backend="bokeh")
+            st.write(hv.render(dash_plot.gen_ts(cntx, df_rcp, dash_plot.mode_rcp)), backend="bokeh")
+            st.write(hv.render(dash_plot.gen_ts(cntx, df_sim, dash_plot.mode_sim)), backend="bokeh")
     elif cntx.view.get_code() == view_def.mode_tbl:
         st.write(dash_plot.gen_tbl(cntx))
     elif cntx.view.get_code() == view_def.mode_map:

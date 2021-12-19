@@ -82,7 +82,7 @@ class Hors(object_def.Objs):
         # The items are extracted from directory names.
         # ~/<project_code>/map/<vi_code>/*
         if cntx.view.get_code() == view_def.mode_map:
-            p = dash_utils.get_d_data(cntx) + "<view>/<vi_code>/*/*_<delta>.csv"
+            p = str(dash_utils.get_d_data(cntx)) + "<view>/<vi_code>/*/*_<delta>.csv"
             p = p.replace("<view>", cntx.view.get_code())
             p = p.replace("<vi_code>", cntx.varidx.get_code())
             p = p.replace("_<delta>", "" if cntx.delta is False else "_delta")
@@ -101,7 +101,7 @@ class Hors(object_def.Objs):
         # The items are extracted from directory names.
         # ~/<project_code>/cycle*/*
         elif cntx.view.get_code() == view_def.mode_cycle:
-            p = dash_utils.get_d_data(cntx) + "<view>/<vi_code>/*"
+            p = str(dash_utils.get_d_data(cntx)) + "<view>/<vi_code>/*"
             p = p.replace("<view>/", cntx.view.get_code() + "*/")
             p = p.replace("<vi_code>", cntx.varidx.get_code())
             for p_i in list(glob.glob(p)):

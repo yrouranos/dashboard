@@ -80,7 +80,7 @@ class Models(object_def.Objs):
         # The items are extracted from file names.
         # ~/<project_code>/<view_code>*/<vi_code>/<hor_code>/*.csv
         # The result only makes sense in the context of the 'cycle' view.
-        p = dash_utils.get_d_data(cntx) + "<view_code>*/<vi_code>/<hor_code>/*<rcp_code>*.csv"
+        p = str(dash_utils.get_d_data(cntx)) + "<view_code>*/<vi_code>/<hor_code>/*<rcp_code>*.csv"
         p = p.replace("<view_code>", cntx.view.get_code())
         p = p.replace("<vi_code>", cntx.varidx.get_code())
         p = p.replace("<hor_code>", cntx.hor.get_code())
