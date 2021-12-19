@@ -112,13 +112,13 @@ class Stats(object_def.Objs):
         code_l = []
 
         # The items are extracted from file names.
-        # ~/<project_code>/map/<varidx_code>/<hor_code>/*.csv"
+        # ~/<project_code>/map/<vi_code>/<hor_code>/*.csv"
         if cntx.view.get_code() == view_def.mode_map:
             p = dash_utils.get_d_data(cntx) +\
-                "<view_code>/<varidx_code>/<hor_code>/<varidx_name>_<rcp_code>_<hor_code_>_<stat>_<delta>.csv"
+                "<view_code>/<vi_code>/<hor_code>/<vi_name>_<rcp_code>_<hor_code_>_<stat>_<delta>.csv"
             p = p.replace("<view_code>", cntx.view.get_code())
-            p = p.replace("<varidx_code>", cntx.varidx.get_code())
-            p = p.replace("<varidx_name>", cntx.varidx.get_code())
+            p = p.replace("<vi_code>", cntx.varidx.get_code())
+            p = p.replace("<vi_name>", cntx.varidx.get_code())
             p = p.replace("<rcp_code>", "" if cntx.rcp is None else cntx.rcp.get_code())
             p = p.replace("<hor_code_>", "" if cntx.hor is None else cntx.hor.get_code().replace("-", "_"))
             p = p.replace("<hor_code>", "" if cntx.hor is None else cntx.hor.get_code())

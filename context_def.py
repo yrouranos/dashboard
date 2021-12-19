@@ -34,7 +34,7 @@ class Context(object_def.Obj):
 
         super(Context, self).__init__(code, code)
 
-        # Data ---------------------------------------------------------------------------------------------------------
+        # Data ---------------------------------
 
         # Project.
         self.project = None
@@ -71,11 +71,13 @@ class Context(object_def.Obj):
         # Anomalies.
         self.delta = False
 
-        # File system --------------------------------------------------------------------------------------------------
+        # File system --------------------------
 
         # Geospatial files (maps).
         self.p_locations = ""
         self.p_bounds = ""
+
+        # Map ----------------------------------
 
         # Resolution.
         self.dpi = 600
@@ -105,35 +107,16 @@ class Context(object_def.Obj):
         - The 4th scheme is for positive-only delta values.
         """
 
-        # Temperature variables.
-        self.opt_map_col_temp_var   = ["viridis", "RdBu_r", "Blues_r", "Reds"]
-
-        # Temperature indices (high).
-        self.opt_map_col_temp_idx_1 = self.opt_map_col_temp_var
-
-        # Temperature indices (low).
-        self.opt_map_col_temp_idx_2 = ["plasma_r", "RdBu", "Reds_r", "Blues"]
-
-        # Precipitation variables.
-        self.opt_map_col_prec_var   = ["Blues", "BrWhGr", "Browns_r", "Greens"]
-
-        # Precipitation indices (high).
-        self.opt_map_col_prec_idx_1 = self.opt_map_col_prec_var
-
-        # Precipitation indices (low).
-        self.opt_map_col_prec_idx_2 = ["Oranges", "BrWhGr_r", "Greens_r", "Browns"]
-
-        # Precipitation indices (other).
-        self.opt_map_col_prec_idx_3 = ["viridis", "RdBu_r", "Blues_r", "Reds"]
-
-        # Wind variables.
-        self.opt_map_col_wind_var   = ["None", "RdBu_r", "Blues_r", "Reds"]
-
-        # Wind indices.
-        self.opt_map_col_wind_idx_1 = ["Reds", "RdBu_r", "Blues_r", "Reds"]
-
-        # Other variables and indices.
-        self.opt_map_col_default    = ["viridis", "RdBu_r", "Blues_r", "Reds"]
+        self.opt_map_col_temp_var   = ["viridis",   "RdBu_r",  "Blues_r",   "Reds"]  # Temperature variables.
+        self.opt_map_col_temp_idx_1 = self.opt_map_col_temp_var                      # Temperature indices (high).
+        self.opt_map_col_temp_idx_2 = ["plasma_r",    "RdBu",   "Reds_r",  "Blues"]  # Temperature indices (low).
+        self.opt_map_col_prec_var   = ["Blues",     "BrWhGr", "Browns_r", "Greens"]  # Precipitation variables.
+        self.opt_map_col_prec_idx_1 = self.opt_map_col_prec_var                      # Precipitation indices (high).
+        self.opt_map_col_prec_idx_2 = ["Oranges", "BrWhGr_r", "Greens_r", "Browns"]  # Precipitation indices (low).
+        self.opt_map_col_prec_idx_3 = ["viridis",   "RdBu_r",  "Blues_r",   "Reds"]  # Precipitation indices (other).
+        self.opt_map_col_wind_var   = ["None",      "RdBu_r",  "Blues_r",   "Reds"]  # Wind variables.
+        self.opt_map_col_wind_idx_1 = ["Reds",      "RdBu_r",  "Blues_r",   "Reds"]  # Wind indices.
+        self.opt_map_col_default    = ["viridis",   "RdBu_r",  "Blues_r",   "Reds"]  # Other variables and indices.
 
         # Discrete vs. continuous colors scales (maps).
         self.opt_map_discrete = True

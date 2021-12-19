@@ -85,23 +85,12 @@ def gen_ts(
     # Extract minimum and maximum x-values (round to lower and upper decades).
     x_min = math.floor(min(df["year"]) / 10) * 10
     x_max = math.ceil(max(df["year"]) / 10) * 10
-    
+
     # Extract minimum and maximum y-values.
     first_col_index = 3 if cntx.delta else 2
     y_min = df.iloc[:, first_col_index:].min().min()
     y_max = df.iloc[:, first_col_index:].max().max()
-    """
-    for rcp in cntx.rcps.items:
-        if rcp.get_code() == rcp_def.rcp_ref:
-            col_min = col_max = rcp_def.rcp_ref
-        else:
-            col_min = rcp.get_code() + "_min"
-            col_max = rcp.get_code() + "_max"
-        if col_min in df.columns:
-            y_min = min(y_min, df[col_min].min())
-        if col_max in df.columns:
-            y_max = max(y_max, df[col_max].max())
-    """
+
     # Plot components.
     x_label = "Année"
     y_label = ("Δ" if cntx.delta else "") + cntx.varidx.get_label()
@@ -463,8 +452,8 @@ def gen_ts_mat(
                 ax.plot(df_year, df_rcp[columns[1]], color=color, alpha=1.0)
                 ax.fill_between(np.array(df_year), df_rcp[columns[0]], df_rcp[columns[2]], color=color, alpha=0.25)
             else:
-                for i in range(len(df_rcp)):
-                    ax.plot(df_year, df_rcp[columns[i]], color=color, alpha=0.5)
+                for i in range(len(columns)):
+                    ax.plot(df_year, df_rcp[columns[i]], color=color, alpha=1.0)
         
         # Collect legend label and line.
         leg_labels.append(rcp.get_desc())    
@@ -923,7 +912,7 @@ def get_cmap_name(
     """
 
     # Determine color scale index.
-    is_wind_var = cntx.varidx.get_code() in [vi.var_uas, vi.var_vas, vi.var_sfcwindmax]
+    is_wind_var = cntx.varidx.get_code() in [vi.v_uas, vi.v_vas, vi.v_sfcwindmax]
     if (not cntx.delta) and (not is_wind_var):
         cmap_idx = 0
     elif (z_min < 0) and (z_max > 0):
@@ -935,37 +924,37 @@ def get_cmap_name(
 
     # Temperature-related.
     if cntx.varidx.get_code() in \
-        [vi.var_tas, vi.var_tasmin, vi.var_tasmax, vi.idx_etr, vi.idx_tgg,
-         vi.idx_tng, vi.idx_tnx, vi.idx_txx, vi.idx_txg]:
+        [vi.v_tas, vi.v_tasmin, vi.v_tasmax, vi.i_etr, vi.i_tgg,
+         vi.i_tng, vi.i_tnx, vi.i_txx, vi.i_txg]:
         cmap_name = cntx.opt_map_col_temp_var[cmap_idx]
     elif cntx.varidx.get_code() in \
-        [vi.idx_tx_days_above, vi.idx_heat_wave_max_length, vi.idx_heat_wave_total_length,
-         vi.idx_hot_spell_frequency, vi.idx_hot_spell_max_length, vi.idx_tropical_nights,
-         vi.idx_tx90p, vi.idx_wsdi]:
+        [vi.i_tx_days_above, vi.i_heat_wave_max_length, vi.i_heat_wave_total_length,
+         vi.i_hot_spell_frequency, vi.i_hot_spell_max_length, vi.i_tropical_nights,
+         vi.i_tx90p, vi.i_wsdi]:
         cmap_name = cntx.opt_map_col_temp_idx_1[cmap_idx]
-    elif cntx.varidx.get_code() in [vi.idx_tn_days_below, vi.idx_tng_months_below]:
+    elif cntx.varidx.get_code() in [vi.i_tn_days_below, vi.i_tng_months_below]:
         cmap_name = cntx.opt_map_col_temp_idx_2[cmap_idx]
 
     # Precipitation-related.
     elif cntx.varidx.get_code() in \
-        [vi.var_pr, vi.idx_prcptot, vi.idx_rx1day, vi.idx_rx5day, vi.idx_sdii,
-         vi.idx_rain_season_prcptot]:
+        [vi.v_pr, vi.i_prcptot, vi.i_rx1day, vi.i_rx5day, vi.i_sdii,
+         vi.i_rain_season_prcptot]:
         cmap_name = cntx.opt_map_col_prec_var[cmap_idx]
     elif cntx.varidx.get_code() in \
-        [vi.idx_cwd, vi.idx_r10mm, vi.idx_r20mm, vi.idx_wet_days, vi.idx_rain_season_length,
-         vi.idx_rnnmm]:
+        [vi.i_cwd, vi.i_r10mm, vi.i_r20mm, vi.i_wet_days, vi.i_rain_season_length,
+         vi.i_rnnmm]:
         cmap_name = cntx.opt_map_col_prec_idx_1[cmap_idx]
     elif cntx.varidx.get_code() in \
-        [vi.idx_cdd, vi.idx_dry_days, vi.idx_drought_code,
-         vi.idx_dry_spell_total_length]:
+        [vi.i_cdd, vi.i_dry_days, vi.i_drought_code,
+         vi.i_dry_spell_total_length]:
         cmap_name = cntx.opt_map_col_prec_idx_2[cmap_idx]
-    elif cntx.varidx.get_code() in [vi.idx_rain_season_start, vi.idx_rain_season_end]:
+    elif cntx.varidx.get_code() in [vi.i_rain_season_start, vi.i_rain_season_end]:
         cmap_name = cntx.opt_map_col_prec_idx_3[cmap_idx]
 
     # Wind-related.
-    elif cntx.varidx.get_code() in [vi.var_uas, vi.var_vas, vi.var_sfcwindmax]:
+    elif cntx.varidx.get_code() in [vi.v_uas, vi.v_vas, vi.v_sfcwindmax]:
         cmap_name = cntx.opt_map_col_wind_var[cmap_idx]
-    elif cntx.varidx.get_code() in [vi.idx_wg_days_above, vi.idx_wx_days_above]:
+    elif cntx.varidx.get_code() in [vi.i_wg_days_above, vi.i_wx_days_above]:
         cmap_name = cntx.opt_map_col_wind_idx_1[cmap_idx]
 
     # Default values.

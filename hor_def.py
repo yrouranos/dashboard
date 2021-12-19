@@ -80,11 +80,11 @@ class Hors(object_def.Objs):
         code_l = []
 
         # The items are extracted from directory names.
-        # ~/<project_code>/map/<varidx_code>/*
+        # ~/<project_code>/map/<vi_code>/*
         if cntx.view.get_code() == view_def.mode_map:
-            p = dash_utils.get_d_data(cntx) + "<view>/<varidx_code>/*/*_<delta>.csv"
+            p = dash_utils.get_d_data(cntx) + "<view>/<vi_code>/*/*_<delta>.csv"
             p = p.replace("<view>", cntx.view.get_code())
-            p = p.replace("<varidx_code>", cntx.varidx.get_code())
+            p = p.replace("<vi_code>", cntx.varidx.get_code())
             p = p.replace("_<delta>", "" if cntx.delta is False else "_delta")
             for p in glob.glob(p):
                 code = os.path.basename(os.path.dirname(p))
@@ -92,7 +92,7 @@ class Hors(object_def.Objs):
                     code_l.append(code)
 
         # The items are extracted from the 'hor' column of data files.
-        # ~/<project_code>/tbl/<varidx_code>.csv
+        # ~/<project_code>/tbl/<vi_code>.csv
         elif cntx.view.get_code() == view_def.mode_tbl:
             df = dash_utils.load_data(cntx)
             code_l = list(dict.fromkeys(list(df["hor"])))
@@ -101,9 +101,9 @@ class Hors(object_def.Objs):
         # The items are extracted from directory names.
         # ~/<project_code>/cycle*/*
         elif cntx.view.get_code() == view_def.mode_cycle:
-            p = dash_utils.get_d_data(cntx) + "<view>/<varidx_code>/*"
+            p = dash_utils.get_d_data(cntx) + "<view>/<vi_code>/*"
             p = p.replace("<view>/", cntx.view.get_code() + "*/")
-            p = p.replace("<varidx_code>", cntx.varidx.get_code())
+            p = p.replace("<vi_code>", cntx.varidx.get_code())
             for p_i in list(glob.glob(p)):
                 code = os.path.basename(p_i)
                 if code not in code_l:

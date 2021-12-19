@@ -140,8 +140,8 @@ def refresh():
 
     # Variables and indices.
     cntx.varidxs = vi.VarIdxs(cntx)
-    varidx_f = st.selectbox("Variable ou indice", options=cntx.varidxs.get_desc_l())
-    cntx.varidx = vi.VarIdx(cntx.varidxs.get_code(varidx_f))
+    vi_f = st.selectbox("Variable ou indice", options=cntx.varidxs.get_desc_l())
+    cntx.varidx = vi.VarIdx(cntx.varidxs.get_code(vi_f))
     cntx.project.set_quantiles(cntx.project.get_code(), cntx)
 
     # Horizons.

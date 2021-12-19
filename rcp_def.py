@@ -19,18 +19,18 @@ from typing import List, Union
 # Emission scenarios.
 # The last item means all RCPs.
 rcp_ref = "ref"
-rcp_26 = "rcp26"
-rcp_45 = "rcp45"
-rcp_85 = "rcp85"
-rcp_xx = "rcpxx"
+rcp_26  = "rcp26"
+rcp_45  = "rcp45"
+rcp_85  = "rcp85"
+rcp_xx  = "rcpxx"
 
 # Properties of emission scenarios.
 code_props = {
     rcp_ref: ["Référence", "black"],
-    rcp_26: ["RCP 2.6", "blue"],
-    rcp_45: ["RCP 4.5", "green"],
-    rcp_85: ["RCP 8.5", "red"],
-    rcp_xx: ["Tous", "pink"]
+    rcp_26:  ["RCP 2.6", "blue"],
+    rcp_45:  ["RCP 4.5", "green"],
+    rcp_85:  ["RCP 8.5", "red"],
+    rcp_xx:  ["Tous", "pink"]
 }
 
 
@@ -111,13 +111,13 @@ class RCPs(object_def.Objs):
         cntx = args[0]
 
         # The items are extracted from column names of data files ('ts' view).
-        # ~/<project_code>/ts/<varidx_code>/*.csv
+        # ~/<project_code>/ts/<vi_code>/*.csv
         # The items are extracted from the 'rcp' column of data files ('tbl' view).
-        # ~/<project_code>/tbl/<varidx_code>/*.csv
+        # ~/<project_code>/tbl/<vi_code>/*.csv
         if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_tbl]:
-            p = dash_utils.get_d_data(cntx) + "/<view_code>/<varidx_code>.csv"
+            p = dash_utils.get_d_data(cntx) + "/<view_code>/<vi_code>.csv"
             p = p.replace("<view_code>", cntx.view.get_code())
-            p = p.replace("<varidx_code>", cntx.varidx.get_code())
+            p = p.replace("<vi_code>", cntx.varidx.get_code())
             df = pd.read_csv(p)
             if cntx.view.get_code() == view_def.mode_ts:
                 item_l = list(df.columns)
@@ -127,20 +127,20 @@ class RCPs(object_def.Objs):
                 item_l.remove(rcp_ref)
 
         # The items are extracted from file names.
-        # ~/<project_code>/map/<varidx_code>/<hor_code>/*
+        # ~/<project_code>/map/<vi_code>/<hor_code>/*
         elif cntx.view.get_code() == view_def.mode_map:
-            p = dash_utils.get_d_data(cntx) + "<view_code>/<varidx_code>/<hor_code>/*.csv"
+            p = dash_utils.get_d_data(cntx) + "<view_code>/<vi_code>/<hor_code>/*.csv"
             p = p.replace("<view_code>", cntx.view.get_code())
-            p = p.replace("<varidx_code>", cntx.varidx.get_code())
+            p = p.replace("<vi_code>", cntx.varidx.get_code())
             p = p.replace("<hor_code>", cntx.hor.get_code())
             item_l = list(glob.glob(p))
 
         # The items are extracted from file names.
-        # ~/<project_code>/cycle*/<varidx_code>/<hor_code>/*.csv
+        # ~/<project_code>/cycle*/<vi_code>/<hor_code>/*.csv
         elif cntx.view.get_code() == view_def.mode_cycle:
-            p = dash_utils.get_d_data(cntx) + "<view_code>*/<varidx_code>/<hor_code>/*.csv"
+            p = dash_utils.get_d_data(cntx) + "<view_code>*/<vi_code>/<hor_code>/*.csv"
             p = p.replace("<view_code>", cntx.view.get_code())
-            p = p.replace("<varidx_code>", cntx.varidx.get_code())
+            p = p.replace("<vi_code>", cntx.varidx.get_code())
             p = p.replace("<hor_code>", cntx.hor.get_code())
             item_l = glob.glob(p)
 

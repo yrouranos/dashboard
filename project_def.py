@@ -66,19 +66,19 @@ class Project(object_def.Obj):
                 quantiles = []
 
                 # The items are extracted from the 'q' column of data files.
-                # ~/<project_code>/tbl/<varidx_code>.csv
+                # ~/<project_code>/tbl/<vi_code>.csv
                 if cntx.view.get_code() == view_def.mode_tbl:
                     df = dash_utils.load_data(cntx)
                     df = df[(df["q"] > 0.01) & (df["q"] < 0.99) & (df["q"] != 0.5)]["q"]
                     quantiles = [min(df), max(df)]
 
                 # The items are extracted from file names.
-                # ~/<project_code>/map/<varidx_code>/*/*_q*.csv
+                # ~/<project_code>/map/<vi_code>/*/*_q*.csv
                 elif cntx.view.get_code() == view_def.mode_map:
-                    p = dash_utils.d_data + "<project_code>/<view_code>/<varidx_code>"
+                    p = dash_utils.d_data + "<project_code>/<view_code>/<vi_code>"
                     p = p.replace("<project_code>", code)
                     p = p.replace("<view_code>", cntx.view.get_code())
-                    p = p.replace("<varidx_code>", cntx.varidx.get_code())
+                    p = p.replace("<vi_code>", cntx.varidx.get_code())
                     p_l = glob.glob(p + "/*/*_q*.csv")
                     for p_i in p_l:
                         tokens = p_i.replace(".csv", "").replace("_delta", "").split("_q")

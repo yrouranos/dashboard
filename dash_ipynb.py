@@ -20,7 +20,7 @@ import panel.widgets as pnw
 import project_def
 import rcp_def
 import stat_def
-import varidx_def
+import varidx_def as vi
 import view_def
 import warnings
 from typing import Union, List
@@ -165,7 +165,7 @@ def init_context():
     cntx = context_def.Context(context_def.code_jupyter)
     cntx.views = view_def.Views()
     cntx.libs = lib_def.Libs()
-    cntx.varidxs = varidx_def.VarIdxs()
+    cntx.varidxs = vi.VarIdxs()
     cntx.hors = hor_def.Hors()
     cntx.rcps = rcp_def.RCPs()
 
@@ -242,10 +242,10 @@ def update_varidx():
 
     global cntx, varidx_f
 
-    cntx.varidxs = varidx_def.VarIdxs(cntx)
+    cntx.varidxs = vi.VarIdxs(cntx)
     varidx_l = cntx.varidxs.get_desc_l()
     update_field("varidx", varidx_l)
-    cntx.varidx = varidx_def.VarIdx(cntx.varidxs.get_code(varidx_f[1].value))
+    cntx.varidx = vi.VarIdx(cntx.varidxs.get_code(varidx_f[1].value))
     cntx.project.set_quantiles(cntx.project.get_code(), cntx)
 
 
@@ -394,7 +394,7 @@ def varidx_updated(event):
 
     global cntx, varidx_f
 
-    cntx.varidx = varidx_def.VarIdx(cntx.varidxs.get_code(varidx_f[1].value))
+    cntx.varidx = vi.VarIdx(cntx.varidxs.get_code(varidx_f[1].value))
     if cntx.view.get_code() in [view_def.mode_tbl, view_def.mode_map, view_def.mode_cycle]:
         update_hor()
         hor_updated(event)
