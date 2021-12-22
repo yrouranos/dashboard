@@ -139,10 +139,7 @@ class RCPs(def_object.Objs):
             p = p.replace("<mode>", "rcp")
             p = p.replace("_<delta>", "_delta" if cntx.delta else "")
             df = pd.read_csv(p)
-            if cntx.view.get_code() == def_view.mode_ts:
-                item_l = list(df.columns)
-            else:
-                item_l = df["rcp"]
+            item_l = list(df.columns)
             if cntx.delta and (rcp_ref in item_l):
                 item_l.remove(rcp_ref)
 
