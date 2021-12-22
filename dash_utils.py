@@ -121,7 +121,7 @@ def load_data(
     if cntx.view.get_code() == def_view.mode_tbl:
         p = str(get_d_data(cntx)) + "<view_code>/<vi_code>.csv"
     elif cntx.view.get_code() in [def_view.mode_ts, def_view.mode_bias]:
-        p = str(get_d_data(cntx)) + "<view_code>/<vi_code>/<vi_code>_<mode>.csv"
+        p = str(get_d_data(cntx)) + "<view_code>/<vi_code>/<vi_code>_<mode>_<delta>.csv"
         p = p.replace("_<mode>", "_" + mode)
     elif cntx.view.get_code() == def_view.mode_map:
         p = str(get_d_data(cntx)) + "<view_code>/<vi_code>/<hor_code>/*_<rcp_code>_*_<stat>_<delta>.csv"
@@ -132,12 +132,13 @@ def load_data(
         view_code += "_" + mode.lower()
     p = p.replace("<view_code>", view_code)
     p = p.replace("<vi_code>", cntx.varidx.get_code())
+    if cntx.view.get_code() in [def_view.mode_ts, def_view.mode_map, def_view.mode_cycle, def_view.mode_bias]:
+        p = p.replace("_<delta>", "" if cntx.delta is False else "_delta")
     if cntx.view.get_code() in [def_view.mode_map, def_view.mode_cycle]:
         p = p.replace("<hor_code>", cntx.hor.get_code())
         p = p.replace("<rcp_code>", cntx.rcp.get_code())
         if cntx.view.get_code() == def_view.mode_map:
             p = p.replace("<stat>", cntx.stat.get_code())
-            p = p.replace("_<delta>", "" if cntx.delta is False else "_delta")
         elif cntx.view.get_code() == def_view.mode_cycle:
             model_code = cntx.model.get_code() if cntx.rcp.get_code() != def_rcp.rcp_ref else ""
             p = p.replace("<model_code>", model_code)
