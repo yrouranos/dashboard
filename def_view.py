@@ -26,7 +26,7 @@ code_desc = {
     mode_tbl: "Tableau",
     mode_map: "Carte",
     mode_cycle: "Cycle annuel",
-    mode_bias: "Biais"
+    mode_bias: "Ajustement du biais"
 }
 
 

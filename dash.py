@@ -132,7 +132,7 @@ def refresh():
     cntx.lib = def_lib.Lib(cntx.libs.get_code(lib_f))
 
     # Deltas.
-    if cntx.view.get_code() in [def_view.mode_ts, def_view.mode_tbl, def_view.mode_map]:
+    if cntx.view.get_code() in [def_view.mode_ts, def_view.mode_tbl, def_view.mode_map, def_view.mode_bias]:
         st.sidebar.markdown("<style>.sel_title {font-size:14.5px}</style>", unsafe_allow_html=True)
         st.sidebar.markdown("<p class='sel_title'>Afficher les anomalies</p>", unsafe_allow_html=True)
         delta_f = st.sidebar.checkbox("", value=False)
