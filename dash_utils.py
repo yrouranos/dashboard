@@ -106,8 +106,8 @@ def load_data(
         Context.
     mode : Optional[str]
         Mode.
-        ts:    mode = {"rcp", "sim"}
-        cycle: mode = {"MS", "D"}
+        ts/bias: mode = {"rcp", "sim"}
+        cycle:   mode = {"MS", "D"}
 
     Returns
     -------

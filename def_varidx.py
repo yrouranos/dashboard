@@ -496,8 +496,6 @@ class VarIdxs(def_object.Objs):
         elif cntx.view.get_code() in [def_view.mode_ts, def_view.mode_map, def_view.mode_cycle, def_view.mode_bias]:
             p = str(dash_utils.get_d_data(cntx)) + "<view_code>*/*"
             p = p.replace("<view_code>", cntx.view.get_code())
-            if cntx.view.get_code() in [def_view.mode_ts, def_view.mode_bias]:
-                p = p.replace("_rcp", "").replace("_sim", "")
             for p_i in list(glob.glob(p)):
                 code = os.path.basename(p_i)
                 if (code not in code_l) and (os.path.isdir(p_i)):

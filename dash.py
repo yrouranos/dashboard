@@ -212,4 +212,3 @@ def refresh():
 # import dash_test
 # dash_test.test_all("sn-ko")
 refresh()
-
