@@ -689,7 +689,7 @@ def gen_map(
     # Load locations.
     p = cntx.p_locations
     df_loc = None
-    if os.path.exists(p):
+    if (p != "") and (os.path.exists(p)):
         df_loc = pd.read_csv(p)
 
     # Generate map.
@@ -759,10 +759,12 @@ def gen_map_hv(
         heatmap = heatmap.opts(colorbar_opts={"ticker": ticker, "major_label_overrides": ticks_dict})
 
     # Create region boundary.
-    df_curve = dash_utils.load_geojson(cntx.p_bounds, "pandas")
-    x_lim = (min(df_curve["longitude"]), max(df_curve["longitude"]))
-    y_lim = (min(df_curve["latitude"]), max(df_curve["latitude"]))
-    curve = df_curve.hvplot.line(x="longitude", y="latitude", color="black", alpha=0.7, xlim=x_lim, ylim=y_lim)
+    bounds = None
+    if (cntx.p_bounds != "") and os.path.exists(cntx.p_bounds):
+        df_curve = dash_utils.load_geojson(cntx.p_bounds, "pandas")
+        x_lim = (min(df_curve["longitude"]), max(df_curve["longitude"]))
+        y_lim = (min(df_curve["latitude"]), max(df_curve["latitude"]))
+        bounds = df_curve.hvplot.line(x="longitude", y="latitude", color="black", alpha=0.7, xlim=x_lim, ylim=y_lim)
 
     # Create locations.
     points = None
@@ -775,7 +777,9 @@ def gen_map_hv(
                  text_font_style="italic", text_font_size=str(fs_annotations) + "pt")
 
     # Combine layers.
-    fig = (heatmap * curve)
+    fig = heatmap
+    if bounds is not None:
+        fig = fig * bounds
     if points is not None:
         fig = fig * points * labels
 
@@ -876,7 +880,8 @@ def gen_map_mat(
     cbar_ax.tick_params(labelsize=fs_ticks_cbar, length=0)
 
     # Draw region boundary.
-    draw_region_boundary(cntx, ax)
+    if (cntx.p_bounds != "") and os.path.exists(cntx.p_bounds):
+        draw_region_boundary(cntx, ax)
 
     # Draw locations.
     if df_loc is not None:
