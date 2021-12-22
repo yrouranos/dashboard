@@ -13,10 +13,15 @@
 # ----------------------------------------------------------------------------------------------------------------------
 
 import altair as alt
-import context_def
+import dash_utils
+import def_context
+import def_lib
+import def_rcp
+import def_stat
+import def_varidx as vi
+import def_view
 import holoviews as hv
 import hvplot.pandas
-import lib_def
 import math
 import matplotlib.colors as colors
 import matplotlib.gridspec as gridspec
@@ -27,11 +32,6 @@ import pandas as pd
 import panel as pn
 import plotly.graph_objects as go
 import plotly.io as pio
-import rcp_def
-import stat_def
-import dash_utils
-import varidx_def as vi
-import view_def
 import xarray as xr
 from bokeh.models import FixedTicker
 from descartes import PolygonPatch
@@ -49,7 +49,7 @@ mode_sim = "sim"
 
 
 def gen_ts(
-    cntx: context_def.Context,
+    cntx: def_context.Context,
     df: pd.DataFrame,
     mode: Optional[str] = mode_rcp
 ) -> Union[alt.Chart, any, plt.figure]:
@@ -60,7 +60,7 @@ def gen_ts(
     
     Parameters
     ----------
-    cntx : context_def.Context
+    cntx : def_context.Context
         Context.
     df : pd.DataFrame
         Dataframe.
@@ -78,9 +78,9 @@ def gen_ts(
     # Calculate deltas.
     if cntx.delta:
         for col in df.columns[2:]:
-            if col != rcp_def.rcp_ref:
-                df[col] = df[col] - df[rcp_def.rcp_ref].mean()
-        df[rcp_def.rcp_ref] = 0
+            if col != def_rcp.rcp_ref:
+                df[col] = df[col] - df[def_rcp.rcp_ref].mean()
+        df[def_rcp.rcp_ref] = 0
 
     # Extract minimum and maximum x-values (round to lower and upper decades).
     x_min = math.floor(min(df["year"]) / 10) * 10
@@ -95,9 +95,9 @@ def gen_ts(
     x_label = "Année"
     y_label = ("Δ" if cntx.delta else "") + cntx.varidx.get_label()
     
-    if cntx.lib.get_code() == lib_def.mode_mat:
+    if cntx.lib.get_code() == def_lib.mode_mat:
         ts = gen_ts_mat(cntx, df, x_label, y_label, [x_min, x_max], [y_min, y_max], mode)
-    elif cntx.lib.get_code() == lib_def.mode_hv:
+    elif cntx.lib.get_code() == def_lib.mode_hv:
         ts = gen_ts_hv(cntx, df, x_label, y_label, [y_min, y_max], mode)
     else:
         ts = gen_ts_alt(cntx, df, x_label, y_label, [y_min, y_max], mode)
@@ -106,7 +106,7 @@ def gen_ts(
 
 
 def gen_ts_alt(
-    cntx: context_def.Context,
+    cntx: def_context.Context,
     df: pd.DataFrame,
     x_label: str,
     y_label: str,
@@ -120,7 +120,7 @@ def gen_ts_alt(
     
     Parameters
     ----------
-    cntx : context_def.Context
+    cntx : def_context.Context
         Context.
     df : pd.DataFrame
         Dataframe.
@@ -144,8 +144,8 @@ def gen_ts_alt(
 
     # Move reference RCP at the end of the list.
     rcps = cntx.rcps.copy()
-    rcps.remove_items(rcp_def.rcp_ref, inplace=True)
-    rcps.add_items(rcp_def.RCP(rcp_def.rcp_ref), inplace=True)
+    rcps.remove_items(def_rcp.rcp_ref, inplace=True)
+    rcps.add_items(def_rcp.RCP(def_rcp.rcp_ref), inplace=True)
 
     # Plot components.
     x_axis = alt.Axis(title=x_label, format="d")
@@ -160,15 +160,15 @@ def gen_ts_alt(
 
         for rcp in rcps.items:
 
-            if (item == "area") and (rcp.get_code() == rcp_def.rcp_ref):
+            if (item == "area") and (rcp.get_code() == def_rcp.rcp_ref):
                 continue
 
             # Subset columns.
             df_rcp = pd.DataFrame()
             df_rcp["Année"] = df["year"]
             df_rcp["Scénario"] = [rcp.get_desc()] * len(df)
-            if rcp.get_code() == rcp_def.rcp_ref:
-                df_rcp["Min"] = df_rcp["Moy"] = df_rcp["Max"] = df[rcp_def.rcp_ref]
+            if rcp.get_code() == def_rcp.rcp_ref:
+                df_rcp["Min"] = df_rcp["Moy"] = df_rcp["Max"] = df[def_rcp.rcp_ref]
             else:
                 if mode == mode_rcp:
                     df_rcp["Min"] = df[str(rcp.get_code() + "_min")]
@@ -186,7 +186,7 @@ def gen_ts_alt(
             # Round values.
             n_dec = cntx.varidx.get_precision()
             df_rcp["Moyenne"] = dash_utils.round_values(df_rcp["Moy"], n_dec)
-            if rcp.get_code() == rcp_def.rcp_ref:
+            if rcp.get_code() == def_rcp.rcp_ref:
                 tooltip = ["Année", "Scénario", "Moyenne"]
             else:
                 df_rcp["Minimum"] = dash_utils.round_values(df_rcp["Min"], n_dec)
@@ -206,18 +206,18 @@ def gen_ts_alt(
             # Draw curve(s).
             elif item == "curve":
                 if ((mode == mode_rcp) and (not cntx.delta)) or \
-                   ((not cntx.delta) and (rcp.get_code() == rcp_def.rcp_ref)) or \
-                   ((mode == mode_rcp) and cntx.delta and (rcp.get_code() != rcp_def.rcp_ref)):
+                   ((not cntx.delta) and (rcp.get_code() == def_rcp.rcp_ref)) or \
+                   ((mode == mode_rcp) and cntx.delta and (rcp.get_code() != def_rcp.rcp_ref)):
                     opacity = 1.0
                 else:
                     opacity = 0.3
-                columns = ["Moy"] if (mode == mode_rcp) or (rcp.get_code() == rcp_def.rcp_ref) else []
+                columns = ["Moy"] if (mode == mode_rcp) or (rcp.get_code() == def_rcp.rcp_ref) else []
                 if mode == mode_sim:
                     for column in df_rcp.columns:
                         if rcp.get_code() in column:
                             columns.append(column)
                 for column in columns:
-                    if cntx.delta and (rcp.get_code() == rcp_def.rcp_ref):
+                    if cntx.delta and (rcp.get_code() == def_rcp.rcp_ref):
                         curve = alt.Chart(df_rcp).mark_line(opacity=opacity).encode(
                             x=alt.X("Année", axis=x_axis),
                             y=alt.Y(column, axis=y_axis, scale=y_scale)
@@ -232,14 +232,14 @@ def gen_ts_alt(
                     plot = curve if plot is None else plot + curve
 
     # Adjust size.
-    height = 362 if cntx.code == context_def.code_streamlit else 300
+    height = 362 if cntx.code == def_context.code_streamlit else 300
     plot = plot.configure_axis(grid=False).properties(height=height, width=650)
 
     return plot
 
 
 def gen_ts_hv(
-    cntx: context_def.Context,
+    cntx: def_context.Context,
     df: pd.DataFrame,
     x_label: str,
     y_label: str,
@@ -253,7 +253,7 @@ def gen_ts_hv(
     
     Parameters
     ----------
-    cntx : context_def.Context
+    cntx : def_context.Context
         Context.
     df : pd.DataFrame
         Dataframe.
@@ -277,8 +277,8 @@ def gen_ts_hv(
 
     # Move reference RCP at the end of the list.
     rcps = cntx.rcps.copy()
-    rcps.remove_items(rcp_def.rcp_ref, inplace=True)
-    rcps.add_items(rcp_def.RCP(rcp_def.rcp_ref), inplace=True)
+    rcps.remove_items(def_rcp.rcp_ref, inplace=True)
+    rcps.add_items(def_rcp.RCP(def_rcp.rcp_ref), inplace=True)
 
     # Loop through RCPs.
     plot = None
@@ -286,15 +286,15 @@ def gen_ts_hv(
 
         for rcp in rcps.items:
 
-            if (item == "area") and (rcp.get_code() == rcp_def.rcp_ref):
+            if (item == "area") and (rcp.get_code() == def_rcp.rcp_ref):
                 continue
 
             # Subset and rename columns.
             df_rcp = pd.DataFrame()
             df_rcp["Année"] = df["year"]
             df_rcp["Scénario"] = [rcp.get_desc()] * len(df_rcp)
-            if rcp.get_code() == rcp_def.rcp_ref:
-                df_rcp["Minimum"] = df_rcp["Moyenne"] = df_rcp["Maximum"] = df[rcp_def.rcp_ref]
+            if rcp.get_code() == def_rcp.rcp_ref:
+                df_rcp["Minimum"] = df_rcp["Moyenne"] = df_rcp["Maximum"] = df[def_rcp.rcp_ref]
             else:
                 if mode == mode_rcp:
                     if str(rcp.get_code() + "_min") in df.columns:
@@ -315,7 +315,7 @@ def gen_ts_hv(
             # Round values.
             n_dec = cntx.varidx.get_precision()
             df_rcp["Moyenne"] = np.array(dash_utils.round_values(df_rcp["Moyenne"], n_dec)).astype(float)
-            if rcp.get_code() == rcp_def.rcp_ref:
+            if rcp.get_code() == def_rcp.rcp_ref:
                 tooltip = ["Année", "Scénario", "Moyenne"]
             else:
                 df_rcp["Minimum"] = np.array(dash_utils.round_values(df_rcp["Minimum"], n_dec)).astype(float)
@@ -332,12 +332,12 @@ def gen_ts_hv(
             # Draw curve(s).
             elif item == "curve":
                 if ((mode == mode_rcp) and (not cntx.delta)) or \
-                   ((not cntx.delta) and (rcp.get_code() == rcp_def.rcp_ref)) or \
-                   ((mode == mode_rcp) and cntx.delta and (rcp.get_code() != rcp_def.rcp_ref)):
+                   ((not cntx.delta) and (rcp.get_code() == def_rcp.rcp_ref)) or \
+                   ((mode == mode_rcp) and cntx.delta and (rcp.get_code() != def_rcp.rcp_ref)):
                     line_alpha = 1.0
                 else:
                     line_alpha = 0.3
-                show_ref = (mode == mode_rcp) or ((mode == mode_sim) and (rcp.get_code() == rcp_def.rcp_ref))
+                show_ref = (mode == mode_rcp) or ((mode == mode_sim) and (rcp.get_code() == def_rcp.rcp_ref))
                 columns = ["Moyenne"] if show_ref else []
                 if mode == mode_sim:
                     for column in df_rcp.columns:
@@ -358,7 +358,7 @@ def gen_ts_hv(
 
 
 def gen_ts_mat(
-    cntx: context_def.Context,
+    cntx: def_context.Context,
     df: pd.DataFrame,
     x_label: str,
     y_label: str,
@@ -373,7 +373,7 @@ def gen_ts_mat(
     
     Parameters
     ----------
-    cntx : context_def.Context
+    cntx : def_context.Context
         Context.
     df : pd.DataFrame
         Dataframe.
@@ -397,12 +397,12 @@ def gen_ts_mat(
     """
 
     # Font size.
-    fs            = 9 if cntx.code == context_def.code_streamlit else 10
+    fs            = 9 if cntx.code == def_context.code_streamlit else 10
     fs_labels     = fs
     fs_ticks      = fs
 
     # Initialize figure and axes.
-    if context_def.code_streamlit in cntx.code:
+    if def_context.code_streamlit in cntx.code:
         fig = plt.figure(figsize=(9, 4.4), dpi=cntx.dpi)
     else:
         fig = plt.figure(figsize=(10.6, 4.8), dpi=cntx.dpi)
@@ -422,8 +422,8 @@ def gen_ts_mat(
 
     # Move reference RCP at the end of the list.
     rcps = cntx.rcps.copy()
-    rcps.remove_items(rcp_def.rcp_ref, inplace=True)
-    rcps.add_items(rcp_def.RCP(rcp_def.rcp_ref), inplace=True)
+    rcps.remove_items(def_rcp.rcp_ref, inplace=True)
+    rcps.add_items(def_rcp.RCP(def_rcp.rcp_ref), inplace=True)
 
     # Loop through RCPs.
     leg_labels = []
@@ -452,12 +452,12 @@ def gen_ts_mat(
         color = rcp.get_color()
         area_alpha = 0.3
         if ((mode == mode_rcp) and (not cntx.delta)) or \
-                ((not cntx.delta) and (rcp.get_code() == rcp_def.rcp_ref)) or \
-                ((mode == mode_rcp) and cntx.delta and (rcp.get_code() != rcp_def.rcp_ref)):
+                ((not cntx.delta) and (rcp.get_code() == def_rcp.rcp_ref)) or \
+                ((mode == mode_rcp) and cntx.delta and (rcp.get_code() != def_rcp.rcp_ref)):
             line_alpha = 1.0
         else:
             line_alpha = 0.3
-        if rcp.get_code() == rcp_def.rcp_ref:
+        if rcp.get_code() == def_rcp.rcp_ref:
             ax.plot(df_year, df_rcp, color=color, alpha=line_alpha)
         else:
             if mode == mode_rcp:
@@ -482,16 +482,16 @@ def gen_ts_mat(
 
 
 def gen_tbl(
-    cntx: context_def.Context
+    cntx: def_context.Context
 ) -> Union[pd.DataFrame, go.Figure]:
-    
+
     """
     --------------------------------------------------------------------------------------------------------------------
     Generate a table.
     
     Parameters
     ----------
-    cntx : context_def.Context
+    cntx : def_context.Context
         Context.
 
     Returns
@@ -506,8 +506,8 @@ def gen_tbl(
 
     # List of statistics (in a column).
     stat_l, stat_desc_l = [], []
-    for code in list(stat_def.get_code_desc().keys()):
-        if code in [stat_def.mode_min, stat_def.mode_max, stat_def.mode_mean]:
+    for code in list(def_stat.get_code_desc().keys()):
+        if code in [def_stat.mode_min, def_stat.mode_max, def_stat.mode_mean]:
             stat_l.append([code, -1])
         elif code == "q" + cntx.project.get_quantiles_as_str()[0]:
             stat_l.append(["quantile", cntx.project.get_quantiles()[0]])
@@ -515,7 +515,7 @@ def gen_tbl(
             stat_l.append(["quantile", cntx.project.get_quantiles()[1]])
         else:
             stat_l.append(["quantile", 0.5])
-        stat_desc_l.append(stat_def.get_code_desc()[code])
+        stat_desc_l.append(def_stat.get_code_desc()[code])
 
     # Initialize resulting dataframe.
     df_res = pd.DataFrame()
@@ -525,13 +525,13 @@ def gen_tbl(
     columns = []
     for rcp in cntx.rcps.items:
 
-        if rcp.get_code() == rcp_def.rcp_ref:
+        if rcp.get_code() == def_rcp.rcp_ref:
             continue
 
         # Extract delta.
         delta = 0.0
         if cntx.delta:
-            delta = float(df[df["rcp"] == rcp_def.rcp_ref]["val"])
+            delta = float(df[df["rcp"] == def_rcp.rcp_ref]["val"])
 
         # Extract statistics.
         vals = []
@@ -551,7 +551,7 @@ def gen_tbl(
 
     df_res.columns = [df_res.columns[0]] + columns
 
-    if cntx.code == context_def.code_jupyter:
+    if cntx.code == def_context.code_jupyter:
         res = df_res.set_index(df_res.columns[0])
 
     else:
@@ -587,16 +587,16 @@ def gen_tbl(
 
 
 def get_ref_val(
-    cntx: context_def.Context
+    cntx: def_context.Context
 ) -> str:
-    
+
     """
     --------------------------------------------------------------------------------------------------------------------
     Get the reference value.
 
     Parameters
     ----------
-    cntx : context_def.Context
+    cntx : def_context.Context
         Context.
         
     Returns
@@ -608,11 +608,11 @@ def get_ref_val(
     
     # Load data.
     cntx_tbl = cntx.copy()
-    cntx_tbl.view = view_def.View(view_def.mode_tbl)
+    cntx_tbl.view = def_view.View(def_view.mode_tbl)
     df = dash_utils.load_data(cntx_tbl)
     
     # Extract value.
-    val = df[df["rcp"] == rcp_def.rcp_ref]["val"][0]
+    val = df[df["rcp"] == def_rcp.rcp_ref]["val"][0]
     if cntx.varidx.get_precision == 0:
         val = int(val)
     val = str(val)
@@ -624,7 +624,7 @@ def get_ref_val(
 
 
 def gen_map(
-    cntx: context_def.Context,
+    cntx: def_context.Context,
     df: pd.DataFrame,
     z_range: List[float]
 ) -> Union[any, plt.Figure]:
@@ -635,7 +635,7 @@ def gen_map(
 
     Parameters
     ----------
-    cntx : context_def.Context
+    cntx : def_context.Context
         Context.
     df : pd.DataFrame
         Dataframe (with 2 dimensions: longitude and latitude).
@@ -700,7 +700,7 @@ def gen_map(
         df_loc = pd.read_csv(p)
 
     # Generate map.
-    if cntx.lib.get_code() == lib_def.mode_hv:
+    if cntx.lib.get_code() == def_lib.mode_hv:
         fig = gen_map_hv(cntx, df, df_loc, v_range, cmap, ticks, tick_labels)
     else:
         fig = gen_map_mat(cntx, df, df_loc, v_range, cmap, ticks, tick_labels)
@@ -709,7 +709,7 @@ def gen_map(
 
 
 def gen_map_hv(
-    cntx: context_def.Context,
+    cntx: def_context.Context,
     df: pd.DataFrame,
     df_loc: pd.DataFrame,
     v_range: List[float],
@@ -724,7 +724,7 @@ def gen_map_hv(
 
     Parameters
     ----------
-    cntx : context_def.Context
+    cntx : def_context.Context
         Context.
     df : pd.DataFrame
         Dataframe.
@@ -793,7 +793,7 @@ def gen_map_hv(
 
 
 def gen_map_mat(
-    cntx: context_def.Context,
+    cntx: def_context.Context,
     df: pd.DataFrame,
     df_loc: pd.DataFrame,
     v_range: List[float],
@@ -808,7 +808,7 @@ def gen_map_mat(
     
     Parameters
     ----------
-    cntx : context_def.Context
+    cntx : def_context.Context
         Context.
     df : pd.DataFrame
         Dataframe.
@@ -831,7 +831,7 @@ def gen_map_mat(
     """
 
     # Font size.
-    fs            = 6 if cntx.code == context_def.code_streamlit else 10
+    fs            = 6 if cntx.code == def_context.code_streamlit else 10
     fs_labels     = fs
     fs_ticks      = fs
     fs_ticks_cbar = fs
@@ -842,7 +842,7 @@ def gen_map_mat(
     label = ("Δ" if cntx.delta else "") + cntx.varidx.get_label()
 
     # Initialize figure and axes.
-    if context_def.code_streamlit in cntx.code:
+    if def_context.code_streamlit in cntx.code:
         fig = plt.figure(figsize=(9, 4.45), dpi=cntx.dpi)
     else:
         fig = plt.figure(dpi=cntx.dpi)
@@ -899,7 +899,7 @@ def gen_map_mat(
 
 
 def get_cmap_name(
-    cntx: context_def.Context,
+    cntx: def_context.Context,
     z_min: float,
     z_max: float
 ) -> str:
@@ -910,7 +910,7 @@ def get_cmap_name(
 
     Parameters
     ----------
-    cntx : context_def.Context
+    cntx : def_context.Context
         Context.
     z_min : float
         Minimum value.
@@ -1157,7 +1157,7 @@ def adjust_precision(
 
 
 def draw_region_boundary(
-    cntx: context_def.Context,
+    cntx: def_context.Context,
     ax: plt.axes
 ) -> plt.axes:
 
@@ -1167,7 +1167,7 @@ def draw_region_boundary(
 
     Parameters
     ----------
-    cntx: context_def.Context
+    cntx: def_context.Context
         Context.
     ax : plt.axes
         Plots axes.
@@ -1263,7 +1263,7 @@ def rgb_to_dec(
 
 
 def gen_cycle_ms(
-    cntx: context_def.Context,
+    cntx: def_context.Context,
     df: pd.DataFrame
 ) -> Union[any, plt.Figure]:
 
@@ -1273,7 +1273,7 @@ def gen_cycle_ms(
 
     Parameters:
     ----------
-    cntx: context_def.Context
+    cntx: def_context.Context
         Context.
     df: pd.DataFrame
         Dataframe.
@@ -1285,7 +1285,7 @@ def gen_cycle_ms(
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    if cntx.lib.get_code() == lib_def.mode_hv:
+    if cntx.lib.get_code() == def_lib.mode_hv:
         fig = gen_cycle_ms_hv(cntx, df)
     else:
         fig = gen_cycle_ms_mat(cntx, df)
@@ -1294,7 +1294,7 @@ def gen_cycle_ms(
 
 
 def gen_cycle_ms_hv(
-    cntx: context_def.Context,
+    cntx: def_context.Context,
     df: pd.DataFrame
 ) -> any:
 
@@ -1304,7 +1304,7 @@ def gen_cycle_ms_hv(
 
     Parameters:
     ----------
-    cntx: context_def.Context
+    cntx: def_context.Context
         Context.
     df: pd.DataFrame
         Dataframe.
@@ -1347,7 +1347,7 @@ def gen_cycle_ms_hv(
 
 
 def gen_cycle_ms_mat(
-    cntx: context_def.Context,
+    cntx: def_context.Context,
     df: pd.DataFrame
 ) -> plt.Figure:
 
@@ -1357,7 +1357,7 @@ def gen_cycle_ms_mat(
 
     Parameters:
     ----------
-    cntx: context_def.Context
+    cntx: def_context.Context
         Context.
     df: pd.DataFrame
         Dataframe.
@@ -1379,7 +1379,7 @@ def gen_cycle_ms_mat(
     fs_axes = fs
 
     # Draw.
-    height = 5.45 if cntx.code == context_def.code_streamlit else 5.15
+    height = 5.45 if cntx.code == def_context.code_streamlit else 5.15
     fig = plt.figure(figsize=(9.95, height), dpi=cntx.dpi)
     plt.subplots_adjust(top=0.99, bottom=0.13, left=0.08, right=0.98, hspace=0.10, wspace=0.10)
     specs = gridspec.GridSpec(ncols=1, nrows=1, figure=fig)
@@ -1402,17 +1402,17 @@ def gen_cycle_ms_mat(
 
 
 def gen_cycle_d(
-    cntx: context_def.Context,
+    cntx: def_context.Context,
     df: pd.DataFrame
 ) -> Union[any, plt.Figure]:
-    
+
     """
     --------------------------------------------------------------------------------------------------------------------
     Generate a time series of daily values.
 
     Parameters
     ----------
-    cntx: context_def.Context
+    cntx: def_context.Context
         Context.
     df: pd.DataFrame
         Dataframe.
@@ -1424,7 +1424,7 @@ def gen_cycle_d(
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    if cntx.lib.get_code() == lib_def.mode_hv:
+    if cntx.lib.get_code() == def_lib.mode_hv:
         fig = gen_cycle_d_hv(cntx, df)
     else:
         fig = gen_cycle_d_mat(cntx, df)
@@ -1433,7 +1433,7 @@ def gen_cycle_d(
 
 
 def gen_cycle_d_hv(
-    cntx: context_def.Context,
+    cntx: def_context.Context,
     df: pd.DataFrame
 ) -> plt.Figure:
     """
@@ -1442,7 +1442,7 @@ def gen_cycle_d_hv(
 
     Parameters
     ----------
-    cntx: context_def.Context
+    cntx: def_context.Context
         Context.
     df: pd.DataFrame
         Dataframe.
@@ -1476,7 +1476,7 @@ def gen_cycle_d_hv(
 
     
 def gen_cycle_d_mat(
-    cntx: context_def.Context,
+    cntx: def_context.Context,
     df: pd.DataFrame,
     plt_type: Optional[int] = 1
 ) -> Union[plt.Figure, None]:
@@ -1487,7 +1487,7 @@ def gen_cycle_d_mat(
 
     Parameters
     ----------
-    cntx: context_def.Context
+    cntx: def_context.Context
         Context.
     df: pd.DataFrame
         Dataframe.
@@ -1511,12 +1511,12 @@ def gen_cycle_d_mat(
     n = len(df)
 
     # Draw curve (mean values) and shadow (zone between minimum and maximum values).
-    height = 5.45 if cntx.code == context_def.code_streamlit else 5.15
+    height = 5.45 if cntx.code == def_context.code_streamlit else 5.15
     fig, ax = plt.subplots(figsize=(9.95, height), dpi=cntx.dpi)
     plt.subplots_adjust(top=0.99, bottom=0.13, left=0.08, right=0.98, hspace=0.10, wspace=0.10)
 
     # Draw areas.
-    ref_color = rcp_def.RCP(rcp_def.rcp_ref).get_color()
+    ref_color = def_rcp.RCP(def_rcp.rcp_ref).get_color()
     rcp_color = "darkgrey"
     if plt_type == 1:
         ax.plot(range(1, n + 1), df["mean"], color=ref_color, alpha=1.0)

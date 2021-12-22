@@ -9,14 +9,14 @@
 # (C) 2021 Ouranos Inc., Canada
 # ----------------------------------------------------------------------------------------------------------------------
 
-import context_def
+import def_context
+import def_rcp
+import def_view
 import glob
 import numpy as np
 import os
 import pandas as pd
-import rcp_def
 import simplejson
-import view_def
 import warnings
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
@@ -27,7 +27,7 @@ d_data = "./data/"
 
 
 def load_data(
-    cntx: context_def.Context,
+    cntx: def_context.Context,
     mode: Optional[str] = ""
 ) -> Union[pd.DataFrame, None]:
 
@@ -92,7 +92,7 @@ def load_data(
 
     Parameters
     ----------
-    cntx : context_def.Context
+    cntx : def_context.Context
         Context.
     mode : Optional[str]
         Mode.
@@ -108,26 +108,26 @@ def load_data(
     
     # Load data.
     p = ""
-    if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_tbl]:
+    if cntx.view.get_code() in [def_view.mode_ts, def_view.mode_tbl]:
         p = str(get_d_data(cntx)) + "<view_code>/<vi_code>_<mode>.csv"
-        p = p.replace("_<mode>", "_" + mode if cntx.view.get_code() == view_def.mode_ts else "")
-    elif cntx.view.get_code() == view_def.mode_map:
+        p = p.replace("_<mode>", "_" + mode if cntx.view.get_code() == def_view.mode_ts else "")
+    elif cntx.view.get_code() == def_view.mode_map:
         p = str(get_d_data(cntx)) + "<view_code>/<vi_code>/<hor_code>/*_<rcp_code>_*_<stat>_<delta>.csv"
-    elif cntx.view.get_code() == view_def.mode_cycle:
+    elif cntx.view.get_code() == def_view.mode_cycle:
         p = str(get_d_data(cntx)) + "<view_code>/<vi_code>/<hor_code>/*<model_code>*<rcp_code>*.csv"
     view_code = cntx.view.get_code()
-    if cntx.view.get_code() == view_def.mode_cycle:
+    if cntx.view.get_code() == def_view.mode_cycle:
         view_code += "_" + mode.lower()
     p = p.replace("<view_code>", view_code)
     p = p.replace("<vi_code>", cntx.varidx.get_code())
-    if cntx.view.get_code() in [view_def.mode_map, view_def.mode_cycle]:
+    if cntx.view.get_code() in [def_view.mode_map, def_view.mode_cycle]:
         p = p.replace("<hor_code>", cntx.hor.get_code())
         p = p.replace("<rcp_code>", cntx.rcp.get_code())
-        if cntx.view.get_code() == view_def.mode_map:
+        if cntx.view.get_code() == def_view.mode_map:
             p = p.replace("<stat>", cntx.stat.get_code())
             p = p.replace("_<delta>", "" if cntx.delta is False else "_delta")
-        elif cntx.view.get_code() == view_def.mode_cycle:
-            model_code = cntx.model.get_code() if cntx.rcp.get_code() != rcp_def.rcp_ref else ""
+        elif cntx.view.get_code() == def_view.mode_cycle:
+            model_code = cntx.model.get_code() if cntx.rcp.get_code() != def_rcp.rcp_ref else ""
             p = p.replace("<model_code>", model_code)
         p = list(glob.glob(p))[0]
 
@@ -138,10 +138,10 @@ def load_data(
 
     # Round values.
     n_dec = cntx.varidx.get_precision()
-    if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_cycle]:
+    if cntx.view.get_code() in [def_view.mode_ts, def_view.mode_cycle]:
         for col in df.select_dtypes("float64").columns:
             df.loc[:, col] = df.copy()[col].round(n_dec).to_numpy()
-    elif cntx.view.get_code() == view_def.mode_tbl:
+    elif cntx.view.get_code() == def_view.mode_tbl:
         df["val"] = df["val"].round(decimals=n_dec)
     else:
         df[cntx.varidx.get_code()] = df[cntx.varidx.get_code()].round(decimals=n_dec)
@@ -194,7 +194,7 @@ def load_geojson(
 
 
 def get_range(
-    cntx: context_def.Context
+    cntx: def_context.Context
 ) -> List[float]:
 
     """
@@ -203,7 +203,7 @@ def get_range(
     
     Parameters
     ----------
-    cntx : context_def.Context
+    cntx : def_context.Context
         Context.
     
     Returns
@@ -215,7 +215,7 @@ def get_range(
     
     min_val, max_val = np.nan, np.nan
     
-    if cntx.view.get_code() == view_def.mode_map:
+    if cntx.view.get_code() == def_view.mode_map:
         
         # Reference file.
         p_ref = str(get_d_data(cntx)) + "<view>/<vi_code>/*/<vi_code>_ref*_mean.csv"
@@ -279,7 +279,7 @@ def list_dir(
 
 
 def get_d_data(
-    cntx: context_def.Context
+    cntx: def_context.Context
 ) -> str:
 
     """
@@ -288,7 +288,7 @@ def get_d_data(
 
     Parameters
     ----------
-    cntx : context_def.Context
+    cntx : def_context.Context
         Context.
 
     Returns
@@ -319,7 +319,7 @@ def get_p_logo() -> str:
 
 
 def get_p_locations(
-    cntx: context_def.Context
+    cntx: def_context.Context
 ) -> str:
 
     """
@@ -328,7 +328,7 @@ def get_p_locations(
 
     Parameters
     ----------
-    cntx : context_def.Context
+    cntx : def_context.Context
         Context
 
     Returns
@@ -344,7 +344,7 @@ def get_p_locations(
 
 
 def get_p_bounds(
-    cntx: context_def.Context
+    cntx: def_context.Context
 ) -> str:
 
     """
@@ -353,7 +353,7 @@ def get_p_bounds(
 
     Parameters
     ----------
-    cntx : context_def.Context
+    cntx : def_context.Context
         Context
 
     Returns

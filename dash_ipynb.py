@@ -9,19 +9,19 @@
 # (C) 2021 Ouranos Inc., Canada
 # ----------------------------------------------------------------------------------------------------------------------
 
-import context_def
 import dash_plot
 import dash_utils
-import hor_def
-import lib_def
-import model_def
+import def_context
+import def_hor
+import def_lib
+import def_model
+import def_project
+import def_rcp
+import def_stat
+import def_varidx as vi
+import def_view
 import panel as pn
 import panel.widgets as pnw
-import project_def
-import rcp_def
-import stat_def
-import varidx_def as vi
-import view_def
 import warnings
 from typing import Union, List
 
@@ -162,12 +162,12 @@ def init_context():
 
     global cntx
 
-    cntx = context_def.Context(context_def.code_jupyter)
-    cntx.views = view_def.Views()
-    cntx.libs = lib_def.Libs()
+    cntx = def_context.Context(def_context.code_jupyter)
+    cntx.views = def_view.Views()
+    cntx.libs = def_lib.Libs()
     cntx.varidxs = vi.VarIdxs()
-    cntx.hors = hor_def.Hors()
-    cntx.rcps = rcp_def.RCPs()
+    cntx.hors = def_hor.Hors()
+    cntx.rcps = def_rcp.RCPs()
 
 
 def update_project():
@@ -180,10 +180,10 @@ def update_project():
 
     global cntx, project_f
 
-    cntx.projects = project_def.Projects(cntx=cntx)
+    cntx.projects = def_project.Projects(cntx=cntx)
     project_l = cntx.projects.get_desc_l()
     update_field("project", project_l)
-    cntx.project = project_def.Project(code=project_f[1].value, cntx=cntx)
+    cntx.project = def_project.Project(code=project_f[1].value, cntx=cntx)
 
 
 def update_view():
@@ -196,10 +196,10 @@ def update_view():
 
     global cntx, view_f
 
-    cntx.views = view_def.Views(cntx)
+    cntx.views = def_view.Views(cntx)
     view_l = cntx.views.get_desc_l()
     update_field("view", view_l)
-    cntx.view = view_def.View(cntx.views.get_code(view_f[1].value))
+    cntx.view = def_view.View(cntx.views.get_code(view_f[1].value))
 
 
 def update_lib():
@@ -212,10 +212,10 @@ def update_lib():
 
     global cntx, lib_f
 
-    cntx.libs = lib_def.Libs(cntx.view.get_code())
+    cntx.libs = def_lib.Libs(cntx.view.get_code())
     lib_l = cntx.libs.get_desc_l()
     update_field("lib", lib_l)
-    cntx.lib = lib_def.Lib(cntx.libs.get_code(lib_f[1].value))
+    cntx.lib = def_lib.Lib(cntx.libs.get_code(lib_f[1].value))
 
 
 def update_delta():
@@ -259,12 +259,12 @@ def update_hor():
 
     global cntx, hor_f
 
-    if cntx.view.get_code() in [view_def.mode_tbl, view_def.mode_map, view_def.mode_cycle]:
-        cntx.hors = hor_def.Hors(cntx)
+    if cntx.view.get_code() in [def_view.mode_tbl, def_view.mode_map, def_view.mode_cycle]:
+        cntx.hors = def_hor.Hors(cntx)
         hor_l = cntx.hors.get_desc_l()
         update_field("hor", hor_l)
     if hor_f is not None:
-        cntx.hor = hor_def.Hor(hor_f[1].value)
+        cntx.hor = def_hor.Hor(hor_f[1].value)
 
 
 def update_rcp():
@@ -277,12 +277,12 @@ def update_rcp():
 
     global cntx, rcp_f
 
-    if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_map, view_def.mode_cycle]:
-        cntx.rcps = rcp_def.RCPs(cntx)
+    if cntx.view.get_code() in [def_view.mode_ts, def_view.mode_map, def_view.mode_cycle]:
+        cntx.rcps = def_rcp.RCPs(cntx)
         rcp_l = cntx.rcps.get_desc_l()
         update_field("rcp", rcp_l)
     if rcp_f is not None:
-        cntx.rcp = rcp_def.RCP(cntx.rcps.get_code(rcp_f[1].value))
+        cntx.rcp = def_rcp.RCP(cntx.rcps.get_code(rcp_f[1].value))
 
 
 def update_stat():
@@ -295,12 +295,12 @@ def update_stat():
 
     global cntx, stat_f
 
-    if cntx.view.get_code() == view_def.mode_map:
-        cntx.stats = stat_def.Stats(cntx)
+    if cntx.view.get_code() == def_view.mode_map:
+        cntx.stats = def_stat.Stats(cntx)
         stat_l = cntx.stats.get_desc_l()
         update_field("stat", stat_l)
     if stat_f is not None:
-        cntx.stat = stat_def.Stat(cntx.stats.get_code(stat_f[1].value))
+        cntx.stat = def_stat.Stat(cntx.stats.get_code(stat_f[1].value))
 
 
 def update_model():
@@ -313,12 +313,12 @@ def update_model():
 
     global cntx, model_f
 
-    if cntx.view.get_code() == view_def.mode_cycle:
-        cntx.models = model_def.Models(cntx)
+    if cntx.view.get_code() == def_view.mode_cycle:
+        cntx.models = def_model.Models(cntx)
         model_l = cntx.models.get_desc_l()
         update_field("model", model_l)
     if model_f is not None:
-        cntx.model = model_def.Model(model_f[1].value)
+        cntx.model = def_model.Model(model_f[1].value)
 
 
 def project_updated(event):
@@ -331,7 +331,7 @@ def project_updated(event):
 
     global cntx, project_f
 
-    cntx.project = project_def.Project(code=project_f[1].value, cntx=cntx)
+    cntx.project = def_project.Project(code=project_f[1].value, cntx=cntx)
     update_view()
     view_updated(event)
 
@@ -346,7 +346,7 @@ def view_updated(event):
 
     global cntx, view_f
 
-    cntx.view = view_def.View(cntx.views.get_code(view_f[1].value))
+    cntx.view = def_view.View(cntx.views.get_code(view_f[1].value))
     update_lib()
     lib_updated(event)
 
@@ -361,7 +361,7 @@ def lib_updated(event):
 
     global cntx, lib_f
 
-    cntx.lib = lib_def.Lib(cntx.libs.get_code(lib_f[1].value))
+    cntx.lib = def_lib.Lib(cntx.libs.get_code(lib_f[1].value))
     update_varidx()
     varidx_updated(event)
 
@@ -377,7 +377,7 @@ def delta_updated(event):
     global cntx, delta_f
 
     cntx.delta = delta_f[1].value
-    if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_map]:
+    if cntx.view.get_code() in [def_view.mode_ts, def_view.mode_map]:
         update_hor()
         hor_updated(event)
     else:
@@ -395,7 +395,7 @@ def varidx_updated(event):
     global cntx, varidx_f
 
     cntx.varidx = vi.VarIdx(cntx.varidxs.get_code(varidx_f[1].value))
-    if cntx.view.get_code() in [view_def.mode_tbl, view_def.mode_map, view_def.mode_cycle]:
+    if cntx.view.get_code() in [def_view.mode_tbl, def_view.mode_map, def_view.mode_cycle]:
         update_hor()
         hor_updated(event)
     else:
@@ -413,8 +413,8 @@ def hor_updated(event):
     global cntx, hor_f
 
     if hor_f is not None:
-        cntx.hor = hor_def.Hor(hor_f[1].value)
-    if cntx.view.get_code() in [view_def.mode_map, view_def.mode_cycle]:
+        cntx.hor = def_hor.Hor(hor_f[1].value)
+    if cntx.view.get_code() in [def_view.mode_map, def_view.mode_cycle]:
         update_rcp()
         rcp_updated(event)
     else:
@@ -431,11 +431,11 @@ def rcp_updated(event):
 
     global cntx, rcp_f
 
-    cntx.rcp = rcp_def.RCP(cntx.rcps.get_code(rcp_f[1].value))
-    if cntx.view.get_code() in [view_def.mode_tbl, view_def.mode_map]:
+    cntx.rcp = def_rcp.RCP(cntx.rcps.get_code(rcp_f[1].value))
+    if cntx.view.get_code() in [def_view.mode_tbl, def_view.mode_map]:
         update_stat()
         stat_updated(event)
-    elif cntx.view.get_code() == view_def.mode_cycle:
+    elif cntx.view.get_code() == def_view.mode_cycle:
         update_model()
         model_updated(event)
     else:
@@ -452,7 +452,7 @@ def stat_updated(event):
 
     global cntx, stat_f
 
-    cntx.stat = stat_def.Stat(cntx.stats.get_code(stat_f[1].value))
+    cntx.stat = def_stat.Stat(cntx.stats.get_code(stat_f[1].value))
     refresh()
 
 
@@ -466,7 +466,7 @@ def model_updated(event):
 
     global cntx, model_f
 
-    cntx.model = model_def.Model(cntx.models.get_code(model_f[1].value))
+    cntx.model = def_model.Model(cntx.models.get_code(model_f[1].value))
     refresh()
 
 
@@ -498,22 +498,22 @@ def refresh():
 
     # Tab: time series.
     tab_ts = None
-    if cntx.view.get_code() == view_def.mode_ts:
+    if cntx.view.get_code() == def_view.mode_ts:
         df_rcp = dash_utils.load_data(cntx, dash_plot.mode_rcp)
         df_sim = dash_utils.load_data(cntx, dash_plot.mode_sim)
-        space = pn.pane.Markdown("<br><br><br>" if cntx.lib.get_code() == lib_def.mode_alt else "")
+        space = pn.pane.Markdown("<br><br><br>" if cntx.lib.get_code() == def_lib.mode_alt else "")
         tab_ts = pn.Row(pn.Column(varidx_f,
                                   dash_plot.gen_ts(cntx, df_rcp, dash_plot.mode_rcp),
                                   dash_plot.gen_ts(cntx, df_sim, dash_plot.mode_sim), space, ref_val))
 
     # Tab: table.
     tab_tbl = None
-    if cntx.view.get_code() == view_def.mode_tbl:
+    if cntx.view.get_code() == def_view.mode_tbl:
         tab_tbl = pn.Row(pn.Column(varidx_f, hor_f, pn.Column(dash_plot.gen_tbl(cntx), width=500), ref_val))
 
     # Tab: map.
     tab_map = None
-    if cntx.view.get_code() == view_def.mode_map:
+    if cntx.view.get_code() == def_view.mode_map:
         cntx.p_bounds = dash_utils.get_p_bounds(cntx)
         cntx.p_locations = dash_utils.get_p_locations(cntx)
         df = dash_utils.load_data(cntx)
@@ -522,14 +522,14 @@ def refresh():
 
     # Tab: cycle plots.
     tab_cycle = None
-    if cntx.view.get_code() == view_def.mode_cycle:
+    if cntx.view.get_code() == def_view.mode_cycle:
         df_ms = dash_utils.load_data(cntx, "MS")
         df_d = dash_utils.load_data(cntx, "D")
         tab_cycle = pn.Row(pn.Column(varidx_f, hor_f, rcp_f, model_f,
                                     dash_plot.gen_cycle_ms(cntx, df_ms), dash_plot.gen_cycle_d(cntx, df_d)))
 
     # Sidebar.
-    show_delta_f = cntx.view.get_code() in [view_def.mode_ts, view_def.mode_tbl, view_def.mode_map]
+    show_delta_f = cntx.view.get_code() in [def_view.mode_ts, def_view.mode_tbl, def_view.mode_map]
     sidebar = pn.Column(pn.Column(pn.pane.PNG(dash_utils.get_p_logo(), height=50)),
                         project_f, view_f, lib_f,
                         delta_f if show_delta_f else "",
@@ -542,11 +542,11 @@ def refresh():
         # display(dash)
     else:
         dash[0] = sidebar
-        if cntx.view.get_code() == view_def.mode_ts:
+        if cntx.view.get_code() == def_view.mode_ts:
             dash[1] = tab_ts
-        elif cntx.view.get_code() == view_def.mode_tbl:
+        elif cntx.view.get_code() == def_view.mode_tbl:
             dash[1] = tab_tbl
-        elif cntx.view.get_code() == view_def.mode_map:
+        elif cntx.view.get_code() == def_view.mode_map:
             dash[1] = tab_map
         else:
             dash[1] = tab_cycle

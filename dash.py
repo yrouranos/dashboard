@@ -9,19 +9,19 @@
 # (C) 2021 Ouranos Inc., Canada
 # ----------------------------------------------------------------------------------------------------------------------
 
-import context_def
+import def_context
+import def_hor
+import def_lib
+import def_model
+import def_project
+import def_rcp
+import def_stat
 import dash_plot
 import dash_utils
+import def_varidx as vi
+import def_view
 import holoviews as hv
-import hor_def
-import lib_def
-import model_def
-import project_def
-import rcp_def
-import stat_def
 import streamlit as st
-import varidx_def as vi
-import view_def
 from PIL import Image
 
 cntx = None
@@ -107,32 +107,32 @@ def refresh():
 
     # Initialize context.
     if cntx is None:
-        cntx = context_def.Context(context_def.code_streamlit)
-        cntx.views = view_def.Views()
-        cntx.libs = lib_def.Libs()
+        cntx = def_context.Context(def_context.code_streamlit)
+        cntx.views = def_view.Views()
+        cntx.libs = def_lib.Libs()
         cntx.varidxs = vi.VarIdxs()
-        cntx.hors = hor_def.Hors()
-        cntx.rcps = rcp_def.RCPs()
+        cntx.hors = def_hor.Hors()
+        cntx.rcps = def_rcp.RCPs()
 
     st.sidebar.image(Image.open(dash_utils.get_p_logo()), width=150)
 
     # Projects.
-    cntx.projects = project_def.Projects(cntx=cntx)
+    cntx.projects = def_project.Projects(cntx=cntx)
     project_f = st.sidebar.selectbox("Choisir le projet", options=cntx.projects.get_desc_l())
-    cntx.project = project_def.Project(code=project_f, cntx=cntx)
+    cntx.project = def_project.Project(code=project_f, cntx=cntx)
 
     # Views.
-    cntx.views = view_def.Views(cntx)
+    cntx.views = def_view.Views(cntx)
     view_f = st.sidebar.radio("Choisir la vue", cntx.views.get_desc_l())
-    cntx.view = view_def.View(cntx.views.get_code(view_f))
+    cntx.view = def_view.View(cntx.views.get_code(view_f))
 
     # Plotting libraries.
-    cntx.libs = lib_def.Libs(cntx.view.get_code())
+    cntx.libs = def_lib.Libs(cntx.view.get_code())
     lib_f = st.sidebar.radio("Choisir la librairie visuelle", options=cntx.libs.get_desc_l())
-    cntx.lib = lib_def.Lib(cntx.libs.get_code(lib_f))
+    cntx.lib = def_lib.Lib(cntx.libs.get_code(lib_f))
 
     # Deltas.
-    if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_tbl, view_def.mode_map]:
+    if cntx.view.get_code() in [def_view.mode_ts, def_view.mode_tbl, def_view.mode_map]:
         st.sidebar.markdown("<style>.sel_title {font-size:14.5px}</style>", unsafe_allow_html=True)
         st.sidebar.markdown("<p class='sel_title'>Afficher les anomalies</p>", unsafe_allow_html=True)
         delta_f = st.sidebar.checkbox("", value=False)
@@ -145,47 +145,47 @@ def refresh():
     cntx.project.set_quantiles(cntx.project.get_code(), cntx)
 
     # Horizons.
-    if cntx.view.get_code() in [view_def.mode_tbl, view_def.mode_map, view_def.mode_cycle]:
-        cntx.hors = hor_def.Hors(cntx)
+    if cntx.view.get_code() in [def_view.mode_tbl, def_view.mode_map, def_view.mode_cycle]:
+        cntx.hors = def_hor.Hors(cntx)
         hor_f = st.selectbox("Horizon", options=cntx.hors.get_code_l())
-        cntx.hor = hor_def.Hor(hor_f)
+        cntx.hor = def_hor.Hor(hor_f)
         
     # Emission scenarios.
-    cntx.rcps = rcp_def.RCPs(cntx)
-    if cntx.view.get_code() in [view_def.mode_map, view_def.mode_cycle]:
+    cntx.rcps = def_rcp.RCPs(cntx)
+    if cntx.view.get_code() in [def_view.mode_map, def_view.mode_cycle]:
         rcp_f = st.selectbox("Scénario d'émissions", options=cntx.rcps.get_desc_l())
-        cntx.rcp = rcp_def.RCP(cntx.rcps.get_code(rcp_f))
+        cntx.rcp = def_rcp.RCP(cntx.rcps.get_code(rcp_f))
 
     # Statistics.
-    if cntx.view.get_code() == view_def.mode_map:
-        cntx.stats = stat_def.Stats(cntx)
+    if cntx.view.get_code() == def_view.mode_map:
+        cntx.stats = def_stat.Stats(cntx)
         stat_f = st.selectbox("Statistique", options=cntx.stats.get_desc_l())
-        cntx.stat = stat_def.Stat(cntx.stats.get_code(stat_f))
+        cntx.stat = def_stat.Stat(cntx.stats.get_code(stat_f))
 
     # Models.
-    if cntx.view.get_code() == view_def.mode_cycle:
-        cntx.models = model_def.Models(cntx)
+    if cntx.view.get_code() == def_view.mode_cycle:
+        cntx.models = def_model.Models(cntx)
         model_f = st.selectbox("Modèle", options=cntx.models.get_desc_l())
-        cntx.model = model_def.Model(cntx.models.get_code(model_f))
+        cntx.model = def_model.Model(cntx.models.get_code(model_f))
 
     # GUI components.
-    if cntx.view.get_code() == view_def.mode_ts:
+    if cntx.view.get_code() == def_view.mode_ts:
         df_rcp = dash_utils.load_data(cntx, dash_plot.mode_rcp)
         df_sim = dash_utils.load_data(cntx, dash_plot.mode_sim)
-        if cntx.lib.get_code() in [lib_def.mode_alt, lib_def.mode_mat]:
+        if cntx.lib.get_code() in [def_lib.mode_alt, def_lib.mode_mat]:
             st.write(dash_plot.gen_ts(cntx, df_rcp, dash_plot.mode_rcp))
             st.write(dash_plot.gen_ts(cntx, df_sim, dash_plot.mode_sim))
         else:
             st.write(hv.render(dash_plot.gen_ts(cntx, df_rcp, dash_plot.mode_rcp)), backend="bokeh")
             st.write(hv.render(dash_plot.gen_ts(cntx, df_sim, dash_plot.mode_sim)), backend="bokeh")
-    elif cntx.view.get_code() == view_def.mode_tbl:
+    elif cntx.view.get_code() == def_view.mode_tbl:
         st.write(dash_plot.gen_tbl(cntx))
-    elif cntx.view.get_code() == view_def.mode_map:
+    elif cntx.view.get_code() == def_view.mode_map:
         cntx.p_bounds = dash_utils.get_p_bounds(cntx)
         cntx.p_locations = dash_utils.get_p_locations(cntx)
         df = dash_utils.load_data(cntx)
         z_range = dash_utils.get_range(cntx)
-        if cntx.lib.get_code() == lib_def.mode_mat:
+        if cntx.lib.get_code() == def_lib.mode_mat:
             st.write(dash_plot.gen_map(cntx, df, z_range))
         else:
             st.write(hv.render(dash_plot.gen_map(cntx, df, z_range)), backend="bokeh")
@@ -193,18 +193,18 @@ def refresh():
         df_ms = dash_utils.load_data(cntx, "MS")
         cycle_ms = dash_plot.gen_cycle_ms(cntx, df_ms)
         if cycle_ms is not None:
-            if cntx.lib.get_code() == lib_def.mode_mat:
+            if cntx.lib.get_code() == def_lib.mode_mat:
                 st.write(cycle_ms)
             else:
                 st.write(hv.render(cycle_ms), backend="bokeh")
         df_d = dash_utils.load_data(cntx, "D")
         cycle_d = dash_plot.gen_cycle_d(cntx, df_d)
         if cycle_d is not None:
-            if cntx.lib.get_code() == lib_def.mode_mat:
+            if cntx.lib.get_code() == def_lib.mode_mat:
                 st.write(cycle_d)
             else:
                 st.write(hv.render(cycle_d), backend="bokeh")
-    if cntx.view.get_code() in [view_def.mode_ts, view_def.mode_tbl]:
+    if cntx.view.get_code() in [def_view.mode_ts, def_view.mode_tbl]:
         tbl_ref = dash_plot.get_ref_val(cntx)
         st.write("Valeur de référence : " + tbl_ref)
 
