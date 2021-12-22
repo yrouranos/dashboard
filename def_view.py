@@ -19,11 +19,15 @@ mode_ts = "ts"
 mode_tbl = "tbl"
 mode_map = "map"
 mode_cycle = "cycle"
+mode_bias = "bias"
 
-code_desc = {mode_ts: "Série temporelle",
-             mode_tbl: "Tableau",
-             mode_map: "Carte",
-             mode_cycle: "Cycle annuel"}
+code_desc = {
+    mode_ts: "Série temporelle",
+    mode_tbl: "Tableau",
+    mode_map: "Carte",
+    mode_cycle: "Cycle annuel",
+    mode_bias: "Biais"
+}
 
 
 class View(def_object.Obj):

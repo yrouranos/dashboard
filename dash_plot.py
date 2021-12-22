@@ -75,13 +75,6 @@ def gen_ts(
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    # Calculate deltas.
-    if cntx.delta:
-        for col in df.columns[2:]:
-            if col != def_rcp.rcp_ref:
-                df[col] = df[col] - df[def_rcp.rcp_ref].mean()
-        df[def_rcp.rcp_ref] = 0
-
     # Extract minimum and maximum x-values (round to lower and upper decades).
     x_min = math.floor(min(df["year"]) / 10) * 10
     x_max = math.ceil(max(df["year"]) / 10) * 10

@@ -40,7 +40,7 @@ def refresh():
     |
     +-- view (options) = <detected>
         |
-        +-> view (selected) = ts (time series)
+        +-> view (selected) = ts|bias
         |   |
         |   +-> lib (options) = {altair, hvplot, matplotlib}
         |   |   lib (selected) = <user_input>
@@ -52,7 +52,7 @@ def refresh():
         |       varidx (selected) = <user_input> --------------> figure
         |                                                        reference value
         |
-        +-> view (selected) = tbl (table)
+        +-> view (selected) = tbl
         |   |
         |   +-> lib (options) = {plotly}
         |   |   lib (selected) = plotly
@@ -84,7 +84,7 @@ def refresh():
         |               +-> stat (options) = <detected>          ˅
         |                   stat (selected) = <user_input> ----> figure
         |
-        +-> view (selected) = disp (annual cycle)
+        +-> view (selected) = cycle_*
             |
             +-> lib (options) = {hvplot, matplotlib}
             |   lib (selected) = <user_input>
@@ -169,7 +169,7 @@ def refresh():
         cntx.model = def_model.Model(cntx.models.get_code(model_f))
 
     # GUI components.
-    if cntx.view.get_code() == def_view.mode_ts:
+    if cntx.view.get_code() in [def_view.mode_ts, def_view.mode_bias]:
         df_rcp = dash_utils.load_data(cntx, dash_plot.mode_rcp)
         df_sim = dash_utils.load_data(cntx, dash_plot.mode_sim)
         if cntx.lib.get_code() in [def_lib.mode_alt, def_lib.mode_mat]:

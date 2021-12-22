@@ -61,7 +61,7 @@ def load_data(
         |                 ex: pr_HIRHAM5_AFR-44_ICHEC-EC-EARTH_rcp45_2021_2050_monthly.csv
         |               columns: year,1,2,3,4,5,6,7,8,9,10,11,12
         |                    ex: 2021,0.003668,0.000196,0.014072,1.344051,3.065682,28.971143,...
-        +-- ts
+        +-- ts|bias
         |   |
         |   +-- <vi_code>_<mode>.csv
         |         ex: pr_rcp.csv
@@ -108,9 +108,10 @@ def load_data(
     
     # Load data.
     p = ""
-    if cntx.view.get_code() in [def_view.mode_ts, def_view.mode_tbl]:
+    if cntx.view.get_code() in [def_view.mode_ts, def_view.mode_tbl, def_view.mode_bias]:
         p = str(get_d_data(cntx)) + "<view_code>/<vi_code>_<mode>.csv"
-        p = p.replace("_<mode>", "_" + mode if cntx.view.get_code() == def_view.mode_ts else "")
+        if cntx.view.get_code() in [def_view.mode_ts, def_view.mode_bias]:
+            p = p.replace("_<mode>", "_" + mode)
     elif cntx.view.get_code() == def_view.mode_map:
         p = str(get_d_data(cntx)) + "<view_code>/<vi_code>/<hor_code>/*_<rcp_code>_*_<stat>_<delta>.csv"
     elif cntx.view.get_code() == def_view.mode_cycle:

@@ -20,11 +20,11 @@ from typing import List, Union
 
 # Data ensembles -------------------------------------------------------------------------------------------------------
 
-ens_cordex                 = "cordex"                  # CORDEX.
-ens_era5                   = "era5"                    # ERA5.
-ens_era5_land              = "era5_land"               # ERA5-Land.
-ens_enacts                 = "enacts"                  # ENACTS.
-ens_merra2                 = "merra2"                  # MERRA2.
+ens_cordex               = "cordex"                  # CORDEX.
+ens_era5                 = "era5"                    # ERA5.
+ens_era5_land            = "era5_land"               # ERA5-Land.
+ens_enacts               = "enacts"                  # ENACTS.
+ens_merra2               = "merra2"                  # MERRA2.
 
 # Climate variables (CORDEX) -------------------------------------------------------------------------------------------
 
@@ -486,7 +486,7 @@ class VarIdxs(def_object.Objs):
 
         # The items are extracted from directory names.
         # ~/<project_code>/<view_code>/*
-        if cntx.view.get_code() in [def_view.mode_ts, def_view.mode_tbl]:
+        if cntx.view.get_code() in [def_view.mode_tbl]:
             p = str(dash_utils.get_d_data(cntx)) + "<view_code>/*.csv"
             p = p.replace("<view_code>/", cntx.view.get_code().split("-")[0] + "*/")
             for p_i in list(glob.glob(p)):
@@ -498,7 +498,7 @@ class VarIdxs(def_object.Objs):
 
         # The items are extracted from directory names.
         # ~/<project_code>/<view_code>/<varidx_code>/*
-        elif cntx.view.get_code() in [def_view.mode_map, def_view.mode_cycle]:
+        elif cntx.view.get_code() in [def_view.mode_ts, def_view.mode_map, def_view.mode_cycle, def_view.mode_bias]:
             p = str(dash_utils.get_d_data(cntx)) + "<view_code>*/*"
             p = p.replace("<view_code>", cntx.view.get_code())
             for p_i in list(glob.glob(p)):
