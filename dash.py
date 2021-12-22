@@ -209,5 +209,7 @@ def refresh():
         st.write("Valeur de référence : " + tbl_ref)
 
 
+# import dash_test
+# dash_test.test_all("sn-ko")
 refresh()
 

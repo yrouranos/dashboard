@@ -119,7 +119,7 @@ def load_data(
     # Load data.
     p = ""
     if cntx.view.get_code() == def_view.mode_tbl:
-        p = str(get_d_data(cntx)) + "<view_code>/<vi_code>_<mode>.csv"
+        p = str(get_d_data(cntx)) + "<view_code>/<vi_code>.csv"
     elif cntx.view.get_code() in [def_view.mode_ts, def_view.mode_bias]:
         p = str(get_d_data(cntx)) + "<view_code>/<vi_code>/<vi_code>_<mode>.csv"
         p = p.replace("_<mode>", "_" + mode)

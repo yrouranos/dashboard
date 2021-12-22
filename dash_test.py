@@ -65,6 +65,7 @@ def test_gen_ts(
 
                     df = dash_utils.load_data(cntx, mode)
                     dash_plot.gen_ts(cntx, df, mode)
+                    dash_plot.get_ref_val(cntx)
 
 
 def test_gen_tbl(
@@ -110,6 +111,7 @@ def test_gen_tbl(
                     cntx.project = def_project.Project(code=project_code, cntx=cntx)
 
                     dash_plot.gen_tbl(cntx)
+                    dash_plot.get_ref_val(cntx)
 
 
 def test_gen_map(
