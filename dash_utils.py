@@ -151,7 +151,7 @@ def load_data(
 
     # Round values.
     n_dec = cntx.varidx.get_precision()
-    if cntx.view.get_code() in [def_view.mode_ts, def_view.mode_cycle]:
+    if cntx.view.get_code() in [def_view.mode_ts, def_view.mode_cycle, def_view.mode_bias]:
         for col in df.select_dtypes("float64").columns:
             df.loc[:, col] = df.copy()[col].round(n_dec).to_numpy()
     elif cntx.view.get_code() == def_view.mode_tbl:
