@@ -16,8 +16,8 @@ import def_view
 import glob
 from typing import Union, List
 
-code_true = str(True)
-code_false = str(False)
+code_true = True
+code_false = False
 
 
 class Del(def_object.Obj):
@@ -99,15 +99,14 @@ class Dels(def_object.Objs):
         ----------------------------------------
         """
 
-        code_l = [str(False), str(False)]
+        code_l = [code_false, code_false]
 
         # The items are extracted from file names ('ts' or 'bias' view).
         # ~/<project_code>/<view_code>/<vi_code>/*delta.csv
-        if cntx.view.get_code() == [def_view.code_ts, def_view.code_bias]:
+        if cntx.view.get_code() in [def_view.code_ts, def_view.code_bias]:
 
-            p = str(dash_utils.get_d_data(cntx)) + "<view_code>/<vi_code>/<vi_code>*delta.csv"
+            p = str(dash_utils.get_d_data(cntx)) + "<view_code>/*/*delta.csv"
             p = p.replace("<view_code>", cntx.view.get_code())
-            p = p.replace("<vi_code>", cntx.varidx.get_code())
             p_l = list(glob.glob(p))
             if len(p_l) > 0:
                 code_l = [code_false, code_true]
@@ -118,9 +117,8 @@ class Dels(def_object.Objs):
 
         # The items are extracted from file names ('map' view).
         elif cntx.view.get_code() == def_view.code_map:
-            p = str(dash_utils.get_d_data(cntx)) + "<view_code>/<vi_code>/<hor_code>/*delta.csv"
+            p = str(dash_utils.get_d_data(cntx)) + "<view_code>/*/<hor_code>/*delta.csv"
             p = p.replace("<view_code>", cntx.view.get_code())
-            p = p.replace("<vi_code>", cntx.varidx.get_code())
             p = p.replace("<hor_code>", cntx.hor.get_code())
             p_l = list(glob.glob(p))
             if len(p_l) > 0:
@@ -130,7 +128,7 @@ class Dels(def_object.Objs):
 
     def add(
         self,
-        code: Union[str, List[str]],
+        code: Union[bool, List[bool]],
         inplace: bool = True
     ):
 
@@ -140,7 +138,7 @@ class Dels(def_object.Objs):
 
         Parameters
         ----------
-        code : Union[str, List[str]]
+        code : Union[bool, List[bool]]
             Code or list of codes.
         inplace : bool
             If True, modifies the current instance.
@@ -148,12 +146,12 @@ class Dels(def_object.Objs):
         """
 
         code_l = code
-        if isinstance(code, str):
+        if isinstance(code, bool):
             code_l = [code]
 
         items = []
         for i in range(len(code_l)):
-            items.append(Del(bool(code_l[i])))
+            items.append(Del(code_l[i]))
 
         return super(Dels, self).add_items(items, inplace)
 
@@ -175,6 +173,6 @@ class Dels(def_object.Objs):
         code_l = []
 
         for item in self.items:
-            code_l.append(item.get_code())
+            code_l.append(bool(item.get_code()))
 
         return code_l
