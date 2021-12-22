@@ -39,24 +39,7 @@ class Del(def_object.Obj):
         ----------------------------------------
         """
 
-        super(Del, self).__init__(code=str(code), desc=str(code))
-
-    def get_code(
-            self
-    ) -> bool:
-
-        """
-        ----------------------------------------
-        Get code.
-
-        Returns
-        -------
-        bool
-            Code.
-        ----------------------------------------
-        """
-
-        return bool(super(Del, self).code)
+        super(Del, self).__init__(code=code, desc=str(code))
 
 
 class Dels(def_object.Objs):
@@ -155,24 +138,3 @@ class Dels(def_object.Objs):
 
         return super(Dels, self).add_items(items, inplace)
 
-    def get_code_l(
-        self
-    ) -> List[bool]:
-
-        """
-        ----------------------------------------
-        Get a list of codes.
-
-        Returns
-        -------
-        List[bool]
-            Codes.
-        ----------------------------------------
-        """
-
-        code_l = []
-
-        for item in self.items:
-            code_l.append(bool(item.get_code()))
-
-        return code_l

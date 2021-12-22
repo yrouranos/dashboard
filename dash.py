@@ -120,7 +120,9 @@ def refresh():
     # Projects.
     cntx.projects = def_project.Projects(cntx=cntx)
     project_f = st.sidebar.selectbox("Choisir le projet", options=cntx.projects.get_desc_l())
-    cntx.project = def_project.Project(code=project_f, cntx=cntx)
+    # TODO: remove...
+    # cntx.project = def_project.Project(code=project_f, cntx=cntx)
+    cntx.project = def_project.Project(code="sn-ko", cntx=cntx)
 
     # Views.
     cntx.views = def_view.Views(cntx)
@@ -134,12 +136,13 @@ def refresh():
 
     # Deltas.
     cntx.deltas = def_delta.Dels(cntx)
-    cntx.delta = def_delta.Del(False)
     if True in cntx.deltas.get_code_l():
         st.sidebar.markdown("<style>.sel_title {font-size:14.5px}</style>", unsafe_allow_html=True)
         st.sidebar.markdown("<p class='sel_title'>Afficher les anomalies</p>", unsafe_allow_html=True)
         delta_f = st.sidebar.checkbox("", value=False)
-        cntx.delta = def_delta.Del(bool(delta_f))
+        cntx.delta = def_delta.Del(delta_f)
+    else:
+        cntx.delta = def_delta.Del(False)
 
     # Variables and indices.
     cntx.varidxs = vi.VarIdxs(cntx)

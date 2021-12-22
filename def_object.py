@@ -29,7 +29,7 @@ class Obj:
 
     def __init__(
         self,
-        code: str,
+        code: Union[str, bool],
         desc: str
     ):
 
@@ -145,7 +145,7 @@ class Objs:
     def get_code(
         self,
         desc: str
-    ) -> str:
+    ) -> Union[str, bool]:
 
         """
         ----------------------------------------
@@ -158,7 +158,7 @@ class Objs:
 
         Returns
         -------
-        str
+        Union[str, bool]
             Code.
         ----------------------------------------
         """
@@ -198,7 +198,7 @@ class Objs:
 
     def get_code_l(
         self
-    ) -> List[str]:
+    ) -> List[Union[str, bool]]:
 
         """
         ----------------------------------------
@@ -206,7 +206,7 @@ class Objs:
 
         Returns
         -------
-        List[str]
+        List[Union[str, bool]]
             Codes.
         ----------------------------------------
         """
