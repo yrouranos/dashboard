@@ -131,6 +131,8 @@ class RCPs(def_object.Objs):
             p = p.replace("<vi_code>", cntx.varidx.get_code())
             if cntx.view.get_code() in [def_view.mode_ts, def_view.mode_bias]:
                 p = p.replace("_<mode>", "_rcp")
+            else:
+                p = p.replace("_<mode>", "")
             df = pd.read_csv(p)
             if cntx.view.get_code() == def_view.mode_ts:
                 item_l = list(df.columns)
