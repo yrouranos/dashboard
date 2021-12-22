@@ -129,7 +129,8 @@ class RCPs(def_object.Objs):
             p = str(dash_utils.get_d_data(cntx)) + "/<view_code>/<vi_code>_<mode>.csv"
             p = p.replace("<view_code>", cntx.view.get_code())
             p = p.replace("<vi_code>", cntx.varidx.get_code())
-            p = p.replace("_<mode>", "_rcp" if cntx.view.get_code() == def_view.mode_ts else "")
+            if cntx.view.get_code() in [def_view.mode_ts, def_view.mode_bias]:
+                p = p.replace("_<mode>", "_rcp")
             df = pd.read_csv(p)
             if cntx.view.get_code() == def_view.mode_ts:
                 item_l = list(df.columns)
