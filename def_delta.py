@@ -100,9 +100,8 @@ class Dels(def_object.Objs):
 
         # The items are extracted from file names ('map' view).
         elif cntx.view.get_code() == def_view.code_map:
-            p = str(dash_utils.get_d_data(cntx)) + "<view_code>/*/<hor_code>/*delta.csv"
+            p = str(dash_utils.get_d_data(cntx)) + "<view_code>/*/*/*delta.csv"
             p = p.replace("<view_code>", cntx.view.get_code())
-            p = p.replace("<hor_code>", cntx.hor.get_code())
             p_l = list(glob.glob(p))
             if len(p_l) > 0:
                 code_l = [code_false, code_true]
