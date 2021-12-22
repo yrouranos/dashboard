@@ -139,7 +139,7 @@ def refresh():
         st.sidebar.markdown("<style>.sel_title {font-size:14.5px}</style>", unsafe_allow_html=True)
         st.sidebar.markdown("<p class='sel_title'>Afficher les anomalies</p>", unsafe_allow_html=True)
         delta_f = st.sidebar.checkbox("", value=False)
-        cntx.delta = def_delta.Del(delta_f)
+        cntx.delta = def_delta.Del(bool(delta_f))
 
     # Variables and indices.
     cntx.varidxs = vi.VarIdxs(cntx)
