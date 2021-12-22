@@ -127,7 +127,7 @@ class RCPs(def_object.Objs):
             p = p.replace("<vi_code>", cntx.varidx.get_code())
             df = pd.read_csv(p)
             item_l = list(df.columns) if cntx.view.get_code() == def_view.code_ts else df["rcp"]
-            if cntx.delta and (rcp_ref in item_l):
+            if cntx.delta.get_code() and (rcp_ref in item_l):
                 item_l.remove(rcp_ref)
 
         # The items are extracted from directory names ('ts' or 'bias' view).
@@ -137,10 +137,10 @@ class RCPs(def_object.Objs):
             p = p.replace("<view_code>", cntx.view.get_code())
             p = p.replace("<vi_code>", cntx.varidx.get_code())
             p = p.replace("<mode>", "rcp")
-            p = p.replace("_<delta>", "_delta" if cntx.delta else "")
+            p = p.replace("_<delta>", "_delta" if cntx.delta.get_code() else "")
             df = pd.read_csv(p)
             item_l = list(df.columns)
-            if cntx.delta and (rcp_ref in item_l):
+            if cntx.delta.get_code() and (rcp_ref in item_l):
                 item_l.remove(rcp_ref)
 
         # The items are extracted from file names.
@@ -181,7 +181,7 @@ class RCPs(def_object.Objs):
             if (code != "") and (code not in code_l):
                 code_l.append(code)
         code_l.sort()
-        if rcp_ref_found and not cntx.delta:
+        if rcp_ref_found and not cntx.delta.get_code():
             code_l = [rcp_ref] + code_l
 
         self.add(code_l)

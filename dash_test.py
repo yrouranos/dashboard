@@ -12,6 +12,7 @@
 import dash_plot
 import dash_utils
 import def_context
+import def_delta
 import def_hor
 import def_lib
 import def_model
@@ -50,7 +51,7 @@ def test_gen_ts(
         cntx.lib = def_lib.Lib(lib)
 
         for delta in [False, True]:
-            cntx.delta = delta
+            cntx.delta = def_delta.Del(delta)
 
             cntx.varidxs = vi.VarIdxs(cntx)
             for varidx in cntx.varidxs.get_code_l():
@@ -94,7 +95,7 @@ def test_gen_tbl(
         cntx.lib = def_lib.Lib(lib)
 
         for delta in [False, True]:
-            cntx.delta = delta
+            cntx.delta = def_delta.Del(delta)
 
             cntx.varidxs = vi.VarIdxs(cntx)
             for varidx in cntx.varidxs.get_code_l():
@@ -140,7 +141,7 @@ def test_gen_map(
         cntx.lib = def_lib.Lib(lib)
 
         for delta in [False, True]:
-            cntx.delta = delta
+            cntx.delta = def_delta.Del(delta)
 
             cntx.varidxs = vi.VarIdxs(cntx)
             for varidx in cntx.varidxs.get_code_l():
@@ -192,7 +193,7 @@ def test_gen_cycle(
     cntx.views = def_view.Views()
     cntx.view = def_view.View(def_view.code_cycle)
     cntx.libs = def_lib.Libs(cntx.view.get_code())
-    cntx.delta = False
+    cntx.delta = def_delta.Del(False)
 
     for lib in cntx.libs.get_code_l():
 

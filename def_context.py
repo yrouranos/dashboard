@@ -68,8 +68,9 @@ class Context(def_object.Obj):
         self.model = None
         self.models = None
 
-        # Anomalies.
-        self.delta = False
+        # Deltas.
+        self.delta = None
+        self.deltas = None
 
         # File system --------------------------
 

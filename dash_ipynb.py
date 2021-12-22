@@ -12,6 +12,7 @@
 import dash_plot
 import dash_utils
 import def_context
+import def_delta
 import def_hor
 import def_lib
 import def_model
@@ -229,7 +230,7 @@ def update_delta():
     global cntx, delta_f
 
     update_field("delta", [""])
-    cntx.delta = delta_f[1].value
+    cntx.delta = def_delta.Del(delta_f[1].value)
 
 
 def update_varidx():
@@ -376,7 +377,7 @@ def delta_updated(event):
 
     global cntx, delta_f
 
-    cntx.delta = delta_f[1].value
+    cntx.delta = def_delta.Del(delta_f[1].value)
     if cntx.view.get_code() in [def_view.code_ts, def_view.code_map]:
         update_hor()
         hor_updated(event)
@@ -529,7 +530,9 @@ def refresh():
                                     dash_plot.gen_cycle_ms(cntx, df_ms), dash_plot.gen_cycle_d(cntx, df_d)))
 
     # Sidebar.
-    show_delta_f = cntx.view.get_code() in [def_view.code_ts, def_view.code_tbl, def_view.code_map, def_view.code_bias]
+    cntx.deltas = def_delta.Dels(cntx)
+    cntx.delta = def_delta.Del(True in cntx.deltas.get_code_l())
+    show_delta_f = cntx.delta.get_code()
     sidebar = pn.Column(pn.Column(pn.pane.PNG(dash_utils.get_p_logo(), height=50)),
                         project_f, view_f, lib_f,
                         delta_f if show_delta_f else "",

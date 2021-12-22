@@ -133,7 +133,7 @@ def load_data(
     p = p.replace("<view_code>", view_code)
     p = p.replace("<vi_code>", cntx.varidx.get_code())
     if cntx.view.get_code() in [def_view.code_ts, def_view.code_map, def_view.code_cycle, def_view.code_bias]:
-        p = p.replace("_<delta>", "" if cntx.delta is False else "_delta")
+        p = p.replace("_<delta>", "" if not cntx.delta.get_code() else "_delta")
     if cntx.view.get_code() in [def_view.code_map, def_view.code_cycle]:
         p = p.replace("<hor_code>", cntx.hor.get_code())
         p = p.replace("<rcp_code>", cntx.rcp.get_code())
@@ -240,11 +240,11 @@ def get_range(
         p_rcp = str(get_d_data(cntx)) + "<view>/<vi_code>/*/<vi_code>_rcp*_q<q>_<delta>.csv"
         p_rcp = p_rcp.replace("<view>", cntx.view.get_code())
         p_rcp = p_rcp.replace("<vi_code>", cntx.varidx.get_code())
-        p_rcp = p_rcp.replace("_<delta>", "" if cntx.delta is False else "_delta")
+        p_rcp = p_rcp.replace("_<delta>", "" if not cntx.delta.get_code() else "_delta")
         p_rcp_q_low = glob.glob(p_rcp.replace("<q>", cntx.project.get_quantiles_as_str()[0]))
         p_rcp_q_high = glob.glob(p_rcp.replace("<q>", cntx.project.get_quantiles_as_str()[1]))
         p_l = p_rcp_q_low + p_rcp_q_high
-        if not cntx.delta:
+        if not cntx.delta.get_code():
             p_l = p_ref + p_l
 
         # Find the minimum and maximum values.

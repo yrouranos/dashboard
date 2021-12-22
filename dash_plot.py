@@ -86,7 +86,7 @@ def gen_ts(
 
     # Plot components.
     x_label = "Année"
-    y_label = ("Δ" if cntx.delta else "") + cntx.varidx.get_label()
+    y_label = ("Δ" if cntx.delta.get_code() else "") + cntx.varidx.get_label()
     
     if cntx.lib.get_code() == def_lib.mode_mat:
         ts = gen_ts_mat(cntx, df, x_label, y_label, [x_min, x_max], [y_min, y_max], mode)
@@ -198,9 +198,9 @@ def gen_ts_alt(
             
             # Draw curve(s).
             elif item == "curve":
-                if ((mode == mode_rcp) and (not cntx.delta)) or \
-                   ((not cntx.delta) and (rcp.get_code() == def_rcp.rcp_ref)) or \
-                   ((mode == mode_rcp) and cntx.delta and (rcp.get_code() != def_rcp.rcp_ref)):
+                if ((mode == mode_rcp) and (not cntx.delta.get_code())) or \
+                   ((not cntx.delta.get_code()) and (rcp.get_code() == def_rcp.rcp_ref)) or \
+                   ((mode == mode_rcp) and cntx.delta.get_code() and (rcp.get_code() != def_rcp.rcp_ref)):
                     opacity = 1.0
                 else:
                     opacity = 0.3
@@ -210,7 +210,7 @@ def gen_ts_alt(
                         if rcp.get_code() in column:
                             columns.append(column)
                 for column in columns:
-                    if cntx.delta and (rcp.get_code() == def_rcp.rcp_ref):
+                    if cntx.delta.get_code() and (rcp.get_code() == def_rcp.rcp_ref):
                         curve = alt.Chart(df_rcp).mark_line(opacity=opacity).encode(
                             x=alt.X("Année", axis=x_axis),
                             y=alt.Y(column, axis=y_axis, scale=y_scale)
@@ -324,9 +324,9 @@ def gen_ts_hv(
 
             # Draw curve(s).
             elif item == "curve":
-                if ((mode == mode_rcp) and (not cntx.delta)) or \
-                   ((not cntx.delta) and (rcp.get_code() == def_rcp.rcp_ref)) or \
-                   ((mode == mode_rcp) and cntx.delta and (rcp.get_code() != def_rcp.rcp_ref)):
+                if ((mode == mode_rcp) and (not cntx.delta.get_code())) or \
+                   ((not cntx.delta.get_code()) and (rcp.get_code() == def_rcp.rcp_ref)) or \
+                   ((mode == mode_rcp) and cntx.delta.get_code() and (rcp.get_code() != def_rcp.rcp_ref)):
                     line_alpha = 1.0
                 else:
                     line_alpha = 0.3
@@ -444,9 +444,9 @@ def gen_ts_mat(
         # Add curves and areas.
         color = rcp.get_color()
         area_alpha = 0.3
-        if ((mode == mode_rcp) and (not cntx.delta)) or \
-                ((not cntx.delta) and (rcp.get_code() == def_rcp.rcp_ref)) or \
-                ((mode == mode_rcp) and cntx.delta and (rcp.get_code() != def_rcp.rcp_ref)):
+        if ((mode == mode_rcp) and (not cntx.delta.get_code())) or \
+                ((not cntx.delta.get_code()) and (rcp.get_code() == def_rcp.rcp_ref)) or \
+                ((mode == mode_rcp) and cntx.delta.get_code() and (rcp.get_code() != def_rcp.rcp_ref)):
             line_alpha = 1.0
         else:
             line_alpha = 0.3
@@ -523,7 +523,7 @@ def gen_tbl(
 
         # Extract delta.
         delta = 0.0
-        if cntx.delta:
+        if cntx.delta.get_code():
             delta = float(df[df["rcp"] == def_rcp.rcp_ref]["val"])
 
         # Extract statistics.
@@ -744,7 +744,7 @@ def gen_map_hv(
     fs_annotations = 8
 
     # Label.
-    label = ("Δ" if cntx.delta else "") + cntx.varidx.get_label()
+    label = ("Δ" if cntx.delta.get_code() else "") + cntx.varidx.get_label()
 
     # Generate mesh.
     df.rename(columns={cntx.varidx.get_name(): "Valeur", "longitude": "Longitude", "latitude": "Latitude"},
@@ -832,11 +832,11 @@ def gen_map_mat(
     fs_labels     = fs
     fs_ticks      = fs
     fs_ticks_cbar = fs
-    if cntx.delta:
+    if cntx.delta.get_code():
         fs_ticks_cbar = fs_ticks_cbar - 1
 
     # Label.
-    label = ("Δ" if cntx.delta else "") + cntx.varidx.get_label()
+    label = ("Δ" if cntx.delta.get_code() else "") + cntx.varidx.get_label()
 
     # Initialize figure and axes.
     if def_context.code_streamlit in cntx.code:
@@ -924,7 +924,7 @@ def get_cmap_name(
 
     # Determine color scale index.
     is_wind_var = cntx.varidx.get_code() in [vi.v_uas, vi.v_vas, vi.v_sfcwindmax]
-    if (not cntx.delta) and (not is_wind_var):
+    if (not cntx.delta.get_code()) and (not is_wind_var):
         cmap_idx = 0
     elif (z_min < 0) and (z_max > 0):
         cmap_idx = 1

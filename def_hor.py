@@ -89,7 +89,7 @@ class Hors(def_object.Objs):
             p = str(dash_utils.get_d_data(cntx)) + "<view>/<vi_code>/*/*_<delta>.csv"
             p = p.replace("<view>", cntx.view.get_code())
             p = p.replace("<vi_code>", cntx.varidx.get_code())
-            p = p.replace("_<delta>", "" if cntx.delta is False else "_delta")
+            p = p.replace("_<delta>", "" if not cntx.delta.get_code() else "_delta")
             for p in glob.glob(p):
                 code = os.path.basename(os.path.dirname(p))
                 if code not in code_l:

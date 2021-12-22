@@ -131,7 +131,7 @@ class Stats(def_object.Objs):
             p = p.replace("<rcp_code>", "" if cntx.rcp is None else cntx.rcp.get_code())
             p = p.replace("<hor_code_>", "" if cntx.hor is None else cntx.hor.get_code().replace("-", "_"))
             p = p.replace("<hor_code>", "" if cntx.hor is None else cntx.hor.get_code())
-            p = p.replace("_<delta>", "" if cntx.delta is False else "_delta")
+            p = p.replace("_<delta>", "" if not cntx.delta.get_code() else "_delta")
 
             is_rcp_ref = cntx.rcp.get_code() == def_rcp.rcp_ref
             for code in list(get_code_desc().keys()):
