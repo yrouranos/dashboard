@@ -132,7 +132,7 @@ def refresh():
     cntx.lib = def_lib.Lib(cntx.libs.get_code(lib_f))
 
     # Deltas.
-    if cntx.view.get_code() in [def_view.mode_ts, def_view.mode_tbl, def_view.mode_map, def_view.mode_bias]:
+    if cntx.view.get_code() in [def_view.code_ts, def_view.code_tbl, def_view.code_map, def_view.code_bias]:
         st.sidebar.markdown("<style>.sel_title {font-size:14.5px}</style>", unsafe_allow_html=True)
         st.sidebar.markdown("<p class='sel_title'>Afficher les anomalies</p>", unsafe_allow_html=True)
         delta_f = st.sidebar.checkbox("", value=False)
@@ -145,31 +145,31 @@ def refresh():
     cntx.project.set_quantiles(cntx.project.get_code(), cntx)
 
     # Horizons.
-    if cntx.view.get_code() in [def_view.mode_tbl, def_view.mode_map, def_view.mode_cycle]:
+    if cntx.view.get_code() in [def_view.code_tbl, def_view.code_map, def_view.code_cycle]:
         cntx.hors = def_hor.Hors(cntx)
         hor_f = st.selectbox("Horizon", options=cntx.hors.get_code_l())
         cntx.hor = def_hor.Hor(hor_f)
         
     # Emission scenarios.
     cntx.rcps = def_rcp.RCPs(cntx)
-    if cntx.view.get_code() in [def_view.mode_map, def_view.mode_cycle]:
+    if cntx.view.get_code() in [def_view.code_map, def_view.code_cycle]:
         rcp_f = st.selectbox("Scénario d'émissions", options=cntx.rcps.get_desc_l())
         cntx.rcp = def_rcp.RCP(cntx.rcps.get_code(rcp_f))
 
     # Statistics.
-    if cntx.view.get_code() == def_view.mode_map:
+    if cntx.view.get_code() == def_view.code_map:
         cntx.stats = def_stat.Stats(cntx)
         stat_f = st.selectbox("Statistique", options=cntx.stats.get_desc_l())
         cntx.stat = def_stat.Stat(cntx.stats.get_code(stat_f))
 
     # Models.
-    if cntx.view.get_code() == def_view.mode_cycle:
+    if cntx.view.get_code() == def_view.code_cycle:
         cntx.models = def_model.Models(cntx)
         model_f = st.selectbox("Modèle", options=cntx.models.get_desc_l())
         cntx.model = def_model.Model(cntx.models.get_code(model_f))
 
     # GUI components.
-    if cntx.view.get_code() in [def_view.mode_ts, def_view.mode_bias]:
+    if cntx.view.get_code() in [def_view.code_ts, def_view.code_bias]:
         df_rcp = dash_utils.load_data(cntx, dash_plot.mode_rcp)
         df_sim = dash_utils.load_data(cntx, dash_plot.mode_sim)
         if cntx.lib.get_code() in [def_lib.mode_alt, def_lib.mode_mat]:
@@ -178,9 +178,9 @@ def refresh():
         else:
             st.write(hv.render(dash_plot.gen_ts(cntx, df_rcp, dash_plot.mode_rcp)), backend="bokeh")
             st.write(hv.render(dash_plot.gen_ts(cntx, df_sim, dash_plot.mode_sim)), backend="bokeh")
-    elif cntx.view.get_code() == def_view.mode_tbl:
+    elif cntx.view.get_code() == def_view.code_tbl:
         st.write(dash_plot.gen_tbl(cntx))
-    elif cntx.view.get_code() == def_view.mode_map:
+    elif cntx.view.get_code() == def_view.code_map:
         cntx.p_bounds = dash_utils.get_p_bounds(cntx)
         cntx.p_locations = dash_utils.get_p_locations(cntx)
         df = dash_utils.load_data(cntx)
@@ -204,7 +204,7 @@ def refresh():
                 st.write(cycle_d)
             else:
                 st.write(hv.render(cycle_d), backend="bokeh")
-    if cntx.view.get_code() in [def_view.mode_ts, def_view.mode_tbl]:
+    if cntx.view.get_code() in [def_view.code_ts, def_view.code_tbl]:
         tbl_ref = dash_plot.get_ref_val(cntx)
         st.write("Valeur de référence : " + tbl_ref)
 

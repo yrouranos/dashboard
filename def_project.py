@@ -70,20 +70,20 @@ class Project(def_object.Obj):
 
         if quantiles is None:
 
-            if cntx.view.get_code() in [def_view.mode_map, def_view.mode_tbl]:
+            if cntx.view.get_code() in [def_view.code_map, def_view.code_tbl]:
 
                 quantiles = []
 
                 # The items are extracted from the 'q' column of data files.
                 # ~/<project_code>/tbl/<vi_code>.csv
-                if cntx.view.get_code() == def_view.mode_tbl:
+                if cntx.view.get_code() == def_view.code_tbl:
                     df = dash_utils.load_data(cntx)
                     df = df[(df["q"] > 0.01) & (df["q"] < 0.99) & (df["q"] != 0.5)]["q"]
                     quantiles = [min(df), max(df)]
 
                 # The items are extracted from file names.
                 # ~/<project_code>/map/<vi_code>/*/*_q*.csv
-                elif cntx.view.get_code() == def_view.mode_map:
+                elif cntx.view.get_code() == def_view.code_map:
                     p = dash_utils.d_data + "<project_code>/<view_code>/<vi_code>"
                     p = p.replace("<project_code>", code)
                     p = p.replace("<view_code>", cntx.view.get_code())

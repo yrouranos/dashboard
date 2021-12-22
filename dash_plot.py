@@ -601,7 +601,7 @@ def get_ref_val(
     
     # Load data.
     cntx_tbl = cntx.copy()
-    cntx_tbl.view = def_view.View(def_view.mode_tbl)
+    cntx_tbl.view = def_view.View(def_view.code_tbl)
     df = dash_utils.load_data(cntx_tbl)
     
     # Extract value.

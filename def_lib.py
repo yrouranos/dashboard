@@ -64,11 +64,11 @@ class Libs(def_object.Objs):
 
         if len(args) == 1:
             code_l = []
-            if args[0] in [def_view.mode_ts, def_view.mode_bias]:
+            if args[0] in [def_view.code_ts, def_view.code_bias]:
                 code_l = [mode_alt, mode_hv, mode_mat]
-            elif args[0] == def_view.mode_tbl:
+            elif args[0] == def_view.code_tbl:
                 code_l = [mode_ply]
-            elif args[0] in [def_view.mode_map, def_view.mode_cycle]:
+            elif args[0] in [def_view.code_map, def_view.code_cycle]:
                 code_l = [mode_hv, mode_mat]
             self.add(code_l)
 

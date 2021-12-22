@@ -122,7 +122,7 @@ class Stats(def_object.Objs):
 
         # The items are extracted from file names.
         # ~/<project_code>/map/<vi_code>/<hor_code>/*.csv"
-        if cntx.view.get_code() == def_view.mode_map:
+        if cntx.view.get_code() == def_view.code_map:
             p = str(dash_utils.get_d_data(cntx)) +\
                 "<view_code>/<vi_code>/<hor_code>/<vi_name>_<rcp_code>_<hor_code_>_<stat>_<delta>.csv"
             p = p.replace("<view_code>", cntx.view.get_code())

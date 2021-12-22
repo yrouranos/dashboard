@@ -121,18 +121,18 @@ class RCPs(def_object.Objs):
 
         # The items are extracted from the 'rcp' column of data files ('tbl' view).
         # ~/<project_code>/tbl/<vi_code>*.csv
-        if cntx.view.get_code() == def_view.mode_tbl:
+        if cntx.view.get_code() == def_view.code_tbl:
             p = str(dash_utils.get_d_data(cntx)) + "<view_code>/<vi_code>.csv"
             p = p.replace("<view_code>", cntx.view.get_code())
             p = p.replace("<vi_code>", cntx.varidx.get_code())
             df = pd.read_csv(p)
-            item_l = list(df.columns) if cntx.view.get_code() == def_view.mode_ts else df["rcp"]
+            item_l = list(df.columns) if cntx.view.get_code() == def_view.code_ts else df["rcp"]
             if cntx.delta and (rcp_ref in item_l):
                 item_l.remove(rcp_ref)
 
         # The items are extracted from directory names ('ts' or 'bias' view).
         # ~/<project_code>/<view_code>/<vi_code>/*.csv
-        elif cntx.view.get_code() in [def_view.mode_ts, def_view.mode_bias]:
+        elif cntx.view.get_code() in [def_view.code_ts, def_view.code_bias]:
             p = str(dash_utils.get_d_data(cntx)) + "<view_code>/<vi_code>/<vi_code>_<mode>_<delta>.csv"
             p = p.replace("<view_code>", cntx.view.get_code())
             p = p.replace("<vi_code>", cntx.varidx.get_code())
@@ -145,7 +145,7 @@ class RCPs(def_object.Objs):
 
         # The items are extracted from file names.
         # ~/<project_code>/map/<vi_code>/<hor_code>/*
-        elif cntx.view.get_code() == def_view.mode_map:
+        elif cntx.view.get_code() == def_view.code_map:
             p = str(dash_utils.get_d_data(cntx)) + "<view_code>/<vi_code>/<hor_code>/*.csv"
             p = p.replace("<view_code>", cntx.view.get_code())
             p = p.replace("<vi_code>", cntx.varidx.get_code())
@@ -154,7 +154,7 @@ class RCPs(def_object.Objs):
 
         # The items are extracted from file names.
         # ~/<project_code>/cycle*/<vi_code>/<hor_code>/*.csv
-        elif cntx.view.get_code() == def_view.mode_cycle:
+        elif cntx.view.get_code() == def_view.code_cycle:
             p = str(dash_utils.get_d_data(cntx)) + "<view_code>*/<vi_code>/<hor_code>/*.csv"
             p = p.replace("<view_code>", cntx.view.get_code())
             p = p.replace("<vi_code>", cntx.varidx.get_code())

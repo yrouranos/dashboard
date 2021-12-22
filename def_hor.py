@@ -10,6 +10,7 @@
 # ----------------------------------------------------------------------------------------------------------------------
 
 import dash_utils
+import def_context
 import def_object
 import def_rcp
 import def_view
@@ -45,7 +46,10 @@ class Hors(def_object.Objs):
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    def __init__(self, *args):
+    def __init__(
+        self,
+        *args
+    ):
 
         """
         ----------------------------------------
@@ -59,9 +63,12 @@ class Hors(def_object.Objs):
             if isinstance(args[0], str) or isinstance(args[0], list):
                 self.add(args[0])
             else:
-                self.load(args)
+                self.load(args[0])
 
-    def load(self, args):
+    def load(
+        self,
+        cntx: def_context.Context
+    ):
 
         """
         ----------------------------------------
@@ -69,19 +76,16 @@ class Hors(def_object.Objs):
 
         Parameters
         ----------
-        args :
-            args[0] = cntx : def_context.Context
-                Context.
+        cntx : def_context.Context
+            Context.
         ----------------------------------------
         """
-        
-        cntx = args[0]
-        
+
         code_l = []
 
         # The items are extracted from directory names.
         # ~/<project_code>/map/<vi_code>/*
-        if cntx.view.get_code() == def_view.mode_map:
+        if cntx.view.get_code() == def_view.code_map:
             p = str(dash_utils.get_d_data(cntx)) + "<view>/<vi_code>/*/*_<delta>.csv"
             p = p.replace("<view>", cntx.view.get_code())
             p = p.replace("<vi_code>", cntx.varidx.get_code())
@@ -93,14 +97,14 @@ class Hors(def_object.Objs):
 
         # The items are extracted from the 'hor' column of data files.
         # ~/<project_code>/tbl/<vi_code>.csv
-        elif cntx.view.get_code() == def_view.mode_tbl:
+        elif cntx.view.get_code() == def_view.code_tbl:
             df = dash_utils.load_data(cntx)
             code_l = list(dict.fromkeys(list(df["hor"])))
             code_l.remove(df[df["rcp"] == def_rcp.rcp_ref]["hor"][0])
 
         # The items are extracted from directory names.
         # ~/<project_code>/cycle*/*
-        elif cntx.view.get_code() == def_view.mode_cycle:
+        elif cntx.view.get_code() == def_view.code_cycle:
             p = str(dash_utils.get_d_data(cntx)) + "<view>/<vi_code>/*"
             p = p.replace("<view>/", cntx.view.get_code() + "*/")
             p = p.replace("<vi_code>", cntx.varidx.get_code())

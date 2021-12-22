@@ -15,18 +15,18 @@ import def_object
 import glob
 from typing import List, Union
 
-mode_ts = "ts"
-mode_tbl = "tbl"
-mode_map = "map"
-mode_cycle = "cycle"
-mode_bias = "bias"
+code_ts = "ts"
+code_tbl = "tbl"
+code_map = "map"
+code_cycle = "cycle"
+code_bias = "bias"
 
 code_desc = {
-    mode_ts: "Série temporelle",
-    mode_tbl: "Tableau",
-    mode_map: "Carte",
-    mode_cycle: "Cycle annuel",
-    mode_bias: "Ajustement du biais"
+    code_ts: "Série temporelle",
+    code_tbl: "Tableau",
+    code_map: "Carte",
+    code_cycle: "Cycle annuel",
+    code_bias: "Ajustement du biais"
 }
 
 
