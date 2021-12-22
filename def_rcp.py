@@ -125,8 +125,24 @@ class RCPs(def_object.Objs):
         # ~/<project_code>/ts/<vi_code>/*.csv
         # The items are extracted from the 'rcp' column of data files ('tbl' view).
         # ~/<project_code>/tbl/<vi_code>/*.csv
-        if cntx.view.get_code() in [def_view.mode_ts, def_view.mode_tbl]:
-            p = str(dash_utils.get_d_data(cntx)) + "/<view_code>/<vi_code>_<mode>.csv"
+        if cntx.view.get_code() in [def_view.mode_tbl]:
+            p = str(dash_utils.get_d_data(cntx)) + "/<view_code>/<vi_code>_<mode>_<delta>.csv"
+            p = p.replace("<view_code>", cntx.view.get_code())
+            p = p.replace("<vi_code>", cntx.varidx.get_code())
+            if cntx.view.get_code() in [def_view.mode_ts, def_view.mode_bias]:
+                p = p.replace("_<mode>", "_rcp")
+            else:
+                p = p.replace("_<mode>", "")
+            df = pd.read_csv(p)
+            if cntx.view.get_code() == def_view.mode_ts:
+                item_l = list(df.columns)
+            else:
+                item_l = df["rcp"]
+            if cntx.delta and (rcp_ref in item_l):
+                item_l.remove(rcp_ref)
+
+        elif cntx.view.get_code() in [def_view.mode_ts, def_view.mode_bias]:
+            p = str(dash_utils.get_d_data(cntx)) + "/<view_code>/<vi_code>/<vi_code>_<mode>_<delta>.csv"
             p = p.replace("<view_code>", cntx.view.get_code())
             p = p.replace("<vi_code>", cntx.varidx.get_code())
             if cntx.view.get_code() in [def_view.mode_ts, def_view.mode_bias]:
