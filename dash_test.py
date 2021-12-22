@@ -23,7 +23,8 @@ import def_view
 
 
 def test_gen_ts(
-    project_code: str
+    project_code: str,
+    view_code: str
 ):
 
     """
@@ -34,13 +35,15 @@ def test_gen_ts(
     ----------
     project_code : str
         Project code.
+    view_code : str
+        View code.
     --------------------------------------------------------------------------------------------------------------------
     """
 
     cntx = def_context.Context(def_context.code_streamlit)
     cntx.project = def_project.Project(code=project_code, cntx=cntx)
     cntx.views = def_view.Views()
-    cntx.view = def_view.View(def_view.mode_ts)
+    cntx.view = def_view.View(view_code)
     cntx.libs = def_lib.Libs(cntx.view.get_code())
 
     for lib in cntx.libs.get_code_l():
@@ -237,7 +240,8 @@ def test_all(
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    test_gen_ts(project_code)
+    test_gen_ts(project_code, def_view.mode_ts)
     test_gen_tbl(project_code)
     test_gen_map(project_code)
     test_gen_cycle(project_code)
+    test_gen_ts(project_code, def_view.mode_bias)

@@ -47,7 +47,7 @@ def load_data(
         |       +-- <hor_code>  ex: 2021-2050
         |           |
         |           +-- <vi_name>_<RCM>_<domain>_<GCM>_<rcp_code>_<hor_code.start>_<hor_code.end>_daily.csv
-        |                 ex: pr_HIRHAM5_AFR-44_ICHEC-EC-EARTH_rcp45_2021_2050_daily.csv
+        |               ex: pr_HIRHAM5_AFR-44_ICHEC-EC-EARTH_rcp45_2021_2050_daily.csv
         |               columns: day,mean,min,max,var
         |                    ex: 1,7.244016214648855e-06,-3.332919823397555e-08,0.00021562011394048503,pr
         |
@@ -58,20 +58,30 @@ def load_data(
         |       +-- <hor_code>  ex: 2021-2050
         |           |
         |           +-- <vi_name>_<RCM>_<domain>_<GCM>_<rcp_code>_<hor_code.start>_<hor_code.end>_monthly.csv
-        |                 ex: pr_HIRHAM5_AFR-44_ICHEC-EC-EARTH_rcp45_2021_2050_monthly.csv
+        |               ex: pr_HIRHAM5_AFR-44_ICHEC-EC-EARTH_rcp45_2021_2050_monthly.csv
         |               columns: year,1,2,3,4,5,6,7,8,9,10,11,12
         |                    ex: 2021,0.003668,0.000196,0.014072,1.344051,3.065682,28.971143,...
-        +-- ts|bias
+        +-- ts
         |   |
         |   +-- <vi_code>_<mode>.csv
-        |         ex: pr_rcp.csv
+        |       ex: pr_rcp.csv
         |       columns: year,ref,rcp45_moy,rcp45_min,rcp45_max,rcp85_moy,rcp85_min,rcp85_max
         |            ex: 1981,545.37,475.40,358.05,602.77,469.10,350.61,601.30
+        |
+        +-- bias
+        |   |
+        |   +- <vi_code> ex: pr
+        |      |
+        |      +-- <vi_code>_<mode>*.csv
+        |          ex: pr_rcp.csv
+        |          ex: pr_sim_delta.csv
+        |          columns: year,ref,rcp45_moy,rcp45_min,rcp45_max,rcp85_moy,rcp85_min,rcp85_max
+        |               ex: 1981,545.37,475.40,358.05,602.77,469.10,350.61,601.30
         |
         +-- tbl
         |   |
         |   +-- <vi_code>.csv
-        |         ex: pr.csv
+        |       ex: pr.csv
         |       columns: stn, var, rcp, hor, stat, q, val
         |            ex: era5_land, pr, rcp45, 2021-2050, mean, -1, 486.53
         +-- map
@@ -81,9 +91,9 @@ def load_data(
             |   +-- <hor_code>  ex: 2021-2050
             |       |
             |       +-- <vi_name>_<rcp_code>_<hor_code.start>_<hor_code.end>_<stat_code>.csv
-            |             ex: pr_rcp45_2021_2050_mean.csv
-            |             ex: pr_rcp45_2021_2050_q10.csv
-            |             ex: pr_rcp45_2021_2050_q90_delta.csv
+            |           ex: pr_rcp45_2021_2050_mean.csv
+            |           ex: pr_rcp45_2021_2050_q10.csv
+            |           ex: pr_rcp45_2021_2050_q90_delta.csv
             |           columns: longitude,latitude,pr
             |                ex: -17.30,14.8,226.06
             |
@@ -108,10 +118,11 @@ def load_data(
     
     # Load data.
     p = ""
-    if cntx.view.get_code() in [def_view.mode_ts, def_view.mode_tbl, def_view.mode_bias]:
+    if cntx.view.get_code() == def_view.mode_tbl:
         p = str(get_d_data(cntx)) + "<view_code>/<vi_code>_<mode>.csv"
-        if cntx.view.get_code() in [def_view.mode_ts, def_view.mode_bias]:
-            p = p.replace("_<mode>", "_" + mode)
+    elif cntx.view.get_code() in [def_view.mode_ts, def_view.mode_bias]:
+        p = str(get_d_data(cntx)) + "<view_code>/<vi_code>/<vi_code>_<mode>.csv"
+        p = p.replace("_<mode>", "_" + mode)
     elif cntx.view.get_code() == def_view.mode_map:
         p = str(get_d_data(cntx)) + "<view_code>/<vi_code>/<hor_code>/*_<rcp_code>_*_<stat>_<delta>.csv"
     elif cntx.view.get_code() == def_view.mode_cycle:

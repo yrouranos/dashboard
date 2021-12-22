@@ -10,6 +10,7 @@
 # ----------------------------------------------------------------------------------------------------------------------
 
 import dash_utils
+import def_context
 import def_object
 import def_view
 import glob
@@ -100,11 +101,11 @@ class RCPs(def_object.Objs):
             if isinstance(args[0], str) or isinstance(args[0], list):
                 self.add(args[0])
             else:
-                self.load(args)
+                self.load(args[0])
 
     def load(
         self,
-        args
+        cntx: def_context.Context
     ):
 
         """
@@ -113,42 +114,30 @@ class RCPs(def_object.Objs):
 
         Parameters
         ----------
-        args :
-            args[0] = cntx : def_context.Context
-                Context.
+        cntx : def_context.Context
+            Context.
         ----------------------------------------
         """
 
-        cntx = args[0]
-
-        # The items are extracted from column names of data files ('ts' view).
-        # ~/<project_code>/ts/<vi_code>/*.csv
         # The items are extracted from the 'rcp' column of data files ('tbl' view).
-        # ~/<project_code>/tbl/<vi_code>/*.csv
-        if cntx.view.get_code() in [def_view.mode_tbl]:
-            p = str(dash_utils.get_d_data(cntx)) + "/<view_code>/<vi_code>_<mode>_<delta>.csv"
+        # ~/<project_code>/tbl/<vi_code>*.csv
+        if cntx.view.get_code() == def_view.mode_tbl:
+            p = str(dash_utils.get_d_data(cntx)) + "<view_code>/<vi_code>.csv"
             p = p.replace("<view_code>", cntx.view.get_code())
             p = p.replace("<vi_code>", cntx.varidx.get_code())
-            if cntx.view.get_code() in [def_view.mode_ts, def_view.mode_bias]:
-                p = p.replace("_<mode>", "_rcp")
-            else:
-                p = p.replace("_<mode>", "")
             df = pd.read_csv(p)
-            if cntx.view.get_code() == def_view.mode_ts:
-                item_l = list(df.columns)
-            else:
-                item_l = df["rcp"]
+            item_l = list(df.columns) if cntx.view.get_code() == def_view.mode_ts else df["rcp"]
             if cntx.delta and (rcp_ref in item_l):
                 item_l.remove(rcp_ref)
 
+        # The items are extracted from directory names ('ts' or 'bias' view).
+        # ~/<project_code>/<view_code>/<vi_code>/*.csv
         elif cntx.view.get_code() in [def_view.mode_ts, def_view.mode_bias]:
-            p = str(dash_utils.get_d_data(cntx)) + "/<view_code>/<vi_code>/<vi_code>_<mode>_<delta>.csv"
+            p = str(dash_utils.get_d_data(cntx)) + "<view_code>/<vi_code>/<vi_code>_<mode>_<delta>.csv"
             p = p.replace("<view_code>", cntx.view.get_code())
             p = p.replace("<vi_code>", cntx.varidx.get_code())
-            if cntx.view.get_code() in [def_view.mode_ts, def_view.mode_bias]:
-                p = p.replace("_<mode>", "_rcp")
-            else:
-                p = p.replace("_<mode>", "")
+            p = p.replace("<mode>", "rcp")
+            p = p.replace("_<delta>", "_delta" if cntx.delta else "")
             df = pd.read_csv(p)
             if cntx.view.get_code() == def_view.mode_ts:
                 item_l = list(df.columns)
