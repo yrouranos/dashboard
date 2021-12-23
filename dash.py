@@ -177,10 +177,8 @@ def refresh():
         sim_l = cntx.sims.get_desc_l()
         if cntx.view.get_code() in [def_view.code_ts, def_view.code_bias]:
             sim_l = [""] + sim_l
-        sim_f = st.selectbox("Simulation", options=sim_l)
-        # TODO: remove...
-        # cntx.sim = def_sim.Sim(cntx.sims.get_code(sim_f))
-        cntx.sim = def_sim.Sim("CCLM4_CNRM-CERFACS-CNRM-CM5 (RCP 4.5)")
+        sim_f = st.selectbox("Simulation", options=sim_l).
+        cntx.sim = def_sim.Sim(cntx.sims.get_code(sim_f))
 
     # GUI components.
     if cntx.view.get_code() in [def_view.code_ts, def_view.code_bias]:
