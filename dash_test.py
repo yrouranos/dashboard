@@ -50,9 +50,6 @@ def test_gen_ts(
     for lib in cntx.libs.get_code_l():
         cntx.lib = def_lib.Lib(lib)
 
-        # TODO: remove...
-        cntx.lib = def_lib.Lib("mat")
-
         for delta in [False, True]:
             cntx.delta = def_delta.Del(delta)
 
@@ -61,23 +58,15 @@ def test_gen_ts(
 
                 cntx.varidx = vi.VarIdx(varidx)
                 cntx.rcps = def_rcp.RCPs(cntx)
-
-                # TODO: remove...
-                cntx.rcp = def_rcp.RCP("rcp45")
-
+                cntx.rcp = def_rcp.RCP("")
                 cntx.sims = def_sim.Sims(cntx)
-
-                # TODO: remove...
-                cntx.sim = def_sim.Sim("CCLM4_CNRM-CERFACS-CNRM-CM5 (RCP 4.5)")
+                cntx.sim = def_sim.Sim("")
 
                 cntx.project.set_quantiles(cntx.project.get_code(), cntx)
                 cntx.projects = def_project.Projects(cntx=cntx)
                 cntx.project = def_project.Project(code=project_code, cntx=cntx)
 
                 for mode in [dash_plot.mode_rcp, dash_plot.mode_sim]:
-
-                    # TODO: remove...
-                    # mode = dash_plot.mode_rcp
 
                     df = dash_utils.load_data(cntx, mode)
                     dash_plot.gen_ts(cntx, df, mode)

@@ -120,9 +120,7 @@ def refresh():
     # Projects.
     cntx.projects = def_project.Projects(cntx=cntx)
     project_f = st.sidebar.selectbox("Choisir le projet", options=cntx.projects.get_desc_l())
-    # TODO: remove...
-    # cntx.project = def_project.Project(code=project_f, cntx=cntx)
-    cntx.project = def_project.Project(code="sn-ko", cntx=cntx)
+    cntx.project = def_project.Project(code=project_f, cntx=cntx)
 
     # Views.
     cntx.views = def_view.Views(cntx)
@@ -163,9 +161,7 @@ def refresh():
         if cntx.view.get_code() in [def_view.code_ts, def_view.code_bias]:
             rcp_l = [""] + rcp_l
         rcp_f = st.selectbox("Scénario d'émissions", options=rcp_l)
-        # TODO: remove...
         cntx.rcp = def_rcp.RCP(cntx.rcps.get_code(rcp_f))
-        # cntx.rcp = def_rcp.RCP("rcp45")
 
     # Statistics.
     if cntx.view.get_code() == def_view.code_map:
@@ -180,9 +176,7 @@ def refresh():
         if cntx.view.get_code() in [def_view.code_ts, def_view.code_bias]:
             sim_l = [""] + sim_l
         sim_f = st.selectbox("Simulation", options=sim_l)
-        # TODO: remove...
         cntx.sim = def_sim.Sim(cntx.sims.get_code(sim_f))
-        # cntx.sim = def_sim.Sim("CCLM4_CNRM-CERFACS-CNRM-CM5 (RCP 4.5)")
 
     # GUI components.
     if cntx.view.get_code() in [def_view.code_ts, def_view.code_bias]:
