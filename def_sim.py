@@ -124,7 +124,7 @@ class Sim(def_object.Obj):
 
     def get_rcp(
         self
-    ) -> def_rcp.RCP:
+    ) -> Union[def_rcp.RCP, None]:
 
         """
         ----------------------------------------
@@ -137,9 +137,9 @@ class Sim(def_object.Obj):
         ----------------------------------------
         """
 
-        rcp = ""
+        rcp = None
 
-        if (self.code == def_rcp.rcp_ref) and (self.rcp is not None):
+        if self.code == def_rcp.rcp_ref:
             rcp = def_rcp.RCP(def_rcp.rcp_ref)
         else:
             tokens = self.code.split("_")
@@ -165,8 +165,8 @@ class Sim(def_object.Obj):
 
         desc = self.code
 
-        if (self.code == def_rcp.rcp_ref) and (self.rcp is not None):
-            desc = self.rcp.get_desc()
+        if self.code == def_rcp.rcp_ref:
+            desc = self.get_rcp().get_desc()
         else:
             tokens = self.code.split("_")
             if len(tokens) >= 4:
