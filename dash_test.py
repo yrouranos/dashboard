@@ -77,7 +77,7 @@ def test_gen_ts(
                 for mode in [dash_plot.mode_rcp, dash_plot.mode_sim]:
 
                     # TODO: remove...
-                    mode = dash_plot.mode_rcp
+                    # mode = dash_plot.mode_rcp
 
                     df = dash_utils.load_data(cntx, mode)
                     dash_plot.gen_ts(cntx, df, mode)
