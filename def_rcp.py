@@ -141,8 +141,7 @@ class RCPs(def_object.Objs):
             p = p.replace("_<delta>", "_delta" if cntx.delta.get_code() else "")
             df = pd.read_csv(p)
             item_l = list(df.columns)
-            if cntx.delta.get_code() and (rcp_ref in item_l):
-                item_l.remove(rcp_ref)
+            item_l.remove(rcp_ref)
 
         # The items are extracted from file names.
         # ~/<project_code>/map/<vi_code>/<hor_code>/*
