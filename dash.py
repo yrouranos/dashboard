@@ -120,7 +120,9 @@ def refresh():
     # Projects.
     cntx.projects = def_project.Projects(cntx=cntx)
     project_f = st.sidebar.selectbox("Choisir le projet", options=cntx.projects.get_desc_l())
-    cntx.project = def_project.Project(code=project_f, cntx=cntx)
+    # TODO: remove...
+    # cntx.project = def_project.Project(code=project_f, cntx=cntx)
+    cntx.project = def_project.Project(code="sn-ko", cntx=cntx)
 
     # Views.
     cntx.views = def_view.Views(cntx)

@@ -69,7 +69,13 @@ class Sim(def_object.Obj):
         ----------------------------------------
         """
 
-        return self.code.split("_")[0]
+        rcm = ""
+
+        tokens = self.code.split("_")
+        if len(tokens) >= 4:
+            rcm = tokens[0]
+
+        return rcm
 
     def get_domain(
         self
@@ -86,7 +92,13 @@ class Sim(def_object.Obj):
         ----------------------------------------
         """
 
-        return self.code.split("_")[1]
+        domain = ""
+
+        tokens = self.code.split("_")
+        if len(tokens) >= 4:
+            domain = tokens[1]
+
+        return domain
 
     def get_gcm(
         self
@@ -103,7 +115,13 @@ class Sim(def_object.Obj):
         ----------------------------------------
         """
 
-        return self.code.split("_")[2]
+        gcm = ""
+
+        tokens = self.code.split("_")
+        if len(tokens) >= 4:
+            gcm = tokens[2]
+
+        return gcm
 
     def get_rcp(
         self
@@ -120,7 +138,13 @@ class Sim(def_object.Obj):
         ----------------------------------------
         """
 
-        return def_rcp.RCP(self.code.split("_")[3])
+        rcp = ""
+
+        tokens = self.code.split("_")
+        if len(tokens) >= 4:
+            rcp = def_rcp.RCP(tokens[3])
+
+        return rcp
 
     def get_desc(
         self
@@ -137,7 +161,13 @@ class Sim(def_object.Obj):
         ----------------------------------------
         """
 
-        return self.get_rcm() + "_" + self.get_gcm() + " (" + self.get_rcp().get_desc() + ")"
+        desc = self.code
+
+        tokens = self.code.split("_")
+        if (self.code != def_rcp.rcp_ref) and (len(tokens) >= 4):
+            desc = self.get_rcm() + "_" + self.get_gcm() + " (" + self.get_rcp().get_desc() + ")"
+
+        return desc
 
 
 class Sims(def_object.Objs):
@@ -148,7 +178,10 @@ class Sims(def_object.Objs):
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    def __init__(self, *args):
+    def __init__(
+        self,
+        *args
+    ):
 
         """
         ----------------------------------------
@@ -210,20 +243,10 @@ class Sims(def_object.Objs):
             p = p.replace("<vi_code>", cntx.varidx.get_code())
             p = p.replace("_<delta>", "_delta" if cntx.delta.get_code() else "")
             df = pd.read_csv(p)
-            columns = list(df.columns)
-            for column in columns:
-                if not cntx.delta.get_code() or (def_rcp.rcp_ref not in column):
-                    code = ""
-                    if def_rcp.rcp_ref in column:
-                        rcp_ref_found = True
-                    elif def_rcp.rcp_26 in column:
-                        code = def_rcp.rcp_26
-                    elif def_rcp.rcp_45 in column:
-                        code = def_rcp.rcp_45
-                    elif def_rcp.rcp_85 in column:
-                        code = def_rcp.rcp_85
-                    if (code != "") and (code not in code_l):
-                        code_l.append(code)
+            code_l = list(df.columns)
+            rcp_ref_found = (def_rcp.rcp_ref in code_l) and (not cntx.delta.get_code())
+            code_l.remove("year")
+            code_l.remove(def_rcp.rcp_ref)
 
         # Sort list and put reference first.
         code_l.sort()

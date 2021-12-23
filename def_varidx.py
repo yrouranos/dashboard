@@ -255,7 +255,7 @@ class VarIdx(def_object.Obj):
     
     def __init__(
         self,
-        code
+        code: str
     ):
 
         """
