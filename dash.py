@@ -157,7 +157,10 @@ def refresh():
     # Emission scenarios.
     cntx.rcps = def_rcp.RCPs(cntx)
     if cntx.view.get_code() in [def_view.code_ts, def_view.code_map, def_view.code_cycle, def_view.code_bias]:
-        rcp_f = st.selectbox("Scénario d'émissions", options=([""] + cntx.rcps.get_desc_l()))
+        rcp_l = cntx.rcps.get_desc_l()
+        if cntx.view.get_code() in [def_view.code_ts, def_view.code_bias]:
+            rcp_l = [""] + rcp_l
+        rcp_f = st.selectbox("Scénario d'émissions", options=rcp_l)
         cntx.rcp = def_rcp.RCP(cntx.rcps.get_code(rcp_f))
 
     # Statistics.
@@ -169,7 +172,10 @@ def refresh():
     # Simulations.
     if cntx.view.get_code() in [def_view.code_ts, def_view.code_cycle, def_view.code_bias]:
         cntx.sims = def_sim.Sims(cntx)
-        sim_f = st.selectbox("Simulation", options=([""] + cntx.sims.get_desc_l()))
+        sim_l = cntx.sims.get_desc_l()
+        if cntx.view.get_code() in [def_view.code_ts, def_view.code_bias]:
+            sim_l = [""] + sim_l
+        sim_f = st.selectbox("Simulation", options=sim_l)
         cntx.sim = def_sim.Sim(cntx.sims.get_code(sim_f))
 
     # GUI components.

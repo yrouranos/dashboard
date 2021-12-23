@@ -280,7 +280,9 @@ def update_rcp():
 
     if cntx.view.get_code() in [def_view.code_ts, def_view.code_map, def_view.code_cycle, def_view.code_bias]:
         cntx.rcps = def_rcp.RCPs(cntx)
-        rcp_l = [""] + cntx.rcps.get_desc_l()
+        rcp_l = cntx.rcps.get_desc_l()
+        if cntx.view.get_code() in [def_view.code_ts, def_view.code_bias]:
+            rcp_l = [""] + rcp_l
         update_field("rcp", rcp_l)
     if rcp_f is not None:
         cntx.rcp = def_rcp.RCP(cntx.rcps.get_code(rcp_f[1].value))
@@ -316,7 +318,9 @@ def update_sim():
 
     if cntx.view.get_code() in [def_view.code_ts, def_view.code_cycle, def_view.code_bias]:
         cntx.sims = def_sim.Sims(cntx)
-        sim_l = [""] + cntx.sims.get_desc_l()
+        sim_l = cntx.sims.get_desc_l()
+        if cntx.view.get_code() in [def_view.code_ts, def_view.code_bias]:
+            sim_l = [""] + sim_l
         update_field("sim", sim_l)
     if sim_f is not None:
         cntx.sim = def_sim.Sim(sim_f[1].value)
