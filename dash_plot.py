@@ -163,7 +163,7 @@ def gen_ts_alt(
 
         for rcp in rcps.items:
 
-            if ((item == "area") and (rcp.get_code() == def_rcp.rcp_ref)) or (cntx.sim.get_code() != ""):
+            if (item == "area") and ((rcp.get_code() == def_rcp.rcp_ref) or (cntx.sim.get_code() != "")):
                 continue
 
             # Subset columns.
@@ -289,7 +289,7 @@ def gen_ts_hv(
 
         for rcp in rcps.items:
 
-            if ((item == "area") and (rcp.get_code() == def_rcp.rcp_ref)) or (cntx.sim.get_code() != ""):
+            if (item == "area") and ((rcp.get_code() == def_rcp.rcp_ref) or (cntx.sim.get_code() != "")):
                 continue
 
             # Subset and rename columns.
