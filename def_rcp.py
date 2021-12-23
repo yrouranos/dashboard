@@ -170,7 +170,7 @@ class RCPs(def_object.Objs):
         rcp_ref_found = False
         for item in item_l:
             code = ""
-            if "rcp" not in item:
+            if rcp_ref in item:
                 rcp_ref_found = True
             elif rcp_26 in item:
                 code = rcp_26

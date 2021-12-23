@@ -250,8 +250,10 @@ class Sims(def_object.Objs):
             p = p.replace("<vi_code>", cntx.varidx.get_code())
             p = p.replace("_<delta>", "_delta" if cntx.delta.get_code() else "")
             df = pd.read_csv(p)
+            df.drop(["year", def_rcp.rcp_ref], axis=1, inplace=True)
             for column in list(df.columns):
-                if cntx.rcp.get_code() in column:
+                rcp_code = cntx.rcp.get_code()
+                if (rcp_code == "") or ((rcp_code != "") and (rcp_code in column)):
                     code_l.append(column)
 
         # Sort list and put reference first.
