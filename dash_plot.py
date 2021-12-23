@@ -225,7 +225,7 @@ def gen_ts_alt(
                         curve = alt.Chart(df_rcp).mark_line(opacity=opacity).encode(
                             x=alt.X("Année", axis=x_axis),
                             y=alt.Y(column, axis=y_axis, scale=y_scale),
-                            color=rcp.get_color()
+                            color=alt.Color("Scénario")
                         )
                     else:
                         curve = alt.Chart(df_rcp).mark_line(opacity=opacity, text=rcp.get_desc()).encode(
