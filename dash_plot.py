@@ -221,7 +221,7 @@ def gen_ts_alt(
                         if rcp.get_code() in column:
                             columns.append(column)
                 for column in columns:
-                    if cntx.delta.get_code() and (rcp.get_code() == def_rcp.rcp_ref):
+                    if rcp.get_code() == def_rcp.rcp_ref:
                         curve = alt.Chart(df_rcp).mark_line(opacity=opacity).encode(
                             x=alt.X("Année", axis=x_axis),
                             y=alt.Y(column, axis=y_axis, scale=y_scale)
