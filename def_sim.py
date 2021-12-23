@@ -232,7 +232,7 @@ class Sims(def_object.Objs):
 
         # The items are extracted from columns.
         # ~/<project_code>/<view_code>/<vi_code>/<vi_code>_sim_*.csv
-        elif cntx.view.get_code() in [def_view.code_ts, def_view.code_bias]:
+        elif cntx.view.get_code() in [def_view.code_ts, def_view.code_ts_bias]:
             p = str(dash_utils.get_d_data(cntx)) + "<view_code>/<vi_code>/<vi_code>_sim_<delta>.csv"
             p = p.replace("<view_code>", cntx.view.get_code())
             p = p.replace("<vi_code>", cntx.varidx.get_code())

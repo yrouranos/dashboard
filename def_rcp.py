@@ -12,7 +12,6 @@
 import dash_utils
 import def_context
 import def_object
-import def_rcp
 import def_view
 import glob
 import pandas as pd
@@ -55,9 +54,8 @@ class RCP(def_object.Obj):
         ----------------------------------------
         """
 
-        desc = "" if code == "" else code_props[code][0]
-        super(RCP, self).__init__(code=code, desc=desc)
-        self.color = "" if code == "" else code_props[self.code][1]
+        if code in list(code_props.keys()):
+            super(RCP, self).__init__(code=code, desc=code_props[code][0])
     
     def get_color(
         self
@@ -73,8 +71,25 @@ class RCP(def_object.Obj):
             Color.
         ----------------------------------------
         """
-            
-        return self.color
+
+        return "" if self.code == "" else code_props[self.code][1]
+
+    def is_ref(
+        self
+    ) -> bool:
+
+        """
+        ----------------------------------------
+        Determine if the instance is a reference RCP.
+
+        Returns
+        -------
+        bool
+            True if the instance is a reference RCP.
+        ----------------------------------------
+        """
+
+        return self.code == rcp_ref
 
 
 class RCPs(def_object.Objs):
@@ -131,9 +146,9 @@ class RCPs(def_object.Objs):
             if cntx.delta.get_code() and (rcp_ref in item_l):
                 item_l.remove(rcp_ref)
 
-        # The items are extracted from column names ('ts' or 'bias' view).
+        # The items are extracted from column names ('ts' or 'ts_bias' view).
         # ~/<project_code>/<view_code>/<vi_code>/*.csv
-        elif cntx.view.get_code() in [def_view.code_ts, def_view.code_bias]:
+        elif cntx.view.get_code() in [def_view.code_ts, def_view.code_ts_bias]:
             p = str(dash_utils.get_d_data(cntx)) + "<view_code>/<vi_code>/<vi_code>_<mode>_<delta>.csv"
             p = p.replace("<view_code>", cntx.view.get_code())
             p = p.replace("<vi_code>", cntx.varidx.get_code())

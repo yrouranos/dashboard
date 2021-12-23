@@ -16,17 +16,17 @@ import glob
 from typing import List, Union
 
 code_ts = "ts"
+code_ts_bias = "ts_bias"
 code_tbl = "tbl"
 code_map = "map"
 code_cycle = "cycle"
-code_bias = "bias"
 
 code_desc = {
     code_ts: "Série temporelle",
+    code_ts_bias: "Série temporelle (biais)",
     code_tbl: "Tableau",
     code_map: "Carte",
-    code_cycle: "Cycle annuel",
-    code_bias: "Ajustement du biais"
+    code_cycle: "Cycle annuel"
 }
 
 

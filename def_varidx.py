@@ -493,7 +493,7 @@ class VarIdxs(def_object.Objs):
 
         # The items are extracted from directory names.
         # ~/<project_code>/<view_code>/<varidx_code>/*
-        elif cntx.view.get_code() in [def_view.code_ts, def_view.code_map, def_view.code_cycle, def_view.code_bias]:
+        elif cntx.view.get_code() in [def_view.code_ts, def_view.code_map, def_view.code_cycle, def_view.code_ts_bias]:
             p = str(dash_utils.get_d_data(cntx)) + "<view_code>*/*"
             p = p.replace("<view_code>", cntx.view.get_code())
             for p_i in list(glob.glob(p)):

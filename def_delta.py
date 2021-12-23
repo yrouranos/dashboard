@@ -84,9 +84,9 @@ class Dels(def_object.Objs):
 
         code_l = [code_false, code_false]
 
-        # The items are extracted from file names ('ts' or 'bias' view).
+        # The items are extracted from file names ('ts' or 'ts_bias' view).
         # ~/<project_code>/<view_code>/<vi_code>/*delta.csv
-        if cntx.view.get_code() in [def_view.code_ts, def_view.code_bias]:
+        if cntx.view.get_code() in [def_view.code_ts, def_view.code_ts_bias]:
 
             p = str(dash_utils.get_d_data(cntx)) + "<view_code>/*/*delta.csv"
             p = p.replace("<view_code>", cntx.view.get_code())

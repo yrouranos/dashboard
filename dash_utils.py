@@ -68,7 +68,7 @@ def load_data(
         |       columns: year,ref,rcp45_moy,rcp45_min,rcp45_max,rcp85_moy,rcp85_min,rcp85_max
         |            ex: 1981,545.37,475.40,358.05,602.77,469.10,350.61,601.30
         |
-        +-- bias
+        +-- ts_bias
         |   |
         |   +- <vi_code> ex: pr
         |      |
@@ -106,8 +106,8 @@ def load_data(
         Context.
     mode : Optional[str]
         Mode.
-        ts/bias: mode = {"rcp", "sim"}
-        cycle:   mode = {"MS", "D"}
+        ts|ts_bias: mode = {"rcp", "sim"}
+        cycle:      mode = {"MS", "D"}
 
     Returns
     -------
@@ -120,7 +120,7 @@ def load_data(
     p = ""
     if cntx.view.get_code() == def_view.code_tbl:
         p = str(get_d_data(cntx)) + "<view_code>/<vi_code>.csv"
-    elif cntx.view.get_code() in [def_view.code_ts, def_view.code_bias]:
+    elif cntx.view.get_code() in [def_view.code_ts, def_view.code_ts_bias]:
         p = str(get_d_data(cntx)) + "<view_code>/<vi_code>/<vi_code>_<mode>_<delta>.csv"
         p = p.replace("_<mode>", "_" + mode)
     elif cntx.view.get_code() == def_view.code_map:
@@ -132,7 +132,7 @@ def load_data(
         view_code += "_" + mode.lower()
     p = p.replace("<view_code>", view_code)
     p = p.replace("<vi_code>", cntx.varidx.get_code())
-    if cntx.view.get_code() in [def_view.code_ts, def_view.code_map, def_view.code_cycle, def_view.code_bias]:
+    if cntx.view.get_code() in [def_view.code_ts, def_view.code_map, def_view.code_cycle, def_view.code_ts_bias]:
         p = p.replace("_<delta>", "" if not cntx.delta.get_code() else "_delta")
     if cntx.view.get_code() in [def_view.code_map, def_view.code_cycle]:
         p = p.replace("<hor_code>", cntx.hor.get_code())
@@ -151,7 +151,7 @@ def load_data(
 
     # Round values.
     n_dec = cntx.varidx.get_precision()
-    if cntx.view.get_code() in [def_view.code_ts, def_view.code_cycle, def_view.code_bias]:
+    if cntx.view.get_code() in [def_view.code_ts, def_view.code_cycle, def_view.code_ts_bias]:
         for col in df.select_dtypes("float64").columns:
             df.loc[:, col] = df.copy()[col].round(n_dec).to_numpy()
     elif cntx.view.get_code() == def_view.code_tbl:

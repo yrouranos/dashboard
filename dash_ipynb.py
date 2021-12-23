@@ -278,10 +278,10 @@ def update_rcp():
 
     global cntx, rcp_f
 
-    if cntx.view.get_code() in [def_view.code_ts, def_view.code_map, def_view.code_cycle, def_view.code_bias]:
+    if cntx.view.get_code() in [def_view.code_ts, def_view.code_map, def_view.code_cycle, def_view.code_ts_bias]:
         cntx.rcps = def_rcp.RCPs(cntx)
         rcp_l = cntx.rcps.get_desc_l()
-        if cntx.view.get_code() in [def_view.code_ts, def_view.code_bias]:
+        if cntx.view.get_code() in [def_view.code_ts, def_view.code_ts_bias]:
             rcp_l = [""] + rcp_l
         update_field("rcp", rcp_l)
     if rcp_f is not None:
@@ -316,10 +316,10 @@ def update_sim():
 
     global cntx, sim_f
 
-    if cntx.view.get_code() in [def_view.code_ts, def_view.code_cycle, def_view.code_bias]:
+    if cntx.view.get_code() in [def_view.code_ts, def_view.code_cycle, def_view.code_ts_bias]:
         cntx.sims = def_sim.Sims(cntx)
         sim_l = cntx.sims.get_desc_l()
-        if cntx.view.get_code() in [def_view.code_ts, def_view.code_bias]:
+        if cntx.view.get_code() in [def_view.code_ts, def_view.code_ts_bias]:
             sim_l = [""] + sim_l
         update_field("sim", sim_l)
     if sim_f is not None:
@@ -403,6 +403,9 @@ def varidx_updated(event):
     if cntx.view.get_code() in [def_view.code_tbl, def_view.code_map, def_view.code_cycle]:
         update_hor()
         hor_updated(event)
+    elif cntx.view.get_code() in [def_view.code_ts, def_view.code_ts_bias]:
+        update_rcp()
+        rcp_updated(event)
     else:
         refresh()
 
@@ -440,7 +443,7 @@ def rcp_updated(event):
     if cntx.view.get_code() in [def_view.code_tbl, def_view.code_map]:
         update_stat()
         stat_updated(event)
-    elif cntx.view.get_code() == def_view.code_cycle:
+    elif cntx.view.get_code() in [def_view.code_ts, def_view.code_cycle, def_view.code_ts_bias]:
         update_sim()
         sim_updated(event)
     else:
@@ -497,17 +500,30 @@ def refresh():
         update_varidx()
         update_hor()
         update_rcp()
+        update_sim()
 
     # Reference value.
     ref_val = pn.Row("\n\nValeur de référence : ", dash_plot.get_ref_val(cntx))
 
+    # Note related to time series.
+    if cntx.view.get_code() == def_view.code_ts:
+        if not cntx.delta.get_code():
+            ts_note = "Valeurs ajustées (après l'ajustement de biais)"
+        else:
+            ts_note = "Différence entre les valeurs observées et les valeurs ajustées"
+    else:
+        if not cntx.delta.get_code():
+            ts_note = "Valeurs non ajustées (avant l'ajustement de biais)"
+        else:
+            ts_note = "Différence entre les valeurs non ajustées et les valeurs ajustées"
+
     # Tab: time series.
     tab_ts = None
-    if cntx.view.get_code() in [def_view.code_ts, def_view.code_bias]:
+    if cntx.view.get_code() in [def_view.code_ts, def_view.code_ts_bias]:
         df_rcp = dash_utils.load_data(cntx, dash_plot.mode_rcp)
         df_sim = dash_utils.load_data(cntx, dash_plot.mode_sim)
         space = pn.pane.Markdown("<br><br><br>" if cntx.lib.get_code() == def_lib.mode_alt else "")
-        tab_ts = pn.Row(pn.Column(varidx_f,
+        tab_ts = pn.Row(pn.Column(varidx_f, rcp_f, sim_f, ts_note,
                                   dash_plot.gen_ts(cntx, df_rcp, dash_plot.mode_rcp),
                                   dash_plot.gen_ts(cntx, df_sim, dash_plot.mode_sim), space, ref_val))
 
@@ -549,7 +565,7 @@ def refresh():
         # display(dash)
     else:
         dash[0] = sidebar
-        if cntx.view.get_code() in [def_view.code_ts, def_view.code_bias]:
+        if cntx.view.get_code() in [def_view.code_ts, def_view.code_ts_bias]:
             dash[1] = tab_ts
         elif cntx.view.get_code() == def_view.code_tbl:
             dash[1] = tab_tbl

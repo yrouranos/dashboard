@@ -17,6 +17,7 @@ import dash_utils
 import def_context
 import def_lib
 import def_rcp
+import def_sim
 import def_stat
 import def_varidx as vi
 import def_view
@@ -72,6 +73,21 @@ def gen_ts(
     -------
     Union[alt.Chart, any, plt.figure] :
         Plot of time series.
+
+
+    Logic related to line width (variable "line_alpha").
+
+    plot | delta | simulation |   ref |   rcp
+    -----+-------+------------+-------+------
+    rcp  |   no  |      blank | thick | thick
+    sim  |   no  |      blank | thick |  thin
+    rcp  |  yes  |      blank |  thin | thick
+    sim  |  yes  |      blank |  thin |  thin
+    rcp  |   no  |  specified | thick | thick
+    sim  |   no  |  specified | thick | thick
+    rcp  |  yes  |  specified |  thin | thick
+    sim  |  yes  |  specified |  thin | thick
+
     --------------------------------------------------------------------------------------------------------------------
     """
 
@@ -92,10 +108,21 @@ def gen_ts(
     if cntx.delta.get_code():
         df[def_rcp.rcp_ref] = 0
 
-    # Subset columns.
+    # Subset columns and rename columns.
     df_subset = df
-    if (cntx.sim.get_code() != "") and (mode == mode_sim):
-        df_subset = df[["year", "ref", cntx.sim.get_code()]]
+    if mode == mode_sim:
+
+        # RCP specified.
+        rcp_code = cntx.rcp.get_code()
+        if rcp_code != "":
+            df_subset = df[["year", "ref"]]
+            for column in df.columns:
+                if rcp_code in column:
+                    df_subset[column] = df[column]
+
+        # Simulation specified.
+        if cntx.sim.get_code() != "":
+            df_subset = df[["year", "ref", cntx.sim.get_code()]]
 
     # Generate plot.
     if cntx.lib.get_code() == def_lib.mode_mat:
@@ -162,78 +189,96 @@ def gen_ts_alt(
     for item in ["area", "curve"]:
 
         for rcp in rcps.items:
+            rcp_code = rcp.get_code()
+            rcp_desc = rcp.get_desc()
 
-            if (item == "area") and\
-               ((rcp.get_code() == def_rcp.rcp_ref) or ((cntx.sim.get_code() != "") and (mode == mode_sim))):
+            if ((item == "area") and (rcp.is_ref() or (mode == mode_sim))) or \
+               ((cntx.rcp.get_code() != "") and (rcp_code not in [cntx.rcp.get_code(), def_rcp.rcp_ref])):
                 continue
 
             # Subset columns.
             df_rcp = pd.DataFrame()
             df_rcp["Année"] = df["year"]
             df_rcp["Scénario"] = [rcp.get_desc()] * len(df)
-            if rcp.get_code() == def_rcp.rcp_ref:
-                df_rcp["Min"] = df_rcp["Moy"] = df_rcp["Max"] = df[def_rcp.rcp_ref]
+            if rcp.is_ref():
+                df_rcp["Moy"] = df[def_rcp.rcp_ref]
             else:
                 if mode == mode_rcp:
-                    df_rcp["Min"] = df[str(rcp.get_code() + "_min")]
-                    df_rcp["Moy"] = df[str(rcp.get_code() + "_moy")]
-                    df_rcp["Max"] = df[str(rcp.get_code() + "_max")]
+                    df_rcp["Min"] = df[str(rcp_code + "_min")]
+                    df_rcp["Moy"] = df[str(rcp_code + "_moy")]
+                    df_rcp["Max"] = df[str(rcp_code + "_max")]
                 else:
-                    for column in df.columns:
-                        if rcp.get_code() in column:
+                    for column in list(df.columns):
+                        if rcp_code in column:
                             df_rcp[column] = df[column]
-                    n_col = len(df_rcp.columns)
-                    df_rcp["Min"] = df[2:(n_col - 1)].min(axis=1)
-                    df_rcp["Moy"] = df[2:(n_col - 1)].mean(axis=1)
-                    df_rcp["Max"] = df[2:(n_col - 1)].max(axis=1)
 
-            # Round values.
+            # Round values and set tooltip.
             n_dec = cntx.varidx.get_precision()
-            df_rcp["Moyenne"] = dash_utils.round_values(df_rcp["Moy"], n_dec)
-            if rcp.get_code() == def_rcp.rcp_ref:
-                tooltip = ["Année", "Scénario", "Moyenne"]
-            else:
-                df_rcp["Minimum"] = dash_utils.round_values(df_rcp["Min"], n_dec)
-                df_rcp["Maximum"] = dash_utils.round_values(df_rcp["Max"], n_dec)
-                tooltip = ["Année", "Scénario", "Minimum", "Moyenne", "Maximum"]
+            tooltip = []
+            if "Moy" in df_rcp:
+                column = "Moyenne"
+                if ("Min" not in list(df_rcp.columns)) and ("Max" not in list(df_rcp.columns)):
+                    column = "Valeur"
+                df_rcp[column] = np.array(dash_utils.round_values(df_rcp["Moy"], n_dec)).astype(float)
+                tooltip = [column]
+            if "Min" in df_rcp:
+                df_rcp["Minimum"] = np.array(dash_utils.round_values(df_rcp["Min"], n_dec)).astype(float)
+                df_rcp["Maximum"] = np.array(dash_utils.round_values(df_rcp["Max"], n_dec)).astype(float)
+                tooltip = ["Minimum", "Moyenne", "Maximum"]
+            if mode == mode_sim:
+                excl_l = ["Scénario", "Année", "Moy", "Min", "Max"]
+                tooltip = [e for e in list(df_rcp.columns) if e not in excl_l]
+                tooltip.sort()
+            tooltip = ["Année", "Scénario"] + tooltip
 
             # Draw area.
             if (item == "area") and (mode == mode_rcp):
-                area = alt.Chart(df_rcp).mark_area(opacity=0.3, text=rcp.get_desc()).encode(
+                area_alpha = 0.3
+                area = alt.Chart(df_rcp).mark_area(opacity=area_alpha, text=rcp.get_desc()).encode(
                     x=alt.X("Année", axis=x_axis),
                     y=alt.Y("Min", axis=y_axis, scale=y_scale),
                     y2="Max",
                     color=alt.Color("Scénario", scale=col_scale)
                 )
-                plot = area if plot is None else plot + area
+                plot = area if plot is None else (plot + area)
             
             # Draw curve(s).
             elif item == "curve":
-                if ((mode == mode_rcp) and (not cntx.delta.get_code())) or \
-                   ((not cntx.delta.get_code()) and (rcp.get_code() == def_rcp.rcp_ref)) or \
-                   ((mode == mode_rcp) and cntx.delta.get_code() and (rcp.get_code() != def_rcp.rcp_ref)):
-                    opacity = 1.0
+
+                # Line width (see comment in the header of 'gen_ts').
+                if (rcp.is_ref() and (cntx.delta.get_code())) or \
+                   ((not rcp.is_ref()) and (mode == mode_sim) and (cntx.sim.get_code() == "")):
+                    line_alpha = 1.0
                 else:
-                    opacity = 0.3
-                columns = ["Moy"]
+                    line_alpha = 2.0
+
+                # Columns to plot.
+                columns = []
+                if "Valeur" in list(df_rcp.columns):
+                    columns.append("Valeur")
+                if ("Moy" in list(df_rcp.columns)) and ("Valeur" not in list(df_rcp.columns)):
+                    columns.append("Moy")
                 if mode == mode_sim:
-                    for column in df_rcp.columns:
-                        if rcp.get_code() in column:
+                    for column in list(df_rcp.columns):
+                        if ("Année" not in column) and ("Scénario" not in column):
                             columns.append(column)
+
+                # Draw curves.
                 for column in columns:
-                    if rcp.get_code() == def_rcp.rcp_ref:
-                        curve = alt.Chart(df_rcp).mark_line(opacity=opacity, color=rcp.get_color()).encode(
+                    if rcp.is_ref():
+                        curve = alt.Chart(df_rcp).mark_line(size=line_alpha, text=rcp.get_desc(), color=rcp.get_color()).encode(
                             x=alt.X("Année", axis=x_axis),
-                            y=alt.Y(column, axis=y_axis, scale=y_scale)
-                        )
+                            y=alt.Y(column, axis=y_axis, scale=y_scale),
+                            tooltip=tooltip
+                        ).interactive()
                     else:
-                        curve = alt.Chart(df_rcp).mark_line(opacity=opacity, text=rcp.get_desc()).encode(
+                        curve = alt.Chart(df_rcp).mark_line(size=line_alpha, text=rcp_desc).encode(
                             x=alt.X("Année", axis=x_axis),
                             y=alt.Y(column, axis=y_axis, scale=y_scale),
                             color=alt.Color("Scénario", scale=col_scale, legend=col_legend),
                             tooltip=tooltip
                         ).interactive()
-                    plot = curve if plot is None else plot + curve
+                    plot = curve if plot is None else (plot + curve)
 
     # Adjust size.
     height = 362 if cntx.code == def_context.code_streamlit else 300
@@ -289,46 +334,54 @@ def gen_ts_hv(
     for item in ["area", "curve"]:
 
         for rcp in rcps.items:
+            rcp_code = rcp.get_code()
+            rcp_desc = rcp.get_desc()
 
-            if (item == "area") and\
-               ((rcp.get_code() == def_rcp.rcp_ref) or ((cntx.sim.get_code() != "") and (mode == mode_sim))):
+            if (item == "area") and (rcp.is_ref() or (mode == mode_sim)) or \
+               ((cntx.rcp.get_code() != "") and (rcp_code not in [cntx.rcp.get_code(), def_rcp.rcp_ref])):
                 continue
 
             # Subset and rename columns.
             df_rcp = pd.DataFrame()
             df_rcp["Année"] = df["year"]
             df_rcp["Scénario"] = [rcp.get_desc()] * len(df_rcp)
-            if rcp.get_code() == def_rcp.rcp_ref:
-                df_rcp["Minimum"] = df_rcp["Moyenne"] = df_rcp["Maximum"] = df[def_rcp.rcp_ref]
+            if rcp.is_ref():
+                df_rcp["Moyenne"] = df[def_rcp.rcp_ref]
             else:
                 if mode == mode_rcp:
-                    if str(rcp.get_code() + "_min") in df.columns:
-                        df_rcp["Minimum"] = df[str(rcp.get_code() + "_min")]
-                    if str(rcp.get_code() + "_moy") in df.columns:
-                        df_rcp["Moyenne"] = df[str(rcp.get_code() + "_moy")]
-                    if str(rcp.get_code() + "_max") in df.columns:
-                        df_rcp["Maximum"] = df[str(rcp.get_code() + "_max")]
+                    if str(rcp_code + "_min") in df.columns:
+                        df_rcp["Minimum"] = df[str(rcp_code + "_min")]
+                    if str(rcp_code + "_moy") in df.columns:
+                        df_rcp["Moyenne"] = df[str(rcp_code + "_moy")]
+                    if str(rcp_code + "_max") in df.columns:
+                        df_rcp["Maximum"] = df[str(rcp_code + "_max")]
                 else:
-                    for column in df.columns:
-                        if rcp.get_code() in column:
-                            df_rcp[column] = df[column]
-                    n_col = len(df_rcp.columns)
-                    df_rcp["Minimum"] = df[2:(n_col - 1)].min(axis=1)
-                    df_rcp["Moyenne"] = df[2:(n_col - 1)].mean(axis=1)
-                    df_rcp["Maximum"] = df[2:(n_col - 1)].max(axis=1)
+                    for column in list(df.columns):
+                        if rcp_code in column:
+                            sim_desc = def_sim.Sim(column).get_desc()
+                            df_rcp[sim_desc] = df[column]
 
-            # Round values.
+            # Round values and set tooltip.
             n_dec = cntx.varidx.get_precision()
-            df_rcp["Moyenne"] = np.array(dash_utils.round_values(df_rcp["Moyenne"], n_dec)).astype(float)
-            if rcp.get_code() == def_rcp.rcp_ref:
-                tooltip = ["Année", "Scénario", "Moyenne"]
-            else:
+            tooltip = []
+            if "Moyenne" in df_rcp:
+                column = "Moyenne"
+                if ("Minimum" not in df_rcp.columns) and ("Maximum" not in df_rcp.columns):
+                    column = "Valeur"
+                df_rcp[column] = np.array(dash_utils.round_values(df_rcp["Moyenne"], n_dec)).astype(float)
+                tooltip = [column]
+            if "Minimum" in df_rcp:
                 df_rcp["Minimum"] = np.array(dash_utils.round_values(df_rcp["Minimum"], n_dec)).astype(float)
                 df_rcp["Maximum"] = np.array(dash_utils.round_values(df_rcp["Maximum"], n_dec)).astype(float)
-                tooltip = ["Année", "Scénario", "Minimum", "Moyenne", "Maximum"]
+                tooltip = ["Minimum", "Moyenne", "Maximum"]
+            if mode == mode_sim:
+                excl_l = ["Scénario", "Année", "Moyenne", "Minimum", "Maximum"]
+                tooltip = [e for e in list(df_rcp.columns) if e not in excl_l]
+                tooltip.sort()
+            tooltip = ["Année", "Scénario"] + tooltip
 
             # Draw area.
-            if (item == "area") and (mode == mode_rcp):
+            if item == "area":
                 area_alpha = 0.3
                 area = df_rcp.hvplot.area(x="Année", y="Minimum", y2="Maximum", ylim=y_range,
                                           color=rcp.get_color(), alpha=area_alpha, line_alpha=0)
@@ -336,20 +389,29 @@ def gen_ts_hv(
 
             # Draw curve(s).
             elif item == "curve":
-                if ((mode == mode_rcp) and (not cntx.delta.get_code())) or \
-                   ((not cntx.delta.get_code()) and (rcp.get_code() == def_rcp.rcp_ref)) or \
-                   ((mode == mode_rcp) and cntx.delta.get_code() and (rcp.get_code() != def_rcp.rcp_ref)):
-                    line_alpha = 1.0
-                else:
+
+                # Line width (see comment in the header of 'gen_ts').
+                if (rcp.is_ref() and (cntx.delta.get_code())) or \
+                   ((not rcp.is_ref()) and (mode == mode_sim) and (cntx.sim.get_code() == "")):
                     line_alpha = 0.3
-                columns = ["Moyenne"]
+                else:
+                    line_alpha = 1.0
+
+                # Columns to plot.
+                columns = []
+                if "Valeur" in df_rcp.columns:
+                    columns.append("Valeur")
+                if ("Moyenne" in df_rcp.columns) and ("Valeur" not in df_rcp.columns):
+                    columns.append("Moyenne")
                 if mode == mode_sim:
-                    for column in df_rcp.columns:
-                        if rcp.get_code() in column:
+                    for column in list(df_rcp.columns):
+                        if ("Année" not in column) and ("Scénario" not in column):
                             columns.append(column)
+
+                # Draw curves.
                 for column in columns:
                     curve = df_rcp.hvplot.line(x="Année", y=column, ylim=y_range,
-                                               color=rcp.get_color(), line_alpha=line_alpha, label=rcp.get_desc(),
+                                               color=rcp.get_color(), line_alpha=line_alpha, label=rcp_desc,
                                                hover_cols=tooltip)
                     plot = curve if plot is None else plot * curve
             
@@ -433,47 +495,60 @@ def gen_ts_mat(
     leg_labels = []
     leg_lines = []
     for rcp in rcps.items:
+        rcp_code = rcp.get_code()
+        rcp_desc = rcp.get_desc()
 
-        # Extract columns.
+        if (cntx.rcp.get_code() != "") and (rcp_code not in [cntx.rcp.get_code(), def_rcp.rcp_ref]):
+            continue
+
+        # Subset and rename columns.
         df_year = df.year
-        columns = []
-        if mode == mode_rcp:
-            if rcp.get_code() in df.columns:
-                columns = [rcp.get_code()]
-            elif str(rcp.get_code() + "_moy") in df.columns:
-                columns = [rcp.get_code() + "_min", rcp.get_code() + "_moy", rcp.get_code() + "_max"]
+        df_rcp = pd.DataFrame()
+        if rcp.is_ref():
+            df_rcp["Moy"] = df[def_rcp.rcp_ref]
         else:
-            for column in df.columns:
-                if rcp.get_code() in column:
-                    columns.append(column)
-        df_rcp = df[columns]
+            if mode == mode_rcp:
+                if str(rcp_code + "_min") in df.columns:
+                    df_rcp["Min"] = df[str(rcp_code + "_min")]
+                if str(rcp_code + "_moy") in df.columns:
+                    df_rcp["Moy"] = df[str(rcp_code + "_moy")]
+                if str(rcp_code + "_max") in df.columns:
+                    df_rcp["Max"] = df[str(rcp_code + "_max")]
+            else:
+                for column in df.columns:
+                    if rcp_code in column:
+                        sim_desc = def_sim.Sim(column).get_desc()
+                        df_rcp[sim_desc] = df[column]
 
         # Skip if no data is available for this RCP.
         if len(df_rcp) == 0:
             continue
 
-        # Add curves and areas.
-        color = rcp.get_color()
+        # Opacity of area
         area_alpha = 0.3
-        if ((mode == mode_rcp) and (not cntx.delta.get_code())) or \
-                ((not cntx.delta.get_code()) and (rcp.get_code() == def_rcp.rcp_ref)) or \
-                ((mode == mode_rcp) and cntx.delta.get_code() and (rcp.get_code() != def_rcp.rcp_ref)):
-            line_alpha = 1.0
-        else:
+
+        # Line width (see comment in the header of 'gen_ts').
+        if (rcp.is_ref() and (cntx.delta.get_code())) or \
+           ((not rcp.is_ref()) and (mode == mode_sim) and (cntx.sim.get_code() == "")):
             line_alpha = 0.3
-        if rcp.get_code() == def_rcp.rcp_ref:
+        else:
+            line_alpha = 1.0
+
+        # Draw area and curves.
+        color = rcp.get_color()
+        if rcp.is_ref():
             ax.plot(df_year, df_rcp, color=color, alpha=line_alpha)
         else:
             if mode == mode_rcp:
-                ax.plot(df_year, df_rcp[columns[1]], color=color, alpha=line_alpha)
-                ax.fill_between(np.array(df_year), df_rcp[columns[0]], df_rcp[columns[2]], color=color,
+                ax.plot(df_year, df_rcp["Moy"], color=color, alpha=line_alpha)
+                ax.fill_between(np.array(df_year), df_rcp["Min"], df_rcp["Max"], color=color,
                                 alpha=area_alpha)
             else:
-                for i in range(len(columns)):
-                    ax.plot(df_year, df_rcp[columns[i]], color=color, alpha=line_alpha)
+                for i in range(len(df_rcp.columns)):
+                    ax.plot(df_year, df_rcp[df_rcp.columns[i]], color=color, alpha=line_alpha)
         
         # Collect legend label and line.
-        leg_labels.append(rcp.get_desc())    
+        leg_labels.append(rcp_desc)
         leg_lines.append(Line2D([0], [0], color=color, lw=2))
 
     # Legend.
@@ -528,8 +603,9 @@ def gen_tbl(
     # Loop through RCPs.
     columns = []
     for rcp in cntx.rcps.items:
+        rcp_code = rcp.get_code()
 
-        if rcp.get_code() == def_rcp.rcp_ref:
+        if rcp.is_ref():
             continue
 
         # Extract delta.
@@ -540,16 +616,16 @@ def gen_tbl(
         # Extract statistics.
         vals = []
         for stat in stat_l:
-            df_cell = float(df[(df["rcp"] == rcp.get_code()) &
+            df_cell = float(df[(df["rcp"] == rcp_code) &
                                (df["hor"] == cntx.hor.get_code()) &
                                (df["stat"] == stat[0]) &
                                (df["q"] == stat[1])]["val"])
             val = df_cell - delta
             vals.append(val)
 
-        df_res[rcp.get_code()] = vals
+        df_res[rcp_code] = vals
         if cntx.varidx.get_precision() == 0:
-            df_res[rcp.get_code()] = df_res[rcp.get_code()].astype(int)
+            df_res[rcp_code] = df_res[rcp_code].astype(int)
 
         columns.append(rcp.get_desc())
 

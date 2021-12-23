@@ -251,4 +251,4 @@ def test_all(
     test_gen_tbl(project_code)
     test_gen_map(project_code)
     test_gen_cycle(project_code)
-    test_gen_ts(project_code, def_view.code_bias)
+    test_gen_ts(project_code, def_view.code_ts_bias)

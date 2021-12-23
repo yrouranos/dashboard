@@ -70,7 +70,7 @@ class Libs(def_object.Objs):
 
         if len(args) == 1:
             code_l = []
-            if args[0] in [def_view.code_ts, def_view.code_bias]:
+            if args[0] in [def_view.code_ts, def_view.code_ts_bias]:
                 code_l = [mode_alt, mode_hv, mode_mat]
             elif args[0] == def_view.code_tbl:
                 code_l = [mode_ply]

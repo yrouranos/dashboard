@@ -41,7 +41,7 @@ def refresh():
     |
     +-- view (options) = <detected>
         |
-        +-> view (selected) = ts|bias
+        +-> view (selected) = ts|ts_bias
         |   |
         |   +-> lib (options) = {altair, hvplot, matplotlib}
         |   |   lib (selected) = <user_input>
@@ -156,9 +156,9 @@ def refresh():
         
     # Emission scenarios.
     cntx.rcps = def_rcp.RCPs(cntx)
-    if cntx.view.get_code() in [def_view.code_ts, def_view.code_map, def_view.code_cycle, def_view.code_bias]:
+    if cntx.view.get_code() in [def_view.code_ts, def_view.code_map, def_view.code_cycle, def_view.code_ts_bias]:
         rcp_l = cntx.rcps.get_desc_l()
-        if cntx.view.get_code() in [def_view.code_ts, def_view.code_bias]:
+        if cntx.view.get_code() in [def_view.code_ts, def_view.code_ts_bias]:
             rcp_l = [""] + rcp_l
         rcp_f = st.selectbox("Scénario d'émissions", options=rcp_l)
         cntx.rcp = def_rcp.RCP(cntx.rcps.get_code(rcp_f))
@@ -170,18 +170,28 @@ def refresh():
         cntx.stat = def_stat.Stat(cntx.stats.get_code(stat_f))
 
     # Simulations.
-    if cntx.view.get_code() in [def_view.code_ts, def_view.code_cycle, def_view.code_bias]:
+    if cntx.view.get_code() in [def_view.code_ts, def_view.code_cycle, def_view.code_ts_bias]:
         cntx.sims = def_sim.Sims(cntx)
         sim_l = cntx.sims.get_desc_l()
-        if cntx.view.get_code() in [def_view.code_ts, def_view.code_bias]:
+        if cntx.view.get_code() in [def_view.code_ts, def_view.code_ts_bias]:
             sim_l = [""] + sim_l
         sim_f = st.selectbox("Simulation", options=sim_l)
         cntx.sim = def_sim.Sim(cntx.sims.get_code(sim_f))
 
     # GUI components.
-    if cntx.view.get_code() in [def_view.code_ts, def_view.code_bias]:
+    if cntx.view.get_code() in [def_view.code_ts, def_view.code_ts_bias]:
         df_rcp = dash_utils.load_data(cntx, dash_plot.mode_rcp)
         df_sim = dash_utils.load_data(cntx, dash_plot.mode_sim)
+        if cntx.view.get_code() == def_view.code_ts:
+            if not cntx.delta.get_code():
+                st.write("Valeurs ajustées (après l'ajustement de biais)")
+            else:
+                st.write("Différence entre les valeurs observées et les valeurs ajustées")
+        else:
+            if not cntx.delta.get_code():
+                st.write("Valeurs non ajustées (avant l'ajustement de biais)")
+            else:
+                st.write("Différence entre les valeurs non ajustées et les valeurs ajustées")
         if cntx.lib.get_code() in [def_lib.mode_alt, def_lib.mode_mat]:
             st.write(dash_plot.gen_ts(cntx, df_rcp, dash_plot.mode_rcp))
             st.write(dash_plot.gen_ts(cntx, df_sim, dash_plot.mode_sim))
@@ -220,5 +230,5 @@ def refresh():
 
 
 # import dash_test
-# dash_test.test_all("sn-ko")
+# dash_test.test_all("sn")
 refresh()
