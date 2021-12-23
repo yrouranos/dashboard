@@ -117,11 +117,11 @@ i_rain_season_prcptot    = "rain_season_prcptot"     # Quantity received during 
 i_dry_spell_total_length = "dry_spell_total_length"  # Total length of dry period.
 
 # Temperature-precipitation-related.
-i_drought_code  = "drought_code"   # Drought code.
+i_drought_code           = "drought_code"            # Drought code.
 
 # Wind-related.
-i_wg_days_above = "wg_days_above"  # Days per year with mean wind speed > X, with a given direction.
-i_wx_days_above = "wx_days_above"  # Days per year with maximum wind speed > X.
+i_wg_days_above          = "wg_days_above"           # Days per year with mean wind speed > X and direction D.
+i_wx_days_above          = "wx_days_above"           # Days per year with maximum wind speed > X.
 
 # Groups of indices.
 i_groups = {i_rain_season: [i_rain_season_start, i_rain_season_end, i_rain_season_length, i_rain_season_prcptot]}

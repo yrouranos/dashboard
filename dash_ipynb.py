@@ -15,9 +15,9 @@ import def_context
 import def_delta
 import def_hor
 import def_lib
-import def_model
 import def_project
 import def_rcp
+import def_sim
 import def_stat
 import def_varidx as vi
 import def_view
@@ -29,7 +29,7 @@ from typing import Union, List
 warnings.filterwarnings("ignore")
 
 cntx = None
-dash, project_f, view_f, lib_f, delta_f, varidx_f, hor_f, rcp_f, stat_f, model_f = \
+dash, project_f, view_f, lib_f, delta_f, varidx_f, hor_f, rcp_f, sim_f, stat_f = \
     None, None, None, None, None, None, None, None, None, None
 
 
@@ -55,7 +55,7 @@ def update_field(
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    global project_f, view_f, lib_f, delta_f, varidx_f, hor_f, rcp_f, stat_f, model_f
+    global project_f, view_f, lib_f, delta_f, varidx_f, hor_f, rcp_f, sim_f, stat_f
 
     option_l_updated = False
     if field == "project":
@@ -141,16 +141,16 @@ def update_field(
         if option_l_updated:
             stat_f[1].value = stat_f[1].options[0]
 
-    elif field == "model":
-        if model_f is None:
-            model_f = pn.Column(pn.pane.Markdown("<b>Modèle</b>"),
-                                pnw.Select(options=option_l, width=700))
-            model_f[1].param.watch(model_updated, ["value"], onlychanged=True)
+    elif field == "sim":
+        if sim_f is None:
+            sim_f = pn.Column(pn.pane.Markdown("<b>Simulation</b>"),
+                              pnw.Select(options=option_l, width=700))
+            sim_f[1].param.watch(sim_updated, ["value"], onlychanged=True)
         else:
-            option_l_updated = model_f[1].value not in option_l
-            model_f[1].options = option_l
+            option_l_updated = sim_f[1].value not in option_l
+            sim_f[1].options = option_l
         if option_l_updated:
-            model_f[1].value = model_f[1].options[0]
+            sim_f[1].value = sim_f[1].options[0]
 
 
 def init_context():
@@ -278,9 +278,9 @@ def update_rcp():
 
     global cntx, rcp_f
 
-    if cntx.view.get_code() in [def_view.code_ts, def_view.code_map, def_view.code_cycle]:
+    if cntx.view.get_code() in [def_view.code_ts, def_view.code_map, def_view.code_cycle, def_view.code_bias]:
         cntx.rcps = def_rcp.RCPs(cntx)
-        rcp_l = cntx.rcps.get_desc_l()
+        rcp_l = [""] + cntx.rcps.get_desc_l()
         update_field("rcp", rcp_l)
     if rcp_f is not None:
         cntx.rcp = def_rcp.RCP(cntx.rcps.get_code(rcp_f[1].value))
@@ -304,22 +304,22 @@ def update_stat():
         cntx.stat = def_stat.Stat(cntx.stats.get_code(stat_f[1].value))
 
 
-def update_model():
+def update_sim():
 
     """
     --------------------------------------------------------------------------------------------------------------------
-    Update model.
+    Update simulation.
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    global cntx, model_f
+    global cntx, sim_f
 
-    if cntx.view.get_code() == def_view.code_cycle:
-        cntx.models = def_model.Models(cntx)
-        model_l = cntx.models.get_desc_l()
-        update_field("model", model_l)
-    if model_f is not None:
-        cntx.model = def_model.Model(model_f[1].value)
+    if cntx.view.get_code() in [def_view.code_ts, def_view.code_cycle, def_view.code_bias]:
+        cntx.sims = def_sim.Sims(cntx)
+        sim_l = [""] + cntx.sims.get_desc_l()
+        update_field("sim", sim_l)
+    if sim_f is not None:
+        cntx.sim = def_sim.Sim(sim_f[1].value)
 
 
 def project_updated(event):
@@ -437,8 +437,8 @@ def rcp_updated(event):
         update_stat()
         stat_updated(event)
     elif cntx.view.get_code() == def_view.code_cycle:
-        update_model()
-        model_updated(event)
+        update_sim()
+        sim_updated(event)
     else:
         refresh()
 
@@ -457,17 +457,17 @@ def stat_updated(event):
     refresh()
 
 
-def model_updated(event):
+def sim_updated(event):
 
     """
     --------------------------------------------------------------------------------------------------------------------
-    Event: model updated.
+    Event: simulation updated.
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    global cntx, model_f
+    global cntx, sim_f
 
-    cntx.model = def_model.Model(cntx.models.get_code(model_f[1].value))
+    cntx.sim = def_sim.Sim(cntx.sims.get_code(sim_f[1].value))
     refresh()
 
 
@@ -481,7 +481,7 @@ def refresh():
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    global cntx, dash, project_f, view_f, lib_f, delta_f, varidx_f, hor_f, rcp_f, stat_f, model_f
+    global cntx, dash, project_f, view_f, lib_f, delta_f, varidx_f, hor_f, rcp_f, stat_f, sim_f
 
     # Initialize the context and fields.
     if cntx is None:
@@ -526,7 +526,7 @@ def refresh():
     if cntx.view.get_code() == def_view.code_cycle:
         df_ms = dash_utils.load_data(cntx, "MS")
         df_d = dash_utils.load_data(cntx, "D")
-        tab_cycle = pn.Row(pn.Column(varidx_f, hor_f, rcp_f, model_f,
+        tab_cycle = pn.Row(pn.Column(varidx_f, hor_f, rcp_f, sim_f,
                                     dash_plot.gen_cycle_ms(cntx, df_ms), dash_plot.gen_cycle_d(cntx, df_d)))
 
     # Sidebar.

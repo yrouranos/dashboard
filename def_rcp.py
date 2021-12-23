@@ -12,6 +12,7 @@
 import dash_utils
 import def_context
 import def_object
+import def_rcp
 import def_view
 import glob
 import pandas as pd
@@ -130,7 +131,7 @@ class RCPs(def_object.Objs):
             if cntx.delta.get_code() and (rcp_ref in item_l):
                 item_l.remove(rcp_ref)
 
-        # The items are extracted from directory names ('ts' or 'bias' view).
+        # The items are extracted from column names ('ts' or 'bias' view).
         # ~/<project_code>/<view_code>/<vi_code>/*.csv
         elif cntx.view.get_code() in [def_view.code_ts, def_view.code_bias]:
             p = str(dash_utils.get_d_data(cntx)) + "<view_code>/<vi_code>/<vi_code>_<mode>_<delta>.csv"

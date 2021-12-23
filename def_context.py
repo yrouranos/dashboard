@@ -48,6 +48,10 @@ class Context(def_object.Obj):
         self.lib = None
         self.libs = None
 
+        # Deltas.
+        self.delta = None
+        self.deltas = None
+
         # Variable or index (selected and all).
         self.varidx = None
         self.varidxs = None
@@ -60,17 +64,13 @@ class Context(def_object.Obj):
         self.rcp = None
         self.rcps = None
 
+        # Simulations (selected and all).
+        self.sim = None
+        self.sims = None
+
         # Statistics (selected and all).
         self.stat = None
         self.stats = None
-
-        # Models (selected and all).
-        self.model = None
-        self.models = None
-
-        # Deltas.
-        self.delta = None
-        self.deltas = None
 
         # File system --------------------------
 

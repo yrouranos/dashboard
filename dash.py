@@ -13,9 +13,9 @@ import def_context
 import def_delta
 import def_hor
 import def_lib
-import def_model
 import def_project
 import def_rcp
+import def_sim
 import def_stat
 import dash_plot
 import dash_utils
@@ -98,8 +98,8 @@ def refresh():
                     +-> rcp (options) = <detected>
                         rcp (selected) = <user_input>
                         |
-                        +-> model (options) = <detected>
-                            model (selected) = <user_input> ---> figure
+                        +-> sim (options) = <detected>
+                            sim (selected) = <user_input> ---> figure
 
     --------------------------------------------------------------------------------------------------------------------
     """
@@ -156,8 +156,8 @@ def refresh():
         
     # Emission scenarios.
     cntx.rcps = def_rcp.RCPs(cntx)
-    if cntx.view.get_code() in [def_view.code_map, def_view.code_cycle]:
-        rcp_f = st.selectbox("Scénario d'émissions", options=cntx.rcps.get_desc_l())
+    if cntx.view.get_code() in [def_view.code_ts, def_view.code_map, def_view.code_cycle, def_view.code_bias]:
+        rcp_f = st.selectbox("Scénario d'émissions", options=([""] + cntx.rcps.get_desc_l()))
         cntx.rcp = def_rcp.RCP(cntx.rcps.get_code(rcp_f))
 
     # Statistics.
@@ -166,11 +166,11 @@ def refresh():
         stat_f = st.selectbox("Statistique", options=cntx.stats.get_desc_l())
         cntx.stat = def_stat.Stat(cntx.stats.get_code(stat_f))
 
-    # Models.
-    if cntx.view.get_code() == def_view.code_cycle:
-        cntx.models = def_model.Models(cntx)
-        model_f = st.selectbox("Modèle", options=cntx.models.get_desc_l())
-        cntx.model = def_model.Model(cntx.models.get_code(model_f))
+    # Simulations.
+    if cntx.view.get_code() in [def_view.code_ts, def_view.code_cycle, def_view.code_bias]:
+        cntx.sims = def_sim.Sims(cntx)
+        sim_f = st.selectbox("Simulation", options=([""] + cntx.sims.get_desc_l()))
+        cntx.sim = def_sim.Sim(cntx.sims.get_code(sim_f))
 
     # GUI components.
     if cntx.view.get_code() in [def_view.code_ts, def_view.code_bias]:
@@ -213,6 +213,6 @@ def refresh():
         st.write("Valeur de référence : " + tbl_ref)
 
 
-# import dash_test
-# dash_test.test_all("sn-ko")
+import dash_test
+dash_test.test_all("sn-ko")
 refresh()

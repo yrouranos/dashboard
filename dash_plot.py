@@ -87,13 +87,23 @@ def gen_ts(
     # Plot components.
     x_label = "Année"
     y_label = ("Δ" if cntx.delta.get_code() else "") + cntx.varidx.get_label()
-    
+
+    # Assign zero to all years (not only to the refrence period).
+    if cntx.delta.get_code():
+        df[def_rcp.rcp_ref] = 0
+
+    # Subset columns.
+    df_subset = df
+    if cntx.sim.get_code() != "":
+        df_subset = df["year", "ref", cntx.sim.get_code()]
+
+    # Generate plot.
     if cntx.lib.get_code() == def_lib.mode_mat:
-        ts = gen_ts_mat(cntx, df, x_label, y_label, [x_min, x_max], [y_min, y_max], mode)
+        ts = gen_ts_mat(cntx, df_subset, x_label, y_label, [x_min, x_max], [y_min, y_max], mode)
     elif cntx.lib.get_code() == def_lib.mode_hv:
-        ts = gen_ts_hv(cntx, df, x_label, y_label, [y_min, y_max], mode)
+        ts = gen_ts_hv(cntx, df_subset, x_label, y_label, [y_min, y_max], mode)
     else:
-        ts = gen_ts_alt(cntx, df, x_label, y_label, [y_min, y_max], mode)
+        ts = gen_ts_alt(cntx, df_subset, x_label, y_label, [y_min, y_max], mode)
         
     return ts
 
@@ -153,7 +163,7 @@ def gen_ts_alt(
 
         for rcp in rcps.items:
 
-            if (item == "area") and (rcp.get_code() == def_rcp.rcp_ref):
+            if ((item == "area") and (rcp.get_code() == def_rcp.rcp_ref)) or (cntx.sim.get_code() != ""):
                 continue
 
             # Subset columns.
@@ -279,7 +289,7 @@ def gen_ts_hv(
 
         for rcp in rcps.items:
 
-            if (item == "area") and (rcp.get_code() == def_rcp.rcp_ref):
+            if ((item == "area") and (rcp.get_code() == def_rcp.rcp_ref)) or (cntx.sim.get_code() != ""):
                 continue
 
             # Subset and rename columns.
@@ -455,8 +465,9 @@ def gen_ts_mat(
         else:
             if mode == mode_rcp:
                 ax.plot(df_year, df_rcp[columns[1]], color=color, alpha=line_alpha)
-                ax.fill_between(np.array(df_year), df_rcp[columns[0]], df_rcp[columns[2]], color=color,
-                                alpha=area_alpha)
+                if cntx.sim.get_code() == "":
+                    ax.fill_between(np.array(df_year), df_rcp[columns[0]], df_rcp[columns[2]], color=color,
+                                    alpha=area_alpha)
             else:
                 for i in range(len(columns)):
                     ax.plot(df_year, df_rcp[columns[i]], color=color, alpha=line_alpha)
@@ -784,7 +795,7 @@ def gen_map_hv(
         fig = fig * points * labels
 
     # Add legend.
-    fig = fig.opts(height=400, width=740, xlabel="Longitude (°C)", ylabel="Latitude (°C)", fontsize=fs_labels)
+    fig = fig.opts(height=400, width=740, xlabel="Longitude (C)", ylabel="Latitude (C)", fontsize=fs_labels)
 
     return fig
 

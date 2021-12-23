@@ -15,9 +15,9 @@ import def_context
 import def_delta
 import def_hor
 import def_lib
-import def_model
 import def_project
 import def_rcp
+import def_sim
 import def_stat
 import def_varidx as vi
 import def_view
@@ -58,6 +58,8 @@ def test_gen_ts(
 
                 cntx.varidx = vi.VarIdx(varidx)
                 cntx.rcps = def_rcp.RCPs(cntx)
+                cntx.sims = def_sim.Sims(cntx)
+                cntx.sim = def_sim.Sim("")
                 cntx.project.set_quantiles(cntx.project.get_code(), cntx)
                 cntx.projects = def_project.Projects(cntx=cntx)
                 cntx.project = def_project.Project(code=project_code, cntx=cntx)
@@ -214,9 +216,9 @@ def test_gen_cycle(
 
                     cntx.rcp = def_rcp.RCP(rcp)
 
-                    cntx.models = def_model.Models(cntx)
-                    for model in cntx.models.get_code_l():
-                        cntx.model = def_model.Model(model)
+                    cntx.sims = def_sim.Sims(cntx)
+                    for sim in cntx.sims.get_code_l():
+                        cntx.sim = def_sim.Sim(sim)
 
                         cntx.projects = def_project.Projects(cntx=cntx)
                         cntx.project = def_project.Project(code=project_code, cntx=cntx)

@@ -126,7 +126,7 @@ def load_data(
     elif cntx.view.get_code() == def_view.code_map:
         p = str(get_d_data(cntx)) + "<view_code>/<vi_code>/<hor_code>/*_<rcp_code>_*_<stat>_<delta>.csv"
     elif cntx.view.get_code() == def_view.code_cycle:
-        p = str(get_d_data(cntx)) + "<view_code>/<vi_code>/<hor_code>/*<model_code>*<rcp_code>*.csv"
+        p = str(get_d_data(cntx)) + "<view_code>/<vi_code>/<hor_code>/*<sim_code>*<rcp_code>*.csv"
     view_code = cntx.view.get_code()
     if cntx.view.get_code() == def_view.code_cycle:
         view_code += "_" + mode.lower()
@@ -140,8 +140,8 @@ def load_data(
         if cntx.view.get_code() == def_view.code_map:
             p = p.replace("<stat>", cntx.stat.get_code())
         elif cntx.view.get_code() == def_view.code_cycle:
-            model_code = cntx.model.get_code() if cntx.rcp.get_code() != def_rcp.rcp_ref else ""
-            p = p.replace("<model_code>", model_code)
+            sim_code = cntx.sim.get_code() if cntx.rcp.get_code() != def_rcp.rcp_ref else ""
+            p = p.replace("<sim_code>", sim_code)
         p = list(glob.glob(p))[0]
 
     if not os.path.exists(p):
