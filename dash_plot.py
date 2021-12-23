@@ -221,18 +221,19 @@ def gen_ts_alt(
                         if rcp.get_code() in column:
                             columns.append(column)
                 for column in columns:
-                    # if rcp.get_code() == def_rcp.rcp_ref:
-                    #     curve = alt.Chart(df_rcp).mark_line(opacity=opacity).encode(
-                    #         x=alt.X("Année", axis=x_axis),
-                    #         y=alt.Y(column, axis=y_axis, scale=y_scale)
-                    #     )
-                    # else:
-                    curve = alt.Chart(df_rcp).mark_line(opacity=opacity, text=rcp.get_desc()).encode(
-                        x=alt.X("Année", axis=x_axis),
-                        y=alt.Y(column, axis=y_axis, scale=y_scale),
-                        color=alt.Color("Scénario", scale=col_scale, legend=col_legend),
-                        tooltip=tooltip
-                    ).interactive()
+                    if rcp.get_code() == def_rcp.rcp_ref:
+                        curve = alt.Chart(df_rcp).mark_line(opacity=opacity).encode(
+                            x=alt.X("Année", axis=x_axis),
+                            y=alt.Y(column, axis=y_axis, scale=y_scale),
+                            color=rcp.get_color()
+                        )
+                    else:
+                        curve = alt.Chart(df_rcp).mark_line(opacity=opacity, text=rcp.get_desc()).encode(
+                            x=alt.X("Année", axis=x_axis),
+                            y=alt.Y(column, axis=y_axis, scale=y_scale),
+                            color=alt.Color("Scénario", scale=col_scale, legend=col_legend),
+                            tooltip=tooltip
+                        ).interactive()
                     plot = curve if plot is None else plot + curve
 
     # Adjust size.
