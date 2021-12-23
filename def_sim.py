@@ -139,9 +139,12 @@ class Sim(def_object.Obj):
 
         rcp = ""
 
-        tokens = self.code.split("_")
-        if len(tokens) >= 4:
-            rcp = def_rcp.RCP(tokens[3])
+        if (self.code == def_rcp.rcp_ref) and (self.rcp is not None):
+            rcp = def_rcp.RCP(def_rcp.rcp_ref)
+        else:
+            tokens = self.code.split("_")
+            if len(tokens) >= 4:
+                rcp = def_rcp.RCP(tokens[3])
 
         return rcp
 
@@ -160,14 +163,14 @@ class Sim(def_object.Obj):
         ----------------------------------------
         """
 
-        if self.code == def_rcp.rcp_ref:
+        desc = self.code
+
+        if (self.code == def_rcp.rcp_ref) and (self.rcp is not None):
             desc = self.rcp.get_desc()
         else:
             tokens = self.code.split("_")
             if len(tokens) >= 4:
                 desc = self.get_rcm() + "_" + self.get_gcm() + " (" + self.get_rcp().get_desc() + ")"
-            else:
-                desc = self.code
 
         return desc
 
