@@ -342,8 +342,9 @@ def gen_ts_hv(
                     line_alpha = 1.0
                 else:
                     line_alpha = 0.3
+                columns = []
                 if mode == mode_rcp:
-                    columns = ["Moyenne"]
+                    columns.append("Moyenne")
                 else:
                     for column in df_rcp.columns:
                         if rcp.get_code() in column:
