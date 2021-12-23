@@ -215,7 +215,7 @@ def gen_ts_alt(
                     opacity = 1.0
                 else:
                     opacity = 0.3
-                columns = ["Moy"] if (mode == mode_rcp) or (rcp.get_code() == def_rcp.rcp_ref) else []
+                columns = ["Moy"]
                 if mode == mode_sim:
                     for column in df_rcp.columns:
                         if rcp.get_code() in column:
