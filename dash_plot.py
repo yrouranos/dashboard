@@ -94,7 +94,7 @@ def gen_ts(
 
     # Subset columns.
     df_subset = df
-    if cntx.sim.get_code() != "":
+    if (cntx.sim.get_code() != "") and (mode == mode_sim):
         df_subset = df["year", "ref", cntx.sim.get_code()]
 
     # Generate plot.
