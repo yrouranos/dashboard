@@ -467,9 +467,8 @@ def gen_ts_mat(
         else:
             if mode == mode_rcp:
                 ax.plot(df_year, df_rcp[columns[1]], color=color, alpha=line_alpha)
-                if cntx.sim.get_code() == "":
-                    ax.fill_between(np.array(df_year), df_rcp[columns[0]], df_rcp[columns[2]], color=color,
-                                    alpha=area_alpha)
+                ax.fill_between(np.array(df_year), df_rcp[columns[0]], df_rcp[columns[2]], color=color,
+                                alpha=area_alpha)
             else:
                 for i in range(len(columns)):
                     ax.plot(df_year, df_rcp[columns[i]], color=color, alpha=line_alpha)
