@@ -239,6 +239,8 @@ class Sims(def_object.Objs):
                     code = tokens[1] + "_" + tokens[2]+ "_" + tokens[3] + "_" + tokens[4]
                     if code not in code_l:
                         code_l.append(code)
+            if rcp_ref_found:
+                code_l = [def_rcp.rcp_ref] + code_l
 
         # The items are extracted from columns.
         # ~/<project_code>/<view_code>/<vi_code>/<vi_code>_sim_*.csv
@@ -249,14 +251,11 @@ class Sims(def_object.Objs):
             p = p.replace("_<delta>", "_delta" if cntx.delta.get_code() else "")
             df = pd.read_csv(p)
             code_l = list(df.columns)
-            rcp_ref_found = (def_rcp.rcp_ref in code_l) and (not cntx.delta.get_code())
             code_l.remove("year")
             code_l.remove(def_rcp.rcp_ref)
 
         # Sort list and put reference first.
         code_l.sort()
-        if rcp_ref_found:
-            code_l = [def_rcp.rcp_ref] + code_l
 
         self.add(code_l)
 
