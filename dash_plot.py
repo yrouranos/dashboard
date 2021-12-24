@@ -111,7 +111,9 @@ def gen_ts(
     # If there is a single row, add a second line to allow time series to work.
     if len(df) == 1:
         df = df.append(df.iloc[[0]], ignore_index=True)
-        df["year"][1] = df["year"][0] + 1
+        x_min = df["year"][1]
+        x_max = x_min + 1
+        df["year"][1] = x_max
 
     # Subset columns and rename columns.
     df_subset = df
