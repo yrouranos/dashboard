@@ -155,7 +155,7 @@ def load_data(
         p = p.replace("<vi_code>", vi_code)
         p = p.replace("<hor_code>", hor_code)
         p = p.replace("<sim_code>", sim_code)
-        if (sim_code != def_rcp.rcp_ref) and (sim_code != ""):
+        if sim_code != "":
             p = p.replace("<rcp_code>", "")
 
     if (def_view.code_cycle in view_code) or (view_code == def_view.code_map):
