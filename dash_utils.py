@@ -118,30 +118,47 @@ def load_data(
     
     # Load data.
     p = ""
-    if cntx.view.get_code() == def_view.code_tbl:
+
+    view_code = cntx.view.get_code() if cntx.view is not None else ""
+    delta     = cntx.delta.get_code() if cntx.delta is not None else False
+    vi_code   = cntx.varidx.get_code() if cntx.varidx is not None else ""
+    hor_code  = cntx.hor.get_code() if cntx.hor is not None else ""
+    rcp_code  = cntx.rcp.get_code() if cntx.rcp is not None else ""
+    stat_code = cntx.stat.get_code() if cntx.stat is not None else ""
+    sim_code  = cntx.sim.get_code() if cntx.sim is not None else ""
+
+    if view_code == def_view.code_tbl:
         p = str(get_d_data(cntx)) + "<view_code>/<vi_code>.csv"
-    elif cntx.view.get_code() in [def_view.code_ts, def_view.code_ts_bias]:
+        p = p.replace("<view_code>", view_code)
+        p = p.replace("<vi_code>", vi_code)
+
+    elif view_code in [def_view.code_ts, def_view.code_ts_bias]:
         p = str(get_d_data(cntx)) + "<view_code>/<vi_code>/<vi_code>_<mode>_<delta>.csv"
         p = p.replace("_<mode>", "_" + mode)
-    elif cntx.view.get_code() == def_view.code_map:
+        p = p.replace("<view_code>", view_code)
+        p = p.replace("<vi_code>", vi_code)
+        p = p.replace("_<delta>", "" if not delta else "_delta")
+
+    elif view_code == def_view.code_map:
         p = str(get_d_data(cntx)) + "<view_code>/<vi_code>/<hor_code>/*_<rcp_code>_*_<stat>_<delta>.csv"
-    elif cntx.view.get_code() == def_view.code_cycle:
+        p = p.replace("<view_code>", view_code)
+        p = p.replace("<vi_code>", vi_code)
+        p = p.replace("<hor_code>", hor_code)
+        p = p.replace("<rcp_code>", rcp_code)
+        p = p.replace("<stat>", stat_code)
+        p = p.replace("_<delta>", "" if not delta else "_delta")
+
+    elif view_code == def_view.code_cycle:
         p = str(get_d_data(cntx)) + "<view_code>/<vi_code>/<hor_code>/*<sim_code>*<rcp_code>*.csv"
-    view_code = cntx.view.get_code()
-    if cntx.view.get_code() == def_view.code_cycle:
         view_code += "_" + mode.lower()
-    p = p.replace("<view_code>", view_code)
-    p = p.replace("<vi_code>", cntx.varidx.get_code())
-    if cntx.view.get_code() in [def_view.code_ts, def_view.code_map, def_view.code_cycle, def_view.code_ts_bias]:
-        p = p.replace("_<delta>", "" if not cntx.delta.get_code() else "_delta")
-    if cntx.view.get_code() in [def_view.code_map, def_view.code_cycle]:
-        p = p.replace("<hor_code>", cntx.hor.get_code())
-        p = p.replace("<rcp_code>", cntx.rcp.get_code())
-        if cntx.view.get_code() == def_view.code_map:
-            p = p.replace("<stat>", cntx.stat.get_code())
-        elif cntx.view.get_code() == def_view.code_cycle:
-            sim_code = cntx.sim.get_code() if cntx.rcp.get_code() != def_rcp.rcp_ref else ""
-            p = p.replace("<sim_code>", sim_code)
+        p = p.replace("<view_code>", view_code)
+        p = p.replace("<vi_code>", vi_code)
+        p = p.replace("<hor_code>", hor_code)
+        p = p.replace("<sim_code>", sim_code)
+        if (sim_code != def_rcp.rcp_ref) and (sim_code != ""):
+            p = p.replace("<rcp_code>", "")
+
+    if (def_view.code_cycle in view_code) or (view_code == def_view.code_map):
         p = list(glob.glob(p))[0]
 
     if not os.path.exists(p):

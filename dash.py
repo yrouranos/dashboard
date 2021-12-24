@@ -230,5 +230,5 @@ def refresh():
 
 
 # import dash_test
-# dash_test.test_all("sn")
+# dash_test.test_all("sn-study")
 refresh()

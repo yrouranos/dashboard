@@ -108,6 +108,11 @@ def gen_ts(
     if cntx.delta.get_code():
         df[def_rcp.rcp_ref] = 0
 
+    # If there is a single row, add a second line to allow time series to work.
+    if len(df) == 1:
+        df = df.append(df.iloc[[0]], ignore_index=True)
+        df["year"][1] = df["year"][0] + 1
+
     # Subset columns and rename columns.
     df_subset = df
     if mode == mode_sim:
@@ -685,22 +690,31 @@ def get_ref_val(
         Reference value and unit.
     --------------------------------------------------------------------------------------------------------------------
     """
+
+    df = None
+    val = ""
+
+    # Extract from table.
+    if cntx.view.get_code() == def_view.code_tbl:
+        df = dash_utils.load_data(cntx)
+        val = df[df["rcp"] == def_rcp.rcp_ref]["val"][0]
+
+    # Extract from time series.
+    elif cntx.view.get_code() in [def_view.code_ts, def_view.code_ts_bias]:
+        df = dash_utils.load_data(cntx, mode_rcp)
+        val = np.nanmean(df[def_rcp.rcp_ref])
+
+    # Adjust precision and units.
+    if df is not None:
+        if cntx.varidx.get_precision == 0:
+            val = int(val)
+        val = str(val)
+        unit = cntx.varidx.get_unit()
+        if unit != "°C":
+            val += " "
+        val += unit
     
-    # Load data.
-    cntx_tbl = cntx.copy()
-    cntx_tbl.view = def_view.View(def_view.code_tbl)
-    df = dash_utils.load_data(cntx_tbl)
-    
-    # Extract value.
-    val = df[df["rcp"] == def_rcp.rcp_ref]["val"][0]
-    if cntx.varidx.get_precision == 0:
-        val = int(val)
-    val = str(val)
-    unit = cntx.varidx.get_unit()
-    if unit != "°C":
-        val += " "
-    
-    return val + unit
+    return val
 
 
 def gen_map(
