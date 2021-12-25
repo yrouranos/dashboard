@@ -77,13 +77,13 @@ class Views(def_object.Objs):
 
         if len(args) > 0:
             if isinstance(args[0], def_context.Context):
-                self.load(args)
+                self.load(args[0])
             else:
                 self.add(args[0])
 
     def load(
         self,
-        args
+        cntx: def_context.Context
     ):
 
         """
@@ -92,13 +92,10 @@ class Views(def_object.Objs):
 
         Parameters
         ----------
-        args :
-            args[0] : cntx: def_context.Context
-                Context.
+        cntx: def_context.Context
+            Context.
         ----------------------------------------
         """
-
-        cntx = args[0]
 
         code_l = []
 

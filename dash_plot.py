@@ -593,7 +593,7 @@ def gen_tbl(
     # List of statistics (in a column).
     stat_l, stat_desc_l = [], []
     for code in list(def_stat.get_code_desc().keys()):
-        if code in [def_stat.mode_min, def_stat.mode_max, def_stat.mode_mean]:
+        if code in [def_stat.code_min, def_stat.code_max, def_stat.code_mean]:
             stat_l.append([code, -1])
         elif code == "q" + cntx.project.get_quantiles_as_str()[0]:
             stat_l.append(["quantile", cntx.project.get_quantiles()[0]])

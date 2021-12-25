@@ -102,8 +102,8 @@ class Project(def_object.Obj):
                 quantiles = [0, 1]
 
         self.quantiles = quantiles
-        def_stat.mode_q_low = "q" + self.get_quantiles_as_str()[0]
-        def_stat.mode_q_high = "q" + self.get_quantiles_as_str()[1]
+        def_stat.code_q_low = "q" + self.get_quantiles_as_str()[0]
+        def_stat.code_q_high = "q" + self.get_quantiles_as_str()[1]
 
     def get_quantiles(
         self

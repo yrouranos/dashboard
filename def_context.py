@@ -11,8 +11,8 @@
 
 import def_object
 
-code_script = "script"
-code_jupyter = "jupyter"
+code_script    = "script"
+code_jupyter   = "jupyter"
 code_streamlit = "streamlit"
 
 

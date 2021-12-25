@@ -35,6 +35,20 @@ def load_data(
     --------------------------------------------------------------------------------------------------------------------
     Load data.
 
+    Parameters
+    ----------
+    cntx : def_context.Context
+        Context.
+    mode : Optional[str]
+        Mode.
+        ts|ts_bias: mode = {"rcp", "sim"}
+        cycle:      mode = {"MS", "D"}
+
+    Returns
+    -------
+    pd.DataFrame
+        Dataframe.
+
     Structure of data directory:
     +-- ouranos.png
     |
@@ -99,20 +113,6 @@ def load_data(
             |
             +-- boundaries.geojson
             +-- locations.csv
-
-    Parameters
-    ----------
-    cntx : def_context.Context
-        Context.
-    mode : Optional[str]
-        Mode.
-        ts|ts_bias: mode = {"rcp", "sim"}
-        cycle:      mode = {"MS", "D"}
-
-    Returns
-    -------
-    pd.DataFrame
-        Dataframe.
     --------------------------------------------------------------------------------------------------------------------
     """
     

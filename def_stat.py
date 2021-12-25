@@ -17,12 +17,14 @@ import def_view
 import os
 from typing import List, Union
         
-mode_min = "min"
-mode_q_low = "q10"
-mode_median = "median"
-mode_q_high = "q90"
-mode_mean = "mean"
-mode_max = "max"
+code_min      = "min"
+code_q_low    = "q10"
+code_median   = "median"
+code_q_high   = "q90"
+code_max      = "max"
+code_mean     = "mean"
+code_sum      = "sum"
+code_quantile = "quantile"
 
 
 def get_code_desc():
@@ -31,7 +33,7 @@ def get_code_desc():
     --------------------------------------------------------------------------------------------------------------------
     Get a dictionary of codes and descriptions.
 
-    Note that 'mode_q_low' and 'mode_q_high' vary with the context, in particular, project and variable.
+    Note that 'code_q_low' and 'code_q_high' vary with the context, in particular, project and variable.
 
     Returns
     -------
@@ -41,12 +43,12 @@ def get_code_desc():
     """
 
     return {
-        mode_min: "Minimum",
-        mode_q_low: mode_q_low.replace("q", "") + "e percentile",
-        mode_median: "Médiane",
-        mode_q_high: mode_q_high.replace("q", "") + "e percentile",
-        mode_max: "Maximum",
-        mode_mean: "Moyenne"
+        code_min: "Minimum",
+        code_q_low: code_q_low.replace("q", "") + "e percentile",
+        code_median: "Médiane",
+        code_q_high: code_q_high.replace("q", "") + "e percentile",
+        code_max: "Maximum",
+        code_mean: "Moyenne"
     }
 
 
@@ -136,7 +138,7 @@ class Stats(def_object.Objs):
             is_rcp_ref = cntx.rcp.get_code() == def_rcp.rcp_ref
             for code in list(get_code_desc().keys()):
                 if os.path.exists(p.replace("<stat>", code)) and\
-                   ((not is_rcp_ref) or (is_rcp_ref and (code == mode_mean))):
+                   ((not is_rcp_ref) or (is_rcp_ref and (code == code_mean))):
                     code_l.append(code)
 
         self.add(code_l)

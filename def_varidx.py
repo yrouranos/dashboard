@@ -219,32 +219,6 @@ code_props = {
 }
 
 
-def get_group(
-    idx_item: str = ""
-):
-
-    """
-    --------------------------------------------------------------------------------------------------------------------
-    Get the name of a group of indices.
-
-    Parameters
-    ----------
-    idx_item : str, optional
-        Group name.
-    --------------------------------------------------------------------------------------------------------------------
-    """
-
-    group = idx_item
-
-    for key in list(i_groups.keys()):
-
-        if idx_item in i_groups[key][1]:
-            group = i_groups[key][0] + idx_item.replace(idx_item, "")
-            break
-
-    return group
-
-
 class VarIdx(def_object.Obj):
     
     """
@@ -552,3 +526,73 @@ class VarIdxs(def_object.Objs):
         desc_l.sort()
 
         return desc_l
+
+
+def get_group(
+    idx_item: str = ""
+):
+
+    """
+    --------------------------------------------------------------------------------------------------------------------
+    Get the name of a group of indices.
+
+    Parameters
+    ----------
+    idx_item : str, optional
+        Group name.
+    --------------------------------------------------------------------------------------------------------------------
+    """
+
+    group = idx_item
+
+    for key in list(i_groups.keys()):
+
+        if idx_item in i_groups[key][1]:
+            group = i_groups[key][0] + idx_item.replace(idx_item, "")
+            break
+
+    return group
+
+
+def explode_idx_l(
+    idx_group_l
+) -> [str]:
+
+    """
+    --------------------------------------------------------------------------------------------------------------------
+    Explode a list of index names or codes, e.g. [rain_season_1, rain_season_2] into
+    [rain_season_start_1, rain_season_end_1, rain_season_length_1, rain_season_prcptot_1,
+     rain_season_start_2, rain_season_end_2, rain_season_length_2, rain_season_prcptot_2].
+
+    Parameters
+    ----------
+    idx_group_l : [str]
+        List of climate index groups.
+    --------------------------------------------------------------------------------------------------------------------
+    """
+
+    idx_l_new = []
+
+    # Loop through index names or codes.
+    for i in range(len(idx_group_l)):
+        idx_code = idx_group_l[i]
+
+        # Loop through index groups.
+        in_group = False
+        for key in i_groups:
+
+            # Explode and add to list.
+            if i_groups[key][0] in idx_code:
+                in_group = True
+
+                # Extract instance number of index (ex: "_1").
+                no = idx_code.replace(idx_code, "")
+
+                # Loop through embedded indices.
+                for k in range(len(i_groups[key][1])):
+                    idx_l_new.append(i_groups[key][1][k] + no)
+
+        if not in_group:
+            idx_l_new.append(idx_code)
+
+    return idx_l_new
