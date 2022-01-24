@@ -166,7 +166,11 @@ def refresh():
         cntx.hors = def_hor.Hors("*")
         hor_f = st.selectbox("Horizon", options=cntx.hors.code_l)
         cntx.hor = def_hor.Hor(hor_f)
-        
+
+    # TODO: remove
+    cntx.view = def_view.View(c.view_cycle)
+    cntx.hor = def_hor.Hor("1981-2010")
+
     # Emission scenarios.
     cntx.rcps = def_rcp.RCPs("*")
     if cntx.view.code in [c.view_ts, c.view_ts_bias, c.view_map, c.view_cycle]:
@@ -174,7 +178,7 @@ def refresh():
         if cntx.view.code in [c.view_ts, c.view_ts_bias]:
             rcp_l = [dict(def_rcp.code_props())[c.rcpxx][0]] + rcp_l
         hor_code_ref = str(cntx.per_ref[0]) + "-" + str(cntx.per_ref[1])
-        if (cntx.view.code == c.view_map) and (cntx.hor.code == hor_code_ref):
+        if (cntx.view.code in [c.view_map, c.view_cycle]) and (cntx.hor.code == hor_code_ref):
             rcp_code = c.ref
         else:
             rcp_f = st.selectbox("Scénario d'émissions", options=rcp_l)

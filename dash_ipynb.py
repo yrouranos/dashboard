@@ -592,7 +592,7 @@ def hor_updated(event=None):
     cntx.hor = def_hor.Hor(str(f_code("hor")))
 
     if cntx.view.code in [c.view_tbl, c.view_map, c.view_cycle]:
-        if cntx.view.code in [c.view_map]:
+        if cntx.view.code in [c.view_map, c.view_cycle]:
             update_dash()
         update_rcp()
         rcp_updated(event_cascade)
