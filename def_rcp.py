@@ -6,33 +6,41 @@
 #
 # Contributors:
 # 1. rousseau.yannick@ouranos.ca
-# (C) 2021 Ouranos Inc., Canada
+# (C) 2021-2022 Ouranos Inc., Canada
 # ----------------------------------------------------------------------------------------------------------------------
 
-import dash_utils
-import def_context
-import def_object
-import def_view
+# External libraries.
 import glob
 import pandas as pd
 from typing import List, Union
 
-# Emission scenarios.
-# The last item means all RCPs.
-rcp_ref = "ref"
-rcp_26  = "rcp26"
-rcp_45  = "rcp45"
-rcp_85  = "rcp85"
-rcp_xx  = "rcpxx"
+# Dashboard libraries.
+import def_object
+from def_constant import const as c
+from def_context import cntx
 
-# Properties of emission scenarios.
-code_props = {
-    rcp_ref: ["Référence", "black"],
-    rcp_26:  ["RCP 2.6", "blue"],
-    rcp_45:  ["RCP 4.5", "green"],
-    rcp_85:  ["RCP 8.5", "red"],
-    rcp_xx:  ["Tous", "pink"]
-}
+
+def code_props(
+) -> dict:
+
+    """
+    --------------------------------------------------------------------------------------------------------------------
+    Get a dictionary of codes and properties.
+
+    Returns
+    -------
+    dict
+        Dictionary of codes and properties.
+    --------------------------------------------------------------------------------------------------------------------
+    """
+
+    return {
+        c.ref:   ["Référence", "black"],
+        c.rcp26: ["RCP 2.6",   "blue"],
+        c.rcp45: ["RCP 4.5",   "green"],
+        c.rcp85: ["RCP 8.5",   "red"],
+        c.rcpxx: ["Tous",      "pink"]
+    }
 
 
 class RCP(def_object.Obj):
@@ -54,10 +62,11 @@ class RCP(def_object.Obj):
         ----------------------------------------
         """
 
-        if code in list(code_props.keys()):
-            super(RCP, self).__init__(code=code, desc=code_props[code][0])
-    
-    def get_color(
+        if code in list(dict(code_props()).keys()):
+            super(RCP, self).__init__(code=code, desc=dict(code_props())[code][0])
+
+    @property
+    def color(
         self
     ) -> str:
         
@@ -72,8 +81,9 @@ class RCP(def_object.Obj):
         ----------------------------------------
         """
 
-        return "" if self.code == "" else code_props[self.code][1]
+        return "" if self.code == "" else dict(code_props())[self.code][1]
 
+    @property
     def is_ref(
         self
     ) -> bool:
@@ -89,7 +99,7 @@ class RCP(def_object.Obj):
         ----------------------------------------
         """
 
-        return self.code == rcp_ref
+        return self.code == c.ref
 
 
 class RCPs(def_object.Objs):
@@ -114,66 +124,75 @@ class RCPs(def_object.Objs):
         super(RCPs, self).__init__()
 
         if len(args) == 1:
-            if isinstance(args[0], str) or isinstance(args[0], list):
-                self.add(args[0])
+            if args[0] == "*":
+                self.load()
             else:
-                self.load(args[0])
+                self.add(args[0])
 
     def load(
-        self,
-        cntx: def_context.Context
+        self
     ):
 
         """
         ----------------------------------------
         Load items.
-
-        Parameters
-        ----------
-        cntx : def_context.Context
-            Context.
         ----------------------------------------
         """
 
+        # Codes.
+        view_code  = cntx.view.code if cntx.view is not None else ""
+        vi_code    = cntx.varidx.code if cntx.varidx is not None else ""
+        hor_code   = cntx.hor.code if cntx.hor is not None else ""
+        delta_code = cntx.delta.code if cntx.delta is not None else False
+
         # The items are extracted from the 'rcp' column of data files ('tbl' view).
         # ~/<project_code>/tbl/<vi_code>*.csv
-        if cntx.view.get_code() == def_view.code_tbl:
-            p = str(dash_utils.get_d_data(cntx)) + "<view_code>/<vi_code>.csv"
-            p = p.replace("<view_code>", cntx.view.get_code())
-            p = p.replace("<vi_code>", cntx.varidx.get_code())
+        if view_code == c.view_tbl:
+            p = cntx.d_project + "<view_code>/<vi_code>.csv"
+            p = p.replace("<view_code>", view_code)
+            p = p.replace("<vi_code>", vi_code)
             df = pd.read_csv(p)
-            item_l = list(df.columns) if cntx.view.get_code() == def_view.code_ts else df["rcp"]
-            if cntx.delta.get_code() and (rcp_ref in item_l):
-                item_l.remove(rcp_ref)
+            item_l = list(df.columns) if view_code == c.view_ts else df["rcp"]
+            if (delta_code == "True") and (c.ref in item_l):
+                item_l.remove(c.ref)
 
         # The items are extracted from column names ('ts' or 'ts_bias' view).
         # ~/<project_code>/<view_code>/<vi_code>/*.csv
-        elif cntx.view.get_code() in [def_view.code_ts, def_view.code_ts_bias]:
-            p = str(dash_utils.get_d_data(cntx)) + "<view_code>/<vi_code>/<vi_code>_<mode>_<delta>.csv"
-            p = p.replace("<view_code>", cntx.view.get_code())
-            p = p.replace("<vi_code>", cntx.varidx.get_code())
+        elif view_code in [c.view_ts, c.view_ts_bias]:
+            p = cntx.d_project + "<view_code>/<vi_code>/<vi_code>_<mode>_<delta>.csv"
+            p = p.replace("<view_code>", view_code)
+            p = p.replace("<vi_code>", vi_code)
             p = p.replace("<mode>", "rcp")
-            p = p.replace("_<delta>", "_delta" if cntx.delta.get_code() else "")
+            p = p.replace("_<delta>", "_delta" if delta_code == "True" else "")
             df = pd.read_csv(p)
             item_l = list(df.columns)
-            item_l.remove(rcp_ref)
+            item_l.remove(c.ref)
 
         # The items are extracted from file names.
         # ~/<project_code>/map/<vi_code>/<hor_code>/*
-        elif cntx.view.get_code() == def_view.code_map:
-            p = str(dash_utils.get_d_data(cntx)) + "<view_code>/<vi_code>/<hor_code>/*.csv"
-            p = p.replace("<view_code>", cntx.view.get_code())
-            p = p.replace("<vi_code>", cntx.varidx.get_code())
-            p = p.replace("<hor_code>", cntx.hor.get_code())
+        elif view_code == c.view_map:
+            p = cntx.d_project + "<view_code>/<vi_code>/<hor_code>/*.csv"
+            p = p.replace("<view_code>", view_code)
+            p = p.replace("<vi_code>", vi_code)
+            p = p.replace("<hor_code>", hor_code)
             item_l = list(glob.glob(p))
+
+            # Only keep the reference dataset if the reference period was selected.
+            if hor_code == cntx.per_ref_str:
+                item_l_tmp = []
+                for item in item_l:
+                    if c.ref in item:
+                        item_l_tmp.append(item)
+                        break
+                item_l = item_l_tmp
 
         # The items are extracted from file names.
         # ~/<project_code>/cycle*/<vi_code>/<hor_code>/*.csv
-        elif cntx.view.get_code() == def_view.code_cycle:
-            p = str(dash_utils.get_d_data(cntx)) + "<view_code>*/<vi_code>/<hor_code>/*.csv"
-            p = p.replace("<view_code>", cntx.view.get_code())
-            p = p.replace("<vi_code>", cntx.varidx.get_code())
-            p = p.replace("<hor_code>", cntx.hor.get_code())
+        elif view_code == c.view_cycle:
+            p = cntx.d_project + "<view_code>*/<vi_code>/<hor_code>/*.csv"
+            p = p.replace("<view_code>", view_code)
+            p = p.replace("<vi_code>", vi_code)
+            p = p.replace("<hor_code>", hor_code)
             item_l = glob.glob(p)
 
         else:
@@ -182,28 +201,28 @@ class RCPs(def_object.Objs):
         # Extract RCPs.
         # Sort items, but let the reference emission scenario be first.
         code_l = []
-        rcp_ref_found = False
+        ref_found = False
         for item in item_l:
             code = ""
-            if rcp_ref in item:
-                rcp_ref_found = True
-            elif rcp_26 in item:
-                code = rcp_26
-            elif rcp_45 in item:
-                code = rcp_45
-            elif rcp_85 in item:
-                code = rcp_85
+            if c.ref in item:
+                ref_found = True
+            elif c.rcp26 in item:
+                code = c.rcp26
+            elif c.rcp45 in item:
+                code = c.rcp45
+            elif c.rcp85 in item:
+                code = c.rcp85
             if (code != "") and (code not in code_l):
                 code_l.append(code)
         code_l.sort()
-        if rcp_ref_found and not cntx.delta.get_code():
-            code_l = [rcp_ref] + code_l
+        if ref_found and (delta_code == "False"):
+            code_l = [c.ref] + code_l
 
         self.add(code_l)
 
     def add(
         self,
-        code: Union[str, List[str]],
+        item: Union[str, List[str], RCP],
         inplace: bool = True
     ):
 
@@ -213,24 +232,29 @@ class RCPs(def_object.Objs):
 
         Parameters
         ----------
-        code : Union[str, List[str]]
-            Code or list of codes.
-        inplace : bool
+        item: Union[str, List[str], RCP]
+            Item (code, list of codes or instance of RCP).
+        inplace: bool
             If True, modifies the current instance.
         ----------------------------------------
         """
 
-        code_l = code
-        if isinstance(code, str):
-            code_l = [code]
-
         items = []
-        for i in range(len(code_l)):
-            items.append(RCP(code_l[i]))
 
-        return super(RCPs, self).add_items(items, inplace)
+        if isinstance(item, RCP):
+            items = [item]
 
-    def get_code_l(
+        else:
+            code_l = item
+            if isinstance(item, str):
+                code_l = [item]
+            for i in range(len(code_l)):
+                items.append(RCP(code_l[i]))
+
+        return super(RCPs, self).add(items, inplace)
+
+    @property
+    def code_l(
         self
     ) -> List[str]:
 
@@ -245,15 +269,16 @@ class RCPs(def_object.Objs):
         ----------------------------------------
         """
 
-        code_l = super(RCPs, self).get_code_l()
+        code_l = super(RCPs, self).code_l
 
-        if rcp_ref in code_l:
-            code_l.remove(rcp_ref)
-            code_l = [rcp_ref] + code_l
+        if c.ref in code_l:
+            code_l.remove(c.ref)
+            code_l = [c.ref] + code_l
 
         return code_l
 
-    def get_desc_l(
+    @property
+    def desc_l(
         self
     ) -> List[str]:
 
@@ -268,15 +293,16 @@ class RCPs(def_object.Objs):
         ----------------------------------------
         """
 
-        desc_l = super(RCPs, self).get_desc_l()
+        desc_l = super(RCPs, self).desc_l
 
-        if code_props[rcp_ref][0] in desc_l:
-            desc_l.remove(code_props[rcp_ref][0])
-            desc_l = [code_props[rcp_ref][0]] + desc_l
+        if code_props()[c.ref][0] in desc_l:
+            desc_l.remove(code_props()[c.ref][0])
+            desc_l = [code_props()[c.ref][0]] + desc_l
 
         return desc_l
 
-    def get_color_l(
+    @property
+    def color_l(
         self
     ) -> List[str]:
     
@@ -293,10 +319,10 @@ class RCPs(def_object.Objs):
     
         color_l = []
         for item in self.items:
-            color_l.append(item.get_color())
+            color_l.append(item.color)
 
-        if code_props[rcp_ref][1] in color_l:
-            color_l.remove(code_props[rcp_ref][1])
-            color_l = [code_props[rcp_ref][1]] + color_l
+        if code_props()[c.ref][1] in color_l:
+            color_l.remove(code_props()[c.ref][1])
+            color_l = [code_props()[c.ref][1]] + color_l
 
         return color_l

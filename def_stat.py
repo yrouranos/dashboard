@@ -6,34 +6,27 @@
 #
 # Contributors:
 # 1. rousseau.yannick@ouranos.ca
-# (C) 2021 Ouranos Inc., Canada
+# (C) 2021-2022 Ouranos Inc., Canada
 # ----------------------------------------------------------------------------------------------------------------------
 
-import dash_utils
-import def_context
-import def_object
-import def_rcp
-import def_view
+# External libraries.
 import os
 from typing import List, Union
-        
-code_min      = "min"
-code_q_low    = "q10"
-code_median   = "median"
-code_q_high   = "q90"
-code_max      = "max"
-code_mean     = "mean"
-code_sum      = "sum"
-code_quantile = "quantile"
+
+# Dashbaord libraries.
+import def_object
+from def_constant import const as c
+from def_context import cntx
 
 
-def get_code_desc():
+def code_desc(
+) -> dict:
 
     """
     --------------------------------------------------------------------------------------------------------------------
     Get a dictionary of codes and descriptions.
 
-    Note that 'code_q_low' and 'code_q_high' vary with the context, in particular, project and variable.
+    Note that 'code_q_low' and 'code_q_high' vary with the context (project and variable).
 
     Returns
     -------
@@ -43,12 +36,12 @@ def get_code_desc():
     """
 
     return {
-        code_min: "Minimum",
-        code_q_low: code_q_low.replace("q", "") + "e percentile",
-        code_median: "Médiane",
-        code_q_high: code_q_high.replace("q", "") + "e percentile",
-        code_max: "Maximum",
-        code_mean: "Moyenne"
+        c.stat_min:    "Minimum",
+        c.stat_q_low:  c.stat_q_low.replace("q", "") + "e percentile",
+        c.stat_median: "Médiane",
+        c.stat_q_high: c.stat_q_high.replace("q", "") + "e percentile",
+        c.stat_max:    "Maximum",
+        c.stat_mean:   "Moyenne"
     }
 
 
@@ -73,7 +66,7 @@ class Stat(
         ----------------------------------------
         """
 
-        desc = "" if code == "" else dict(get_code_desc())[code]
+        desc = "" if code == "" else dict(code_desc())[code]
         super(Stat, self).__init__(code=code, desc=desc)
 
 
@@ -99,53 +92,62 @@ class Stats(def_object.Objs):
         super(Stats, self).__init__()
 
         if len(args) == 1:
-            if isinstance(args[0], str) or isinstance(args[0], list):
-                self.add(args[0])
+            if args[0] == "*":
+                self.load()
             else:
-                self.load(args[0])
+                self.add(args[0])
 
     def load(
-        self,
-        cntx: def_context.Context
+        self
     ):
 
         """
         ----------------------------------------
         Load items.
-        
-        Parameters
-        ----------
-        cntx : def_context.Context
-            Context.
         ----------------------------------------
         """
 
         code_l = []
 
+        # Determine if this is the reference data.
+        is_ref = False
+        if cntx.rcp is not None:
+            is_ref = cntx.rcp.code == c.ref
+
+        # Codes.
+        view_code  = cntx.view.code if cntx.view is not None else ""
+        vi_code    = cntx.varidx.code if cntx.varidx is not None else ""
+        vi_name    = cntx.varidx.name if cntx.varidx is not None else ""
+        rcp_code   = cntx.rcp.code if cntx.rcp is not None else ""
+        hor_code   = cntx.hor.code if cntx.hor is not None else ""
+        delta_code = cntx.delta.code if cntx.delta is not None else False
+
         # The items are extracted from file names.
         # ~/<project_code>/map/<vi_code>/<hor_code>/*.csv"
-        if cntx.view.get_code() == def_view.code_map:
-            p = str(dash_utils.get_d_data(cntx)) +\
-                "<view_code>/<vi_code>/<hor_code>/<vi_name>_<rcp_code>_<hor_code_>_<stat>_<delta>.csv"
-            p = p.replace("<view_code>", cntx.view.get_code())
-            p = p.replace("<vi_code>", cntx.varidx.get_code())
-            p = p.replace("<vi_name>", cntx.varidx.get_code())
-            p = p.replace("<rcp_code>", "" if cntx.rcp is None else cntx.rcp.get_code())
-            p = p.replace("<hor_code_>", "" if cntx.hor is None else cntx.hor.get_code().replace("-", "_"))
-            p = p.replace("<hor_code>", "" if cntx.hor is None else cntx.hor.get_code())
-            p = p.replace("_<delta>", "" if not cntx.delta.get_code() else "_delta")
+        if view_code == c.view_map:
+            p = cntx.d_project + "<view_code>/<vi_code>/<hor_code>/<vi_name>_<rcp_code>_<hor_code_>_<stat>_<delta>.csv"
+            p = p.replace("<view_code>", view_code)
+            p = p.replace("<vi_code>", vi_code)
+            p = p.replace("<vi_name>", vi_name)
+            p = p.replace("<rcp_code>", rcp_code)
+            p = p.replace("<hor_code_>", "" if cntx.hor is None else hor_code.replace("-", "_"))
+            p = p.replace("<hor_code>", hor_code)
+            p = p.replace("_<delta>", "" if delta_code == "False" else "_delta")
 
-            is_rcp_ref = cntx.rcp.get_code() == def_rcp.rcp_ref
-            for code in list(get_code_desc().keys()):
-                if os.path.exists(p.replace("<stat>", code)) and\
-                   ((not is_rcp_ref) or (is_rcp_ref and (code == code_mean))):
+            # Add each code for which a file exists.
+            for code in list(dict(code_desc()).keys()):
+                if os.path.exists(p.replace("<stat>", code)) and ((not is_ref) or (is_ref and (code == c.stat_mean))):
                     code_l.append(code)
+
+            # Only keep the mean if the reference period was selected.
+            if hor_code == cntx.per_ref_str:
+                code_l = [c.stat_mean] if (c.stat_mean in code_l) else []
 
         self.add(code_l)
 
     def add(
         self,
-        code: Union[str, List[str]],
+        item: Union[str, List[str], Stat],
         inplace: bool = True
     ):
 
@@ -155,19 +157,23 @@ class Stats(def_object.Objs):
 
         Parameters
         ----------
-        code : Union[str, List[str]]
-            Code or list of codes.
-        inplace : bool
+        item: Union[str, List[str], Stat]
+            Item (code, list of codes or instance of Stat).
+        inplace: bool
             If True, modifies the current instance.
         ----------------------------------------
         """
 
-        code_l = code
-        if isinstance(code, str):
-            code_l = [code]
-
         items = []
-        for i in range(len(code_l)):
-            items.append(Stat(code_l[i]))
 
-        return super(Stats, self).add_items(items, inplace)
+        if isinstance(item, Stat):
+            items = [item]
+
+        else:
+            code_l = item
+            if isinstance(item, str):
+                code_l = [item]
+            for i in range(len(code_l)):
+                items.append(Stat(code_l[i]))
+
+        return super(Stats, self).add(items, inplace)

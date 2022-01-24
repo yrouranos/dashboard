@@ -6,17 +6,20 @@
 #
 # Contributors:
 # 1. rousseau.yannick@ouranos.ca
-# (C) 2021 Ouranos Inc., Canada
+# (C) 2021-2022 Ouranos Inc., Canada
 # ----------------------------------------------------------------------------------------------------------------------
 
-import dash_utils
-import def_context
-import def_object
-import def_rcp
-import def_view
+# External libraries.
 import glob
 import os
+import pandas as pd
 from typing import Union, List
+
+# Dashboard libraries.
+from def_constant import const as c
+from def_context import cntx
+import dash_utils as du
+import def_object
 
 
 class Hor(def_object.Obj):
@@ -63,36 +66,35 @@ class Hors(def_object.Objs):
         super(Hors, self).__init__()
 
         if len(args) == 1:
-            if isinstance(args[0], str) or isinstance(args[0], list):
-                self.add(args[0])
+            if args[0] == "*":
+                self.load()
             else:
-                self.load(args[0])
+                self.add(args[0])
 
     def load(
-        self,
-        cntx: def_context.Context
+        self
     ):
 
         """
         ----------------------------------------
         Load items.
-
-        Parameters
-        ----------
-        cntx : def_context.Context
-            Context.
         ----------------------------------------
         """
 
         code_l = []
 
+        # Codes.
+        view_code  = cntx.view.code if cntx.view is not None else ""
+        vi_code    = cntx.varidx.code if cntx.varidx is not None else ""
+        delta_code = cntx.delta.code if cntx.delta is not None else False
+
         # The items are extracted from directory names.
         # ~/<project_code>/map/<vi_code>/*
-        if cntx.view.get_code() == def_view.code_map:
-            p = str(dash_utils.get_d_data(cntx)) + "<view>/<vi_code>/*/*_<delta>.csv"
-            p = p.replace("<view>", cntx.view.get_code())
-            p = p.replace("<vi_code>", cntx.varidx.get_code())
-            p = p.replace("_<delta>", "" if not cntx.delta.get_code() else "_delta")
+        if view_code == c.view_map:
+            p = cntx.d_project + "<view>/<vi_code>/*/*_<delta>.csv"
+            p = p.replace("<view>", view_code)
+            p = p.replace("<vi_code>", vi_code)
+            p = p.replace("_<delta>", "" if delta_code == "False" else "_delta")
             for p in glob.glob(p):
                 code = os.path.basename(os.path.dirname(p))
                 if code not in code_l:
@@ -100,17 +102,17 @@ class Hors(def_object.Objs):
 
         # The items are extracted from the 'hor' column of data files.
         # ~/<project_code>/tbl/<vi_code>.csv
-        elif cntx.view.get_code() == def_view.code_tbl:
-            df = dash_utils.load_data(cntx)
+        elif view_code == c.view_tbl:
+            df = pd.DataFrame(du.load_data())
             code_l = list(dict.fromkeys(list(df["hor"])))
-            code_l.remove(df[df["rcp"] == def_rcp.rcp_ref]["hor"][0])
+            code_l.remove(df[df["rcp"] == c.ref]["hor"][0])
 
         # The items are extracted from directory names.
         # ~/<project_code>/cycle*/*
-        elif cntx.view.get_code() == def_view.code_cycle:
-            p = str(dash_utils.get_d_data(cntx)) + "<view>/<vi_code>/*"
-            p = p.replace("<view>/", cntx.view.get_code() + "*/")
-            p = p.replace("<vi_code>", cntx.varidx.get_code())
+        elif view_code == c.view_cycle:
+            p = cntx.d_project + "<view>/<vi_code>/*"
+            p = p.replace("<view>/", view_code + "*/")
+            p = p.replace("<vi_code>", vi_code)
             for p_i in list(glob.glob(p)):
                 code = os.path.basename(p_i)
                 if code not in code_l:
@@ -138,7 +140,7 @@ class Hors(def_object.Objs):
             
     def add(
         self,
-        code: Union[str, List[str]],
+        item: Union[str, List[str], Hor],
         inplace: bool = True
     ):
         
@@ -148,19 +150,23 @@ class Hors(def_object.Objs):
         
         Parameters
         ----------
-        code : Union[str, List[str]]
-            Code or list of codes.
-        inplace : bool
+        item: Union[str, List[str], Hor]
+            Item (code, list of codes or instance of Hor).
+        inplace: bool
             If True, modifies the current instance.
         ----------------------------------------
         """        
-        
-        code_l = code
-        if isinstance(code, str):
-            code_l = [code]
-        
+
         items = []
-        for i in range(len(code_l)):
-            items.append(Hor(code_l[i]))
+
+        if isinstance(item, Hor):
+            items = [item]
+
+        else:
+            code_l = item
+            if isinstance(item, str):
+                code_l = [item]
+            for i in range(len(code_l)):
+                items.append(Hor(code_l[i]))
         
-        return super(Hors, self).add_items(items, inplace)
+        return super(Hors, self).add(items, inplace)

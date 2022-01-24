@@ -6,10 +6,18 @@
 #
 # Contributors:
 # 1. rousseau.yannick@ouranos.ca
-# (C) 2021 Ouranos Inc., Canada
+# (C) 2021-2022 Ouranos Inc., Canada
 # ----------------------------------------------------------------------------------------------------------------------
 
-import def_context
+# External libraries.
+import holoviews as hv
+import pandas as pd
+import streamlit as st
+from PIL import Image
+
+# Dashboard libraries.
+import dash_plot
+import dash_utils as du
 import def_delta
 import def_hor
 import def_lib
@@ -17,15 +25,10 @@ import def_project
 import def_rcp
 import def_sim
 import def_stat
-import dash_plot
-import dash_utils
 import def_varidx as vi
 import def_view
-import holoviews as hv
-import streamlit as st
-from PIL import Image
-
-cntx = None
+from def_constant import const as c
+from def_context import cntx
 
 
 def refresh():
@@ -104,131 +107,158 @@ def refresh():
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    global cntx
-
     # Initialize context.
-    if cntx is None:
-        cntx = def_context.Context(def_context.code_streamlit)
-        cntx.views = def_view.Views()
-        cntx.libs = def_lib.Libs()
-        cntx.varidxs = vi.VarIdxs()
-        cntx.hors = def_hor.Hors()
-        cntx.rcps = def_rcp.RCPs()
+    cntx.code = c.platform_streamlit
+    cntx.views = def_view.Views()
+    cntx.libs = def_lib.Libs()
+    cntx.deltas = def_delta.Deltas(["False", "True"])
+    cntx.delta = def_delta.Delta("False")
+    cntx.varidxs = vi.VarIdxs()
+    cntx.hors = def_hor.Hors()
+    cntx.rcps = def_rcp.RCPs()
 
-    st.sidebar.image(Image.open(dash_utils.get_p_logo()), width=150)
+    # Logo.
+    st.sidebar.image(Image.open(cntx.p_logo), width=150)
 
     # Projects.
-    cntx.projects = def_project.Projects(cntx=cntx)
-    project_f = st.sidebar.selectbox("Choisir le projet", options=cntx.projects.get_desc_l())
-    cntx.project = def_project.Project(code=project_f, cntx=cntx)
+    cntx.projects = def_project.Projects("*")
+    project_f = st.sidebar.selectbox("Choisir le projet", options=cntx.projects.desc_l)
+    cntx.project = def_project.Project(project_f)
+    cntx.load()
 
     # Views.
-    cntx.views = def_view.Views(cntx)
-    view_f = st.sidebar.radio("Choisir la vue", cntx.views.get_desc_l())
-    cntx.view = def_view.View(cntx.views.get_code(view_f))
+    cntx.views = def_view.Views("*")
+    view_f = st.sidebar.radio("Choisir la vue", cntx.views.desc_l)
+    view_code = cntx.views.code_from_desc(view_f) if cntx.views is not None else ""
+    cntx.view = def_view.View(view_code)
 
     # Plotting libraries.
-    cntx.libs = def_lib.Libs(cntx.view.get_code())
-    lib_f = st.sidebar.radio("Choisir la librairie visuelle", options=cntx.libs.get_desc_l())
-    cntx.lib = def_lib.Lib(cntx.libs.get_code(lib_f))
+    cntx.libs = def_lib.Libs("*")
+    if cntx.opt_lib:
+        lib_f = st.sidebar.radio("Choisir la librairie visuelle", options=cntx.libs.desc_l)
+        lib_code = cntx.libs.code_from_desc(lib_f) if cntx.libs is not None else ""
+    else:
+        lib_code = c.lib_hv
+        if cntx.view.code == c.view_tbl:
+            lib_code = c.lib_ply
+    cntx.lib = def_lib.Lib(lib_code)
 
     # Deltas.
-    cntx.deltas = def_delta.Dels(cntx)
-    if True in cntx.deltas.get_code_l():
+    cntx.deltas = def_delta.Deltas("*")
+    if cntx.view.code in [c.view_ts, c.view_ts_bias, c.view_tbl, c.view_map]:
         st.sidebar.markdown("<style>.sel_title {font-size:14.5px}</style>", unsafe_allow_html=True)
-        st.sidebar.markdown("<p class='sel_title'>Afficher les anomalies</p>", unsafe_allow_html=True)
+        title = "Afficher les anomalies par rapport à la période " + str(cntx.per_ref[0]) + "-" + str(cntx.per_ref[1])
+        st.sidebar.markdown("<p class='sel_title'>" + title + "</p>", unsafe_allow_html=True)
         delta_f = st.sidebar.checkbox("", value=False)
-        cntx.delta = def_delta.Del(delta_f)
+        cntx.delta = def_delta.Delta(str(delta_f))
     else:
-        cntx.delta = def_delta.Del(False)
+        cntx.delta = def_delta.Delta("False")
 
     # Variables and indices.
-    cntx.varidxs = vi.VarIdxs(cntx)
-    vi_f = st.selectbox("Variable ou indice", options=cntx.varidxs.get_desc_l())
-    cntx.varidx = vi.VarIdx(cntx.varidxs.get_code(vi_f))
-    cntx.project.set_quantiles(cntx.project.get_code(), cntx)
+    cntx.varidxs = vi.VarIdxs("*")
+    vi_f = st.selectbox("Variable ou indice", options=cntx.varidxs.desc_l)
+    vi_code = cntx.varidxs.code_from_desc(vi_f) if cntx.varidxs is not None else ""
+    cntx.varidx = vi.VarIdx(vi_code)
+    cntx.project.load_quantiles()
 
     # Horizons.
-    if cntx.view.get_code() in [def_view.code_tbl, def_view.code_map, def_view.code_cycle]:
-        cntx.hors = def_hor.Hors(cntx)
-        hor_f = st.selectbox("Horizon", options=cntx.hors.get_code_l())
+    if cntx.view.code in [c.view_tbl, c.view_map, c.view_cycle]:
+        cntx.hors = def_hor.Hors("*")
+        hor_f = st.selectbox("Horizon", options=cntx.hors.code_l)
         cntx.hor = def_hor.Hor(hor_f)
         
     # Emission scenarios.
-    cntx.rcps = def_rcp.RCPs(cntx)
-    if cntx.view.get_code() in [def_view.code_ts, def_view.code_map, def_view.code_cycle, def_view.code_ts_bias]:
-        rcp_l = cntx.rcps.get_desc_l()
-        if cntx.view.get_code() in [def_view.code_ts, def_view.code_ts_bias]:
-            rcp_l = [""] + rcp_l
-        rcp_f = st.selectbox("Scénario d'émissions", options=rcp_l)
-        cntx.rcp = def_rcp.RCP(cntx.rcps.get_code(rcp_f))
+    cntx.rcps = def_rcp.RCPs("*")
+    if cntx.view.code in [c.view_ts, c.view_ts_bias, c.view_map, c.view_cycle]:
+        rcp_l = cntx.rcps.desc_l
+        if cntx.view.code in [c.view_ts, c.view_ts_bias]:
+            rcp_l = [dict(def_rcp.code_props())[c.rcpxx][0]] + rcp_l
+        hor_code_ref = str(cntx.per_ref[0]) + "-" + str(cntx.per_ref[1])
+        if (cntx.view.code == c.view_map) and (cntx.hor.code == hor_code_ref):
+            rcp_code = c.ref
+        else:
+            rcp_f = st.selectbox("Scénario d'émissions", options=rcp_l)
+            rcp_code = cntx.rcps.code_from_desc(rcp_f) if cntx.rcps is not None else ""
+        cntx.rcp = def_rcp.RCP(rcp_code)
 
     # Statistics.
-    if cntx.view.get_code() == def_view.code_map:
-        cntx.stats = def_stat.Stats(cntx)
-        stat_f = st.selectbox("Statistique", options=cntx.stats.get_desc_l())
-        cntx.stat = def_stat.Stat(cntx.stats.get_code(stat_f))
+    if cntx.view.code == c.view_map:
+        cntx.stats = def_stat.Stats("*")
+        if cntx.rcp.code == c.ref:
+            cntx.stat = def_stat.Stat(c.stat_mean)
+        else:
+            stat_f = st.selectbox("Statistique", options=cntx.stats.desc_l)
+            stat_code = cntx.stats.code_from_desc(stat_f) if cntx.stats is not None else ""
+            cntx.stat = def_stat.Stat(stat_code)
 
     # Simulations.
-    if cntx.view.get_code() in [def_view.code_ts, def_view.code_cycle, def_view.code_ts_bias]:
-        cntx.sims = def_sim.Sims(cntx)
-        sim_l = cntx.sims.get_desc_l()
-        if cntx.view.get_code() in [def_view.code_ts, def_view.code_ts_bias]:
-            sim_l = [""] + sim_l
-        sim_f = st.selectbox("Simulation", options=sim_l)
-        cntx.sim = def_sim.Sim(cntx.sims.get_code(sim_f))
+    if cntx.view.code in [c.view_ts, c.view_ts_bias, c.view_cycle]:
+        cntx.sims = def_sim.Sims("*")
+        sim_l = cntx.sims.desc_l
+        if cntx.view.code in [c.view_ts, c.view_ts_bias]:
+            sim_l = [dict(def_sim.code_desc())[c.simxx]] + sim_l
+        if cntx.rcp.code == c.ref:
+            cntx.sim = def_sim.Sim(c.ref)
+        else:
+            sim_f = st.selectbox("Simulation", options=sim_l)
+            if dict(def_sim.code_desc())[c.simxx] == sim_f:
+                sim_code = c.simxx
+            else:
+                sim_code = cntx.sims.code_from_desc(sim_f) if cntx.sims is not None else ""
+            cntx.sim = def_sim.Sim(sim_code)
 
     # GUI components.
-    if cntx.view.get_code() in [def_view.code_ts, def_view.code_ts_bias]:
-        df_rcp = dash_utils.load_data(cntx, dash_plot.mode_rcp)
-        df_sim = dash_utils.load_data(cntx, dash_plot.mode_sim)
-        if cntx.view.get_code() == def_view.code_ts:
-            if not cntx.delta.get_code():
-                st.write("Valeurs ajustées (après l'ajustement de biais)")
+    if cntx.view.code in [c.view_ts, c.view_ts_bias]:
+        df_rcp = pd.DataFrame(du.load_data(dash_plot.mode_rcp))
+        df_sim = pd.DataFrame(du.load_data(dash_plot.mode_sim))
+        if cntx.view.code == c.view_ts:
+            if cntx.delta.code == "False":
+                st.write("Valeurs ajustées (après ajustement de biais)")
             else:
                 st.write("Différence entre les valeurs observées et les valeurs ajustées")
         else:
-            if not cntx.delta.get_code():
-                st.write("Valeurs non ajustées (avant l'ajustement de biais)")
+            if cntx.delta.code == "False":
+                st.write("Valeurs non ajustées (avant ajustement de biais)")
             else:
                 st.write("Différence entre les valeurs non ajustées et les valeurs ajustées")
-        if cntx.lib.get_code() in [def_lib.mode_alt, def_lib.mode_mat]:
-            st.write(dash_plot.gen_ts(cntx, df_rcp, dash_plot.mode_rcp))
-            st.write(dash_plot.gen_ts(cntx, df_sim, dash_plot.mode_sim))
+        if cntx.lib.code in [c.lib_alt, c.lib_mat]:
+            st.write(dash_plot.gen_ts(df_rcp, dash_plot.mode_rcp))
+            st.write(dash_plot.gen_ts(df_sim, dash_plot.mode_sim))
         else:
-            st.write(hv.render(dash_plot.gen_ts(cntx, df_rcp, dash_plot.mode_rcp)), backend="bokeh")
-            st.write(hv.render(dash_plot.gen_ts(cntx, df_sim, dash_plot.mode_sim)), backend="bokeh")
-    elif cntx.view.get_code() == def_view.code_tbl:
-        st.write(dash_plot.gen_tbl(cntx))
-    elif cntx.view.get_code() == def_view.code_map:
-        cntx.p_bounds = dash_utils.get_p_bounds(cntx)
-        cntx.p_locations = dash_utils.get_p_locations(cntx)
-        df = dash_utils.load_data(cntx)
-        z_range = dash_utils.get_range(cntx)
-        if cntx.lib.get_code() == def_lib.mode_mat:
-            st.write(dash_plot.gen_map(cntx, df, z_range))
+            st.write(hv.render(dash_plot.gen_ts(df_rcp, dash_plot.mode_rcp)), backend="bokeh")
+            st.write(hv.render(dash_plot.gen_ts(df_sim, dash_plot.mode_sim)), backend="bokeh")
+    elif cntx.view.code == c.view_tbl:
+        st.write(dash_plot.gen_tbl())
+    elif cntx.view.code == c.view_map:
+        df = pd.DataFrame(du.load_data())
+        range_vals = du.calc_range()
+        if cntx.lib.code == c.lib_mat:
+            st.write(dash_plot.gen_map(df, range_vals))
         else:
-            st.write(hv.render(dash_plot.gen_map(cntx, df, z_range)), backend="bokeh")
+            st.write(hv.render(dash_plot.gen_map(df, range_vals)), backend="bokeh")
     else:
-        df_ms = dash_utils.load_data(cntx, "MS")
-        cycle_ms = dash_plot.gen_cycle_ms(cntx, df_ms)
+        df_ms = pd.DataFrame(du.load_data("MS"))
+        cycle_ms = dash_plot.gen_cycle_ms(df_ms)
         if cycle_ms is not None:
-            if cntx.lib.get_code() == def_lib.mode_mat:
+            if cntx.lib.code == c.lib_mat:
                 st.write(cycle_ms)
             else:
                 st.write(hv.render(cycle_ms), backend="bokeh")
-        df_d = dash_utils.load_data(cntx, "D")
-        cycle_d = dash_plot.gen_cycle_d(cntx, df_d)
+        df_d = pd.DataFrame(du.load_data("D"))
+        cycle_d = dash_plot.gen_cycle_d(df_d)
         if cycle_d is not None:
-            if cntx.lib.get_code() == def_lib.mode_mat:
+            if cntx.lib.code == c.lib_mat:
                 st.write(cycle_d)
             else:
                 st.write(hv.render(cycle_d), backend="bokeh")
-    if cntx.view.get_code() in [def_view.code_ts, def_view.code_tbl]:
-        tbl_ref = dash_plot.get_ref_val(cntx)
-        st.write("Valeur de référence : " + tbl_ref)
+    if cntx.view.code in [c.view_ts, c.view_tbl]:
+        tbl_ref = str(du.ref_val())
+        st.write("Valeur moyenne pour la période de référence : " + tbl_ref)
 
 
-# import dash_test
-# dash_test.test_all("sn")
+# Refresh GUI.
 refresh()
+
+# Test.
+# import dash_test
+# dash_test.run("sn")

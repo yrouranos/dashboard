@@ -6,17 +6,21 @@
 #
 # Contributors:
 # 1. rousseau.yannick@ouranos.ca
-# (C) 2021 Ouranos Inc., Canada
+# (C) 2021-2022 Ouranos Inc., Canada
 # ----------------------------------------------------------------------------------------------------------------------
 
-import dash_utils
-import def_context
-import def_object
-import def_stat
-import def_view
+# External libraries.
 import glob
 import math
+import pandas as pd
 from typing import List, Union, Optional
+
+# Dashboard libraries.
+import dash_utils as du
+import def_object
+import def_stat
+from def_constant import const as c
+from def_context import cntx
 
 
 class Project(def_object.Obj):
@@ -29,8 +33,7 @@ class Project(def_object.Obj):
 
     def __init__(
         self,
-        code: str = "",
-        cntx: def_context.Context = None
+        code: str = ""
     ):
 
         """
@@ -41,71 +44,15 @@ class Project(def_object.Obj):
 
         super(Project, self).__init__(code=code, desc=code)
 
+        cntx.load()
+
         if (cntx is not None) and (cntx.view is not None):
-            self.set_quantiles(code, cntx)
+            self.load_quantiles()
         elif code != "":
             self.quantiles = [-1, -1]
 
-    def set_quantiles(
-        self,
-        code: str,
-        cntx: def_context.Context,
-        quantiles: Optional[Union[None, List[float]]] = None
-    ):
-
-        """
-        ----------------------------------------
-        Get quantiles (low and high).
-
-        Parameters
-        ----------
-        code : str
-            Code.
-        cntx : def_context.Context
-            Context.
-        quantiles: Optional[Union[None, List[float]]]
-            Quantiles
-        ----------------------------------------
-        """
-
-        if quantiles is None:
-
-            if cntx.view.get_code() in [def_view.code_map, def_view.code_tbl]:
-
-                quantiles = []
-
-                # The items are extracted from the 'q' column of data files.
-                # ~/<project_code>/tbl/<vi_code>.csv
-                if cntx.view.get_code() == def_view.code_tbl:
-                    df = dash_utils.load_data(cntx)
-                    df = df[(df["q"] > 0.01) & (df["q"] < 0.99) & (df["q"] != 0.5)]["q"]
-                    quantiles = [min(df), max(df)]
-
-                # The items are extracted from file names.
-                # ~/<project_code>/map/<vi_code>/*/*_q*.csv
-                elif cntx.view.get_code() == def_view.code_map:
-                    p = dash_utils.d_data + "<project_code>/<view_code>/<vi_code>"
-                    p = p.replace("<project_code>", code)
-                    p = p.replace("<view_code>", cntx.view.get_code())
-                    p = p.replace("<vi_code>", cntx.varidx.get_code())
-                    p_l = glob.glob(p + "/*/*_q*.csv")
-                    for p_i in p_l:
-                        tokens = p_i.replace(".csv", "").replace("_delta", "").split("_q")
-                        q = float(tokens[len(tokens) - 1])/100
-                        if q not in quantiles:
-                            quantiles.append(q)
-                    if len(quantiles) > 0:
-                        quantiles.sort()
-
-            # Does not apply to the other views.
-            else:
-                quantiles = [0, 1]
-
-        self.quantiles = quantiles
-        def_stat.code_q_low = "q" + self.get_quantiles_as_str()[0]
-        def_stat.code_q_high = "q" + self.get_quantiles_as_str()[1]
-
-    def get_quantiles(
+    @property
+    def quantiles(
         self
     ):
 
@@ -120,9 +67,78 @@ class Project(def_object.Obj):
         ----------------------------------------
         """
 
-        return self.quantiles
+        return self._quantiles
 
-    def get_quantiles_as_str(
+    @quantiles.setter
+    def quantiles(
+        self,
+        quantiles: Optional[List[float]]
+    ):
+
+        """
+        ----------------------------------------
+        Get quantiles (low and high).
+
+        Parameters
+        ----------
+        quantiles: List[float]
+            Quantiles.
+        """
+
+        self._quantiles = quantiles
+
+    def load_quantiles(
+        self
+    ):
+
+        """
+        ----------------------------------------
+        Get quantiles (low and high).
+        ----------------------------------------
+        """
+
+        # Codes.
+        project_code = cntx.project.code if cntx.project is not None else ""
+        view_code = cntx.view.code if cntx.view is not None else ""
+        vi_code = cntx.varidx.code if cntx.varidx is not None else ""
+
+        if view_code in [c.view_map, c.view_tbl]:
+
+            quantiles = []
+
+            # The items are extracted from the 'q' column of data files.
+            # ~/<project_code>/tbl/<vi_code>.csv
+            if view_code == c.view_tbl:
+                df = pd.DataFrame(du.load_data())
+                df = df[(df["q"] > 0.01) & (df["q"] < 0.99) & (df["q"] != 0.5)]["q"]
+                quantiles = [min(df), max(df)]
+
+            # The items are extracted from file names.
+            # ~/<project_code>/map/<vi_code>/*/*_q*.csv
+            elif view_code == c.view_map:
+                p = cntx.d_data + "<project_code>/<view_code>/<vi_code>"
+                p = p.replace("<project_code>", project_code)
+                p = p.replace("<view_code>", view_code)
+                p = p.replace("<vi_code>", vi_code)
+                p_l = glob.glob(p + "/*/*_q*.csv")
+                for p_i in p_l:
+                    tokens = p_i.replace(".csv", "").replace("_delta", "").split("_q")
+                    q = float(tokens[len(tokens) - 1])/100
+                    if q not in quantiles:
+                        quantiles.append(q)
+                if len(quantiles) > 0:
+                    quantiles.sort()
+
+        # Does not apply to the other views.
+        else:
+            quantiles = [0, 1]
+
+        self._quantiles = quantiles
+        def_stat.code_q_low = "q" + self.quantiles_as_str[0]
+        def_stat.code_q_high = "q" + self.quantiles_as_str[1]
+
+    @property
+    def quantiles_as_str(
         self
     ) -> List[str]:
 
@@ -137,8 +153,8 @@ class Project(def_object.Obj):
         ----------------------------------------
         """
 
-        q_low = str(math.ceil(self.get_quantiles()[0] * 100))
-        q_high = str(math.ceil(self.get_quantiles()[1] * 100))
+        q_low = str(math.ceil(self.quantiles[0] * 100))
+        q_high = str(math.ceil(self.quantiles[1] * 100))
 
         return [q_low, q_high]
 
@@ -153,8 +169,7 @@ class Projects(def_object.Objs):
 
     def __init__(
         self,
-        code: Union[str, List[str]] = "",
-        cntx: def_context.Context = None
+        code: Union[str, List[str]] = ""
     ):
 
         """
@@ -165,10 +180,10 @@ class Projects(def_object.Objs):
 
         super(Projects, self).__init__()
 
-        if cntx is not None:
+        if code == "*":
             self.load()
         elif code != "":
-            self.add(code, cntx)
+            self.add(code)
 
     def load(
         self
@@ -180,15 +195,15 @@ class Projects(def_object.Objs):
         ----------------------------------------
         """
 
-        code_l = dash_utils.list_dir(dash_utils.d_data)
-        code_l.sort()
+        code_l = du.list_dir(cntx.d_data)
+        if isinstance(code_l, List):
+            code_l.sort()
 
         self.add(code_l)
 
     def add(
         self,
-        code: Union[str, List[str]],
-        cntx: Optional[def_context.Context] = None,
+        item: Union[str, List[str], Project],
         inplace: Optional[bool] = True
     ):
 
@@ -198,21 +213,23 @@ class Projects(def_object.Objs):
 
         Parameters
         ----------
-        code : Union[str, List[str]]
-            Code or list of codes.
-        cntx: Optional[def_context.Context]
-            Context.
-        inplace : Optional[bool]
+        item: Union[str, List[str], Project]
+            Item (code, list of codes or instance of Project).
+        inplace: Optional[bool]
             If True, modifies the current instance.
         ----------------------------------------
         """
 
-        code_l = code
-        if isinstance(code, str):
-            code_l = [code]
-
         items = []
-        for i in range(len(code_l)):
-            items.append(Project(code_l[i], cntx))
 
-        return super(Projects, self).add_items(items, inplace)
+        if isinstance(item, Project):
+            items = [item]
+
+        else:
+            code_l = item
+            if isinstance(item, str):
+                code_l = [item]
+            for i in range(len(code_l)):
+                items.append(Project(code_l[i]))
+
+        return super(Projects, self).add(items, inplace)

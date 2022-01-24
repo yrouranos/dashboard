@@ -6,217 +6,121 @@
 #
 # Contributors:
 # 1. rousseau.yannick@ouranos.ca
-# (C) 2021 Ouranos Inc., Canada
+# (C) 2021-2022 Ouranos Inc., Canada
 # ----------------------------------------------------------------------------------------------------------------------
 
-import dash_utils
-import def_context
-import def_object
-import def_view
+# External libraries.
 import glob
 import os
 from typing import List, Union
 
+# Dashboard libraries.
+import def_object
+from def_constant import const as c
+from def_context import cntx
 
-# Data ensembles -------------------------------------------------------------------------------------------------------
 
-ens_cordex               = "cordex"                  # CORDEX.
-ens_era5                 = "era5"                    # ERA5.
-ens_era5_land            = "era5_land"               # ERA5-Land.
-ens_enacts               = "enacts"                  # ENACTS.
-ens_merra2               = "merra2"                  # MERRA2.
+def code_props(
+) -> dict:
 
-# Climate variables (CORDEX) -------------------------------------------------------------------------------------------
+    """
+    --------------------------------------------------------------------------------------------------------------------
+    Get a dictionary of codes and properties.
 
-v_tas                    = "tas"                     # Temperature (daily mean).
-v_tasmin                 = "tasmin"                  # Temperature (daily minimum).
-v_tasmax                 = "tasmax"                  # Temperature (daily maximum).
-v_pr                     = "pr"                      # Precipitation.
-v_uas                    = "uas"                     # Wind speed, eastward.
-v_vas                    = "vas"                     # Wind speed, northward.
-v_sfcwindmax             = "sfcWindmax"              # Wind speed (daily maximum).
-v_ps                     = "ps"                      # Barometric pressure.
-v_rsds                   = "rsds"                    # Solar radiation.
-v_evspsbl                = "evspsbl"                 # Evaporation.
-v_evspsblpot             = "evspsblpot"              # Potential evapotranspiration.
-v_huss                   = "huss"                    # Specific humidity.
-v_clt                    = "clt"                     # Cloud cover.
-variables = [v_tas, v_tasmin, v_tasmax, v_pr, v_uas, v_vas, v_sfcwindmax, v_ps, v_rsds, v_evspsbl, v_evspsblpot, v_huss,
-             v_clt]
+    Returns
+    -------
+    dict
+        Dictionary of codes and properties.
+        Cell 1: Long description
+        Cell 2: Short description (for y-label).
+        Cell 3: Units.
+        Cell 4: Precision (number of decimal places to show).
+    --------------------------------------------------------------------------------------------------------------------
+    """
 
-# Variables (ERA5; ERA5-Land) ------------------------------------------------------------------------------------------
+    return {
 
-v_era5_t2m               = "t2m"                     # Temperature (hourly or daily mean).
-v_era5_t2mmin            = "t2mmin"                  # Temperature (daily minimum).
-v_era5_t2mmax            = "t2mmax"                  # Temperature (daily maximum).
-v_era5_tp                = "tp"                      # Precipitation.
-v_era5_u10               = "u10"                     # Wind speed, eastward (hourly or daily mean).
-v_era5_u10min            = "u10min"                  # Wind speed, eastward (daily minimum).
-v_era5_u10max            = "u10max"                  # Wind speed, eastward (daily maximum).
-v_era5_v10               = "v10"                     # Wind speed, northward (hourly or daily mean).
-v_era5_v10min            = "v10min"                  # Wind speed, northward (daily minimum).
-v_era5_v10max            = "v10max"                  # Wind speed, northward (daily maximum).
-v_era5_uv10              = "uv10"                    # Wind speed (hourly or daily mean).
-v_era5_uv10min           = "uv10min"                 # Wind speed (daily minimum).
-v_era5_uv10max           = "uv10max"                 # Wind speed (daily maximum).
-v_era5_sp                = "sp"                      # Barometric pressure.
-v_era5_ssrd              = "ssrd"                    # Solar radiation.
-v_era5_e                 = "e"                       # Evaporation.
-v_era5_pev               = "pev"                     # Potential evapotranspiration.
-v_era5_d2m               = "d2m"                     # Dew temperature.
-v_era5_sh                = "sh"                      # Specific humidity.
-variables_era5 = [v_era5_t2m, v_era5_t2mmin, v_era5_t2mmax, v_era5_tp, v_era5_u10, v_era5_u10min, v_era5_u10max,
-                  v_era5_v10, v_era5_v10min, v_era5_v10max, v_era5_uv10, v_era5_uv10min, v_era5_uv10max, v_era5_sp,
-                  v_era5_ssrd, v_era5_e, v_era5_pev, v_era5_d2m, v_era5_sh]
+        # Variables (CORDEX):
+        c.v_tas:                    ["Température moyenne",              "Température",           "°C",    1],
+        c.v_tasmin:                 ["Température minimale journalière", "Température",           "°C",    1],
+        c.v_tasmax:                 ["Température maximale journalière", "Température",           "°C",    1],
+        c.v_uas:                    ["Vitesse du vent (dir. est)",       "Vitesse",               "km/h",  0],
+        c.v_vas:                    ["Vitesse du vent (dir. nord)",      "Vitesse",               "km/h",  0],
+        c.v_sfcwindmax:             ["Vitesse du vent",                  "Vitesse",               "km/h",  0],
+        c.v_ps:                     ["Pression barométrique",            "Pression barométrique", "Pa",    0],
+        c.v_rsds:                   ["Radiation solaire",                "Radiation solaire",     "Pa",    0],
+        c.v_pr:                     ["Précipitation",                    "Cumul",                 "mm",    0],
+        c.v_evspsbl:                ["Évapotranspiration",               "Cumul",                 "mm",    0],
+        c.v_evspsblpot:             ["Évapotranspiration potentielle",   "Cumul",                 "mm",    0],
+        c.v_huss:                   ["Humidité spécifique",              "Humidité spécifique",   "",      2],
+        c.v_clt:                    ["Couvert nuageux",                  "Couvert nuageux",       "%",     1],
 
-# Variables (ENACTS) ---------------------------------------------------------------------------------------------------
+        # Variables (ERA5 and ERA5-Land):
+        c.v_era5_d2m:               ["Point de rosée",                   "Point de rosée",        "",      1],
+        c.v_era5_t2m:               ["Température moyenne",              "Température",           "°C",    1],
+        c.v_era5_t2mmin:            ["Température minimale journalière", "Température",           "°C",    1],
+        c.v_era5_t2mmax:            ["Température maximale journalière", "Température",           "°C",    1],
+        c.v_era5_sp:                ["Pression barométrique",            "Pression barométrique", "Pa",    0],
+        c.v_era5_tp:                ["Précipitation",                    "Cumul",                 "mm",    0],
+        c.v_era5_u10:               ["Vitesse du vent (dir. est)",       "Vitesse",               "km/h",  0],
+        c.v_era5_u10min:            ["Vitesse du vent min. (dir. est)",  "Vitesse",               "km/h",  0],
+        c.v_era5_u10max:            ["Vitesse du vent max. (dir. est)",  "Vitesse",               "km/h",  0],
+        c.v_era5_v10:               ["Vitesse du vent (dir. nord)",      "Vitesse",               "km/h",  0],
+        c.v_era5_v10min:            ["Vitesse du vent min. (dir. nord)", "Vitesse",               "km/h",  0],
+        c.v_era5_v10max:            ["Vitesse du vent max. (dir. nord)", "Vitesse",               "km/h",  0],
+        c.v_era5_uv10:              ["Vitesse du vent",                  "Vitesse",               "km/h",  0],
+        c.v_era5_uv10min:           ["Vitesse du vent min.",             "Vitesse",               "km/h",  0],
+        c.v_era5_uv10max:           ["Vitesse du vent max.",             "Vitesse",               "km/h",  0],
+        c.v_era5_ssrd:              ["Radiation solaire",                "Radiation solaire",     "Pa",    0],
+        c.v_era5_e:                 ["Évaporation",                      "Cumul",                 "mm",    0],
+        c.v_era5_pev:               ["Évapotranspiration potentielle",   "Cumul",                 "mm",    0],
+        c.v_era5_sh:                ["Humidité spécifique",              "Humidité spécifique",   "",      2],
 
-v_enacts_tmin            = "tmin"                    # Temperature (daily minimum).
-v_enacts_tmax            = "tmax"                    # Temperature (daily maximum).
-v_enacts_rr              = "rr"                      # Precipitation.
-v_enacts_pet             = "pet"                     # Potential evapotranspiration.
-variables_enacts = [v_enacts_tmin, v_enacts_tmax, v_enacts_rr, v_enacts_pet]
+        # Variables (ENACTS):
+        c.v_enacts_tmin:            ["Température minimale journalière", "Température",           "°C",    1],
+        c.v_enacts_tmax:            ["Température maximale journalière", "Température",           "°C",    1],
+        c.v_enacts_rr:              ["Précipitation",                    "Cumul",                 "mm",    0],
+        c.v_enacts_pet:             ["Évapotranspiration potentielle",   "Cumul",                 "mm",    0],
 
-# Climate indices ------------------------------------------------------------------------------------------------------
-
-# Temperature-related.
-i_etr                    = "etr"                     # Extreme temperature range.
-i_tgg                    = "tgg"                     # Mean of mean temperature.
-i_tng                    = "tng"                     # Mean of minimum temperature
-i_tnx                    = "tnx"                     # Maximum of minimum temperature.
-i_txg                    = "txg"                     # Mean of maximum temperature
-i_txx                    = "txx"                     # Maximum of maximum temperature
-i_tx90p                  = "tx90p"                   # Number of days with extreme maximum temperature (> 90th pct.).
-i_tng_months_below       = "tng_months_below"        # Months per year with a mean minimum temperature < X.
-i_tx_days_above          = "tx_days_above"           # Days per year with maximum temperature > X.
-i_tn_days_below          = "tn_days_below"           # Days per year with a minimum temperature < X.
-i_tropical_nights        = "tropical_nights"         # Tropical nights per year, i.e. with minimum temperature > X.
-i_heat_wave_max_length   = "heat_wave_max_length"    # Maximum heat wave length.
-i_heat_wave_total_length = "heat_wave_total_len"     # Total heat wave length.
-i_hot_spell_frequency    = "hot_spell_frequency"     # Number of hot spells.
-i_hot_spell_max_length   = "hot_spell_max_length"    # Maximum hot spell length
-
-# Precipitation-related.
-i_wsdi                   = "wsdi"                    # Warm spell duration index.
-i_rx1day                 = "rx1day"                  # Largest 1-day precipitation amount.
-i_rx5day                 = "rx5day"                  # Largest 5-day precipitation amount.
-i_cdd                    = "cdd"                     # Maximum number of consecutive dry days.
-i_cwd                    = "cwd"                     # Maximum number of consecutive wet days.
-i_dry_days               = "dry_days"                # Number of dry days.
-i_wet_days               = "wet_days"                # Number of wet days.
-i_prcptot                = "prcptot"                 # Accumulated total precipitation.
-i_r10mm                  = "r10mm"                   # Number of days with precipitation ≥ 10 mm.
-i_r20mm                  = "r20mm"                   # Number of days with precipitation ≥ 20 mm.
-i_rnnmm                  = "rnnmm"                   # Number of days with precipitation ≥ X mm.
-i_sdii                   = "sdii"                    # Mean daily precipitation intensity.
-i_rain_season            = "rain_season"             # Rain season.
-i_rain_season_start      = "rain_season_start"       # Day of year on which rain season starts.
-i_rain_season_end        = "rain_season_end"         # Day of year on which rain season ends.
-i_rain_season_length     = "rain_season_length"      # Duration of the rain season.
-i_rain_season_prcptot    = "rain_season_prcptot"     # Quantity received during rain season.
-i_dry_spell_total_length = "dry_spell_total_length"  # Total length of dry period.
-
-# Temperature-precipitation-related.
-i_drought_code           = "drought_code"            # Drought code.
-
-# Wind-related.
-i_wg_days_above          = "wg_days_above"           # Days per year with mean wind speed > X and direction D.
-i_wx_days_above          = "wx_days_above"           # Days per year with maximum wind speed > X.
-
-# Groups of indices.
-i_groups = {i_rain_season: [i_rain_season_start, i_rain_season_end, i_rain_season_length, i_rain_season_prcptot]}
-
-# List of indices.
-indices = [i_etr, i_tgg, i_tng, i_tnx, i_txg, i_txx, i_tx90p, i_tng_months_below, i_tx_days_above, i_tn_days_below,
-           i_tropical_nights, i_heat_wave_max_length, i_heat_wave_total_length, i_hot_spell_frequency,
-           i_hot_spell_max_length, i_wsdi, i_rx1day, i_rx5day, i_cdd, i_cwd, i_dry_days, i_wet_days, i_prcptot,
-           i_r10mm, i_r20mm, i_rnnmm, i_sdii, i_rain_season, i_rain_season_start, i_rain_season_end,
-           i_rain_season_length, i_rain_season_prcptot, i_dry_spell_total_length, i_drought_code, i_wg_days_above,
-           i_wx_days_above, i_rain_season]
-
-# Properties of variables and indices-----------------------------------------------------------------------------------
-
-# TODO: Could replace X,Y,Z with threshold values with the information in the configuration file.
-
-# Properties of variables and indices.
-# Cell 1: Long description
-# Cell 2: Short description (for y-label).
-# Cell 3: Units.
-# Cell 4: Precision (number of decimal places to show).
-code_props = {
-
-    # Variables (CORDEX):
-    v_tas:                    ["Température moyenne",              "Température",           "°C",    1],
-    v_tasmin:                 ["Température minimale journalière", "Température",           "°C",    1],
-    v_tasmax:                 ["Température maximale journalière", "Température",           "°C",    1],
-    v_uas:                    ["Vitesse du vent (dir. est)",       "Vitesse",               "km/h",  0],
-    v_vas:                    ["Vitesse du vent (dir. nord)",      "Vitesse",               "km/h",  0],
-    v_sfcwindmax:             ["Vitesse du vent",                  "Vitesse",               "km/h",  0],
-    v_ps:                     ["Pression barométrique",            "Pression barométrique", "Pa",    0],
-    v_rsds:                   ["Radiation solaire",                "Radiation solaire",     "Pa",    0],
-    v_pr:                     ["Précipitation",                    "Cumul",                 "mm",    0],
-    v_evspsbl:                ["Évapotranspiration",               "Cumul",                 "mm",    0],
-    v_evspsblpot:             ["Évapotranspiration potentielle",   "Cumul",                 "mm",    0],
-    v_huss:                   ["Humidité spécifique",              "Humidité spécifique",   "",      2],
-    v_clt:                    ["Couvert nuageux",                  "Couvert nuageux",       "%",     1],
-
-    # Variables (ERA5 and ERA5-Land):
-    v_era5_d2m:               ["Point de rosée",                   "Point de rosée",        "",      1],
-    v_era5_t2m:               ["Température moyenne",              "Température",           "°C",    1],
-    v_era5_sp:                ["Pression barométrique",            "Pression barométrique", "Pa",    0],
-    v_era5_tp:                ["Précipitation",                    "Cumul",                 "mm",    0],
-    v_era5_u10:               ["Vitesse du vent (dir. est)",       "Vitesse",               "km/h",  0],
-    v_era5_v10:               ["Vitesse du vent (dir. nord)",      "Vitesse",               "km/h",  0],
-    v_era5_ssrd:              ["Radiation solaire",                "Radiation solaire",     "Pa",    0],
-    v_era5_e:                 ["Évapration",                       "Cumul",                 "mm",    0],
-    v_era5_pev:               ["Évapotranspiration potentielle",   "Cumul",                 "mm",    0],
-    v_era5_sh:                ["Humidité spécifique",              "Humidité spécifique",   "",      2],
-
-    # Variables (ENACTS):
-    v_enacts_tmin:            ["Température minimale journalière", "Température",           "°C",    1],
-    v_enacts_tmax:            ["Température maximale journalière", "Température",           "°C",    1],
-    v_enacts_rr:              ["Précipitation",                    "Cumul",                 "mm",    0],
-    v_enacts_pet:             ["Évapotranspiration potentielle",   "Cumul",                 "mm",    0],
-
-    # Indices:
-    i_etr:                    ["Écart extrême de température",     "Température",           "°C",    1],
-    i_tx90p:                  ["Nombre de jours chauds (Tmax > 90e percentile)", "Nbr. jours", "jours", 0],
-    i_heat_wave_max_length:   ["Durée maximale des vagues de chaleur", "Durée", "jours", 0],
-    i_heat_wave_total_length: ["Durée totale des vagues de chaleur", "Durée", "jours", 0],
-    i_hot_spell_frequency:    ["Nombre de périodes chaudes", "Nbr. périodes", "périodes", 0],
-    i_hot_spell_max_length:   ["Durée maximale des périodes chaudes", "Durée", "jours", 0],
-    i_tgg:                    ["Température moyenne calculée à partir de Tmin et Tmax", "Température", "°C", 1],
-    i_tng:                    ["Nbr mois frais (moyenne mensuelle de Tmin < X°C)", "Nbr. mois", "mois", 1],
-    i_tnx:                    ["Valeur maximale de Tmin", "Température", "°C", 1],
-    i_txg:                    ["Valeur moyenne de Tmax", "Température", "°C", 1],
-    i_tng_months_below:       ["Nombre de mois frais", "Nbr. mois", "", 1],
-    i_tx_days_above:          ["Nombre de jours chauds (Tmax > X°C)", "Nbr. jours", "jours", 0],
-    i_tn_days_below:          ["Nombre de jours frais (Tmin < X°C)", "Nbr. jours", "jours", 0],
-    i_tropical_nights:        ["Nombre de nuits chaudes (Tmin > X°C)", "Nbr. jours", "jours", 0],
-    i_wsdi:                   ["Indice de durée des périodes chaudes (Tmax ≥ X; Y jours consécutifs)",
-                               "Indice", "", 0],
-    i_rx1day:                 ["Cumul de précipitations (1 jour)", "Cumul", "mm", 0],
-    i_rx5day:                 ["Cumul de précipitations (5 jours)", "Cumul", "mm", 0],
-    i_cdd:                    ["Nombre de jours secs consécutifs (P < X mm)", "Nbr. jours", "jours", 0],
-    i_cwd:                    ["Nombre de jours pluvieux consécutifs (P ≥ X mm)", "Nbr. jours", "jours", 0],
-    i_dry_days:               ["Nombre de jours secs (P < X mm)", "Nbr. jours", "jours", 0],
-    i_wet_days:               ["Nombre de jours pluvieux (P ≥ X mm)", "Nbr. jours", "jours", 0],
-    i_prcptot:                ["Cumul de précipitation (entre les jours X et Y)", "Cumul", "mm", 0],
-    i_r10mm:                  ["Nombre de jours avec P ≥ 10 mm", "Nbr. jours", "jours", 0],
-    i_r20mm:                  ["Nombre de jours avec P ≥ 20 mm", "Nbr. jours", "jours", 0],
-    i_rnnmm:                  ["Nombre de jours avec P ≥ X mm", "Nbr. jours", "jours", 0],
-    i_sdii:                   ["Intensité moyenne des précipitations", "Intensité", "mm/day", 0],
-    i_rain_season_start:      ["Début de la saison de pluie", "Jour", "", 0],
-    i_rain_season_end:        ["Fin de la saison de pluie", "Jour", "", 0],
-    i_rain_season_length:     ["Durée de la saison de pluie", "Nbr. Jours", "jours", 0],
-    i_rain_season_prcptot:    ["Cumul de précipitation pendant la saison de pluie", "Cumul", "mm", 0],
-    i_dry_spell_total_length: ["Durée totale des périodes sèches (P < X mm/jour; Y jours consécutifs)",
-                               "Nbr. jours", "jours", 0],
-    i_wg_days_above:          ["Nombre de jours avec vent fort (Vmoy ≥ X km/h)", "Nbr. jours", "jours", 0],
-    i_wx_days_above:          ["Nombre de jours avec vent fort directionel (Vmax ≥ X km/h; direction de Y±Z°)",
-                               "Nbr. jours", "jours", 0],
-    i_drought_code:           ["Code de sécheresse", "Code", "", 0]
-}
+        # Indices:
+        c.i_etr:                    ["Écart extrême de température",     "Température",           "°C",    1],
+        c.i_tx90p:                  ["Nombre de jours chauds (Tmax > 90e percentile)", "Nbr. jours", "jours", 0],
+        c.i_heat_wave_max_length:   ["Durée maximale des vagues de chaleur", "Durée", "jours", 0],
+        c.i_heat_wave_total_length: ["Durée totale des vagues de chaleur", "Durée", "jours", 0],
+        c.i_hot_spell_frequency:    ["Nombre de périodes chaudes", "Nbr. périodes", "périodes", 0],
+        c.i_hot_spell_max_length:   ["Durée maximale des périodes chaudes", "Durée", "jours", 0],
+        c.i_tgg:                    ["Température moyenne (à partir de Tmin et Tmax)", "Température", "°C", 1],
+        c.i_tng:                    ["Nbr mois frais (μ_mois(Tmin) < <A>°C)", "Nbr. mois", "mois", 1],
+        c.i_tnx:                    ["Valeur maximale de Tmin", "Température", "°C", 1],
+        c.i_txg:                    ["Valeur moyenne de Tmax", "Température", "°C", 1],
+        c.i_tng_months_below:       ["Nombre de mois frais", "Nbr. mois", "", 1],
+        c.i_tx_days_above:          ["Nombre de jours chauds (Tmax > <A>°C)", "Nbr. jours", "jours", 0],
+        c.i_tn_days_below:          ["Nombre de jours frais (Tmin < <A>°C)", "Nbr. jours", "jours", 0],
+        c.i_tropical_nights:        ["Nombre de nuits chaudes (Tmin > <A>°C)", "Nbr. jours", "jours", 0],
+        c.i_wsdi:                   ["Indice de durée des périodes chaudes (Tmax ≥ <A>; <B> jours consécutifs)",
+                                     "Indice", "", 0],
+        c.i_rx1day:                 ["Cumul de précipitations (1 jour)", "Cumul", "mm", 0],
+        c.i_rx5day:                 ["Cumul de précipitations (5 jours)", "Cumul", "mm", 0],
+        c.i_cdd:                    ["Nombre de jours secs consécutifs (P < <A> mm)", "Nbr. jours", "jours", 0],
+        c.i_cwd:                    ["Nombre de jours pluvieux consécutifs (P ≥ <A> mm)", "Nbr. jours", "jours", 0],
+        c.i_dry_days:               ["Nombre de jours secs (P < <A> mm)", "Nbr. jours", "jours", 0],
+        c.i_wet_days:               ["Nombre de jours pluvieux (P ≥ <A> mm)", "Nbr. jours", "jours", 0],
+        c.i_prcptot:                ["Cumul de précipitation (entre les jours <A> et <B>)", "Cumul", "mm", 0],
+        c.i_r10mm:                  ["Nombre de jours avec P ≥ 10 mm", "Nbr. jours", "jours", 0],
+        c.i_r20mm:                  ["Nombre de jours avec P ≥ 20 mm", "Nbr. jours", "jours", 0],
+        c.i_rnnmm:                  ["Nombre de jours avec P ≥ <A> mm", "Nbr. jours", "jours", 0],
+        c.i_sdii:                   ["Intensité moyenne des précipitations", "Intensité", "mm/day", 0],
+        c.i_rain_season_start:      ["Début de la saison de pluie", "Jour", "", 0],
+        c.i_rain_season_end:        ["Fin de la saison de pluie", "Jour", "", 0],
+        c.i_rain_season_length:     ["Durée de la saison de pluie", "Nbr. Jours", "jours", 0],
+        c.i_rain_season_prcptot:    ["Cumul de précipitation pendant la saison de pluie", "Cumul", "mm", 0],
+        c.i_dry_spell_total_length: ["Durée totale des périodes sèches (P < <A> mm/jour; <B> jours consécutifs)",
+                                     "Nbr. jours", "jours", 0],
+        c.i_wg_days_above:          ["Nombre de jours avec vent fort (Vmoy ≥ <A> km/h)", "Nbr. jours", "jours", 0],
+        c.i_wx_days_above:          ["Nombre de jours avec vent fort directionel (Vmax ≥ <A> km/h; de <B>±<C>°)",
+                                     "Nbr. jours", "jours", 0],
+        c.i_drought_code:           ["Code de sécheresse", "Code", "", 0]
+    }
 
 
 class VarIdx(def_object.Obj):
@@ -226,7 +130,10 @@ class VarIdx(def_object.Obj):
     Class defining the object VarIdx.
     --------------------------------------------------------------------------------------------------------------------
     """
-    
+
+    # Parameters.
+    _params = []
+
     def __init__(
         self,
         code: str
@@ -238,10 +145,11 @@ class VarIdx(def_object.Obj):
         ----------------------------------------
         """
 
-        desc = "" if code == "" else code_props[code][0]
+        desc = "" if code == "" else dict(code_props())[code][0]
         super(VarIdx, self).__init__(code=code, desc=desc)
-    
-    def get_name(
+
+    @property
+    def name(
         self
     ) -> str:
 
@@ -263,42 +171,43 @@ class VarIdx(def_object.Obj):
                 return self.code[0:pos]
 
         return self.code
-    
-    def get_unit(
-        self
+
+    @property
+    def title(
+        self,
     ) -> str:
-    
+
         """
         ----------------------------------------
-        Get unit.
+        Get title.
 
         Returns
         -------
         str
-            Unit.
+            Title.
         ----------------------------------------
         """
 
-        return code_props[self.get_code()][2]
+        title = dict(code_props())[self.code][0]
 
-    def get_precision(
-        self
-    ) -> int:
+        # Assign first parameter.
+        if self.code in [c.i_tng, c.i_tx_days_above, c.i_tn_days_below, c.i_tropical_nights, c.i_wsdi, c.i_cdd,
+                         c.i_cwd, c.i_dry_days, c.i_wet_days, c.i_prcptot, c.i_rnnmm, c.i_dry_spell_total_length,
+                         c.i_wg_days_above, c.i_wx_days_above]:
+            title.replace("<A>", str(self.params[0]))
 
-        """
-        ----------------------------------------
-        Get precision (number of decimals).
+        # Assign 2nd parameter.
+        if self.code in [c.i_wsdi, c.i_prcptot, c.i_dry_spell_total_length, c.i_wx_days_above]:
+            title.replace("<B>", str(self.params[1]))
 
-        Returns
-        -------
-        int
-            Precision (number of decimals).
-        ----------------------------------------
-        """
+        # Assign 3rd parameter.
+        if self.code in [c.i_wx_days_above]:
+            title.replace("<C>", str(self.params[2]))
 
-        return code_props[self.get_code()][3]
+        return title
 
-    def get_label(
+    @property
+    def label(
         self
     ) -> str:
 
@@ -313,12 +222,48 @@ class VarIdx(def_object.Obj):
         ----------------------------------------
         """
 
-        desc = code_props[self.get_code()][1]
-        unit = str(self.get_unit())
+        desc = dict(code_props())[self.code][1]
+        unit = str(self.unit)
         if (unit not in ["", "1"]) and (unit not in desc):
             unit = " (" + unit + ")"
-        
+
         return desc + unit
+
+    @property
+    def unit(
+        self
+    ) -> str:
+    
+        """
+        ----------------------------------------
+        Get unit.
+
+        Returns
+        -------
+        str
+            Unit.
+        ----------------------------------------
+        """
+
+        return dict(code_props())[self.code][2]
+
+    @property
+    def precision(
+        self
+    ) -> int:
+
+        """
+        ----------------------------------------
+        Get precision (number of decimals).
+
+        Returns
+        -------
+        int
+            Precision (number of decimals).
+        ----------------------------------------
+        """
+
+        return dict(code_props())[self.code][3]
     
     def is_var(
         self
@@ -330,9 +275,10 @@ class VarIdx(def_object.Obj):
         ----------------------------------------
         """
 
-        return self.get_ens() in [ens_cordex, ens_era5, ens_era5_land, ens_merra2, ens_enacts]
+        return self.ens in [c.ens_cordex, c.ens_era5, c.ens_era5_land, c.ens_merra2, c.ens_enacts]
 
-    def get_ens(
+    @property
+    def ens(
         self
     ) -> str:
 
@@ -350,22 +296,66 @@ class VarIdx(def_object.Obj):
         ens = ""
 
         # CORDEX.
-        if self.get_name() in variables:
-            ens = ens_cordex
+        if self.name in c.variables:
+            ens = c.ens_cordex
 
         # ERA5 and ERA5-Land.
-        elif self.get_name() in variables_era5:
-            ens = ens_era5
+        elif self.name in c.variables_era5:
+            ens = c.ens_era5
 
         # ENACTS.
-        elif self.get_name() in variables_enacts:
-            ens = ens_enacts
+        elif self.name in c.variables_enacts:
+            ens = c.ens_enacts
 
         return ens
 
+    @property
+    def params(
+        self
+    ) -> List[any]:
+
+        """
+        ----------------------------------------
+        Get parameters.
+
+        Returns
+        -------
+        List[any]
+            Parameters.
+        ----------------------------------------
+        """
+
+        # By default, use the available parameters.
+        params = self._params
+
+        # If no parameters are set, use those in the configuration file.
+        if len(params) == 0:
+            params = cntx.idx_params_from_code(self.code)
+
+        return params
+
+    @params.setter
+    def params(
+        self,
+        params: List[any]
+    ):
+
+        """
+        ----------------------------------------
+        Set parameters.
+
+        Parameters
+        ----------
+        params: List[any]
+            Parameters.
+        ----------------------------------------
+        """
+
+        self._params = params
+
     def convert_name(
         self,
-        ens_code: str
+        ens: str
     ) -> Union[any, str]:
 
         """
@@ -375,39 +365,99 @@ class VarIdx(def_object.Obj):
 
         Parameters
         ----------
-        ens_code : str
-            Data ensemble code.
+        ens: str
+            Ensemble.
         ----------------------------------------
         """
 
         # Equivalences.
-        equi = [[v_tas,        v_era5_t2m,     ""],
-                [v_tasmin,     v_era5_t2mmin,  v_enacts_tmin],
-                [v_tasmax,     v_era5_t2mmax,  v_enacts_tmax],
-                [v_pr,         v_era5_tp,      v_enacts_rr],
-                [v_uas,        v_era5_u10,     ""],
-                [v_vas,        v_era5_v10,     ""],
-                [v_sfcwindmax, v_era5_uv10max, ""],
-                [v_ps,         v_era5_sp,      ""],
-                [v_rsds,       v_era5_ssrd,    ""],
-                [v_evspsbl,    v_era5_e,       ""],
-                [v_evspsblpot, v_era5_pev,     v_enacts_pet],
-                [v_huss,       v_era5_sh,      ""]]
+        equi = [[c.v_tas,        c.v_era5_t2m,     ""],
+                [c.v_tasmin,     c.v_era5_t2mmin,  c.v_enacts_tmin],
+                [c.v_tasmax,     c.v_era5_t2mmax,  c.v_enacts_tmax],
+                [c.v_pr,         c.v_era5_tp,      c.v_enacts_rr],
+                [c.v_uas,        c.v_era5_u10,     ""],
+                [c.v_vas,        c.v_era5_v10,     ""],
+                [c.v_sfcwindmax, c.v_era5_uv10max, ""],
+                [c.v_ps,         c.v_era5_sp,      ""],
+                [c.v_rsds,       c.v_era5_ssrd,    ""],
+                [c.v_evspsbl,    c.v_era5_e,       ""],
+                [c.v_evspsblpot, c.v_era5_pev,     c.v_enacts_pet],
+                [c.v_huss,       c.v_era5_sh,      ""]]
 
         # Loop through equivalences.
         for i in range(len(equi)):
 
             # Verify if there is a match.
-            if self.get_name() in equi[i]:
-                if self.get_ens() == ens_cordex:
-                    if ens_code in [ens_era5, ens_era5_land]:
+            if self.name in equi[i]:
+                if self.ens == c.ens_cordex:
+                    if ens in [c.ens_era5, c.ens_era5_land]:
                         return equi[i][1]
-                    elif ens_code == ens_enacts:
+                    elif ens == c.ens_enacts:
                         return equi[i][2]
                 else:
                     return equi[i][0]
 
         return None
+
+    def equi_path(
+        self,
+        p: str,
+        vi_code_b: str,
+        stn: str,
+        rcp: str
+    ) -> str:
+
+        """
+        ----------------------------------------
+        Determine the equivalent path for another variable or index.
+
+        Parameters
+        ----------
+        p: str
+            Path associated with the current instance.
+        vi_code_b: str
+            Name of climate variable or index to replace with.
+        stn: str
+            Station name.
+        rcp: str
+            Emission scenario.
+        ----------------------------------------
+        """
+
+        # Determine if we have variables or indices.
+        vi_code_a = self.code
+        varidx_b = VarIdx(vi_code_b)
+        a_is_var = self.name in cntx.vars.code_l
+        b_is_var = varidx_b.name in cntx.vars.code_l
+        fn = os.path.basename(p)
+
+        # No conversion required.
+        if vi_code_a != vi_code_b:
+
+            # Variable->Variable or Index->Index.
+            if (a_is_var and b_is_var) or (not a_is_var and not b_is_var):
+                p = p.replace(self.name, varidx_b.name)
+
+            # Variable -> Index (or the opposite)
+            else:
+
+                # Variable -> Index.
+                if a_is_var and not b_is_var:
+                    p = cntx.d_idx(stn, vi_code_b)
+
+                # Index -> Variable.
+                else:
+                    if rcp == c.ref:
+                        p = cntx.d_stn(vi_code_b)
+                    else:
+                        p = cntx.d_scen(stn, c.cat_qqmap, vi_code_b)
+                # Both.
+                if rcp == c.ref:
+                    p += varidx_b.name + "_" + c.ref + c.f_ext_nc
+                else:
+                    p += fn.replace(self.name + "_", varidx_b.name + "_")
+
+        return p
 
 
 class VarIdxs(def_object.Objs):
@@ -432,34 +482,31 @@ class VarIdxs(def_object.Objs):
         super().__init__()
 
         if len(args) > 0:
-            if isinstance(args[0], def_context.Context):
-                self.load(args[0])
+            if args[0] == "*":
+                self.load()
             else:
                 self.add(args[0])
 
     def load(
-        self,
-        cntx: def_context.Context
+        self
     ):
 
         """
         ----------------------------------------
         Load items.
-
-        Parameters
-        ----------
-        cntx: def_context.Context
-            Context.
         ----------------------------------------
         """
         
         code_l = []
 
+        # Codes.
+        view_code = cntx.view.code if cntx.view is not None else ""
+
         # The items are extracted from directory names.
         # ~/<project_code>/<view_code>/*
-        if cntx.view.get_code() in [def_view.code_tbl]:
-            p = str(dash_utils.get_d_data(cntx)) + "<view_code>/*.csv"
-            p = p.replace("<view_code>/", cntx.view.get_code().split("-")[0] + "*/")
+        if view_code in [c.view_tbl]:
+            p = cntx.d_project + "<view_code>/*.csv"
+            p = p.replace("<view_code>/", view_code.split("-")[0] + "*/")
             for p_i in list(glob.glob(p)):
                 code = os.path.basename(p_i).replace(".csv", "")
                 if code not in code_l:
@@ -467,9 +514,9 @@ class VarIdxs(def_object.Objs):
 
         # The items are extracted from directory names.
         # ~/<project_code>/<view_code>/<varidx_code>/*
-        elif cntx.view.get_code() in [def_view.code_ts, def_view.code_map, def_view.code_cycle, def_view.code_ts_bias]:
-            p = str(dash_utils.get_d_data(cntx)) + "<view_code>*/*"
-            p = p.replace("<view_code>", cntx.view.get_code())
+        elif view_code in [c.view_ts, c.view_map, c.view_cycle, c.view_ts_bias]:
+            p = cntx.d_project + "<view_code>*/*"
+            p = p.replace("<view_code>", view_code)
             for p_i in list(glob.glob(p)):
                 code = os.path.basename(p_i)
                 if (code not in code_l) and (os.path.isdir(p_i)):
@@ -480,7 +527,7 @@ class VarIdxs(def_object.Objs):
 
     def add(
         self,
-        code: Union[str, List[str]],
+        item: Union[str, List[str], VarIdx],
         inplace: bool = True
     ):
 
@@ -490,24 +537,29 @@ class VarIdxs(def_object.Objs):
 
         Parameters
         ----------
-        code : Union[str, List[str]]
-            Code or list of codes.
+        item : Union[str, List[str], VarIdx]
+            Item (code, list of codes or instance of VarIdx).
         inplace : bool
             If True, modifies the current instance.
         ----------------------------------------
         """
 
-        code_l = code
-        if isinstance(code, str):
-            code_l = [code]
-
         items = []
-        for i in range(len(code_l)):
-            items.append(VarIdx(code_l[i]))
 
-        return super(VarIdxs, self).add_items(items, inplace)
+        if isinstance(item, VarIdx):
+            items = [item]
 
-    def get_desc_l(
+        else:
+            code_l = item
+            if isinstance(item, str):
+                code_l = [item]
+            for i in range(len(code_l)):
+                items.append(VarIdx(code_l[i]))
+
+        return super(VarIdxs, self).add(items, inplace)
+
+    @property
+    def desc_l(
         self
     ) -> List[str]:
 
@@ -522,13 +574,13 @@ class VarIdxs(def_object.Objs):
         ----------------------------------------
         """
 
-        desc_l = super(VarIdxs, self).get_desc_l()
+        desc_l = super(VarIdxs, self).desc_l
         desc_l.sort()
 
         return desc_l
 
 
-def get_group(
+def group(
     idx_item: str = ""
 ):
 
@@ -543,15 +595,15 @@ def get_group(
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    group = idx_item
+    grp = idx_item
 
-    for key in list(i_groups.keys()):
+    for key in list(c.i_groups.keys()):
 
-        if idx_item in i_groups[key][1]:
-            group = i_groups[key][0] + idx_item.replace(idx_item, "")
+        if idx_item in c.i_groups[key][1]:
+            grp = c.i_groups[key][0] + idx_item.replace(idx_item, "")
             break
 
-    return group
+    return grp
 
 
 def explode_idx_l(
@@ -566,7 +618,7 @@ def explode_idx_l(
 
     Parameters
     ----------
-    idx_group_l : [str]
+    idx_group_l: [str]
         List of climate index groups.
     --------------------------------------------------------------------------------------------------------------------
     """
@@ -579,18 +631,18 @@ def explode_idx_l(
 
         # Loop through index groups.
         in_group = False
-        for key in i_groups:
+        for key in c.i_groups:
 
             # Explode and add to list.
-            if i_groups[key][0] in idx_code:
+            if c.i_groups[key][0] in idx_code:
                 in_group = True
 
                 # Extract instance number of index (ex: "_1").
                 no = idx_code.replace(idx_code, "")
 
                 # Loop through embedded indices.
-                for k in range(len(i_groups[key][1])):
-                    idx_l_new.append(i_groups[key][1][k] + no)
+                for k in range(len(c.i_groups[key][1])):
+                    idx_l_new.append(c.i_groups[key][1][k] + no)
 
         if not in_group:
             idx_l_new.append(idx_code)

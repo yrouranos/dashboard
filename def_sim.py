@@ -6,18 +6,39 @@
 #
 # Contributors:
 # 1. rousseau.yannick@ouranos.ca
-# (C) 2021 Ouranos Inc., Canada
+# (C) 2021-2022 Ouranos Inc., Canada
 # ----------------------------------------------------------------------------------------------------------------------
 
-import dash_utils
-import def_context
-import def_object
-import def_rcp
-import def_view
+# External libraries.
 import glob
 import os
 import pandas as pd
 from typing import List, Union
+
+# Dashboard libraries.
+import def_object
+import def_rcp
+from def_constant import const as c
+from def_context import cntx
+
+
+def code_desc(
+) -> dict:
+
+    """
+    --------------------------------------------------------------------------------------------------------------------
+    Get a dictionary of codes and properties.
+
+    Returns
+    -------
+    dict
+        Dictionary of codes and properties.
+    --------------------------------------------------------------------------------------------------------------------
+    """
+
+    return {
+        c.simxx: "Toutes"
+    }
 
 
 class Sim(def_object.Obj):
@@ -39,9 +60,11 @@ class Sim(def_object.Obj):
         ----------------------------------------
         """
 
-        super(Sim, self).__init__(code=code, desc="")
+        desc = dict(code_desc())[code] if code == c.simxx else code
+        super(Sim, self).__init__(code=code, desc=desc)
 
-    def get_rcm(
+    @property
+    def rcm(
         self
     ) -> str:
 
@@ -64,7 +87,8 @@ class Sim(def_object.Obj):
 
         return rcm
 
-    def get_domain(
+    @property
+    def domain(
         self
     ) -> str:
 
@@ -87,7 +111,8 @@ class Sim(def_object.Obj):
 
         return domain
 
-    def get_gcm(
+    @property
+    def gcm(
         self
     ) -> str:
 
@@ -110,7 +135,8 @@ class Sim(def_object.Obj):
 
         return gcm
 
-    def get_rcp(
+    @property
+    def rcp(
         self
     ) -> Union[def_rcp.RCP, None]:
 
@@ -127,8 +153,8 @@ class Sim(def_object.Obj):
 
         rcp = None
 
-        if self.code == def_rcp.rcp_ref:
-            rcp = def_rcp.RCP(def_rcp.rcp_ref)
+        if self.code == c.ref:
+            rcp = def_rcp.RCP(c.ref)
         else:
             tokens = self.code.split("_")
             if len(tokens) >= 4:
@@ -136,7 +162,8 @@ class Sim(def_object.Obj):
 
         return rcp
 
-    def get_desc(
+    @property
+    def desc(
         self
     ) -> str:
 
@@ -153,12 +180,12 @@ class Sim(def_object.Obj):
 
         desc = self.code
 
-        if self.code == def_rcp.rcp_ref:
-            desc = self.get_rcp().get_desc()
+        if self.code == c.ref:
+            desc = self.rcp.desc
         else:
             tokens = self.code.split("_")
             if len(tokens) >= 4:
-                desc = self.get_rcm() + "_" + self.get_gcm() + " (" + self.get_rcp().get_desc() + ")"
+                desc = self.rcm + "_" + self.gcm + " (" + self.rcp.desc + ")"
 
         return desc
 
@@ -185,63 +212,63 @@ class Sims(def_object.Objs):
         super(Sims, self).__init__()
 
         if len(args) == 1:
-            if isinstance(args[0], str) or isinstance(args[0], list):
-                self.add(args[0])
+            if args[0] == "*":
+                self.load()
             else:
-                self.load(args[0])
+                self.add(args[0])
 
     def load(
-        self,
-        cntx: def_context.Context
+        self
     ):
 
         """
         ----------------------------------------
         Load items.
-
-        Parameters
-        ----------
-        cntx : def_context.Context
-            Context.
         ----------------------------------------
         """
 
         code_l = []
-        rcp_ref_found = False
+
+        # Codes.
+        view_code  = cntx.view.code if cntx.view is not None else ""
+        vi_code    = cntx.varidx.code if cntx.varidx is not None else ""
+        hor_code   = cntx.hor.code if cntx.hor is not None else ""
+        rcp_code   = cntx.rcp.code if cntx.rcp is not None else ""
+        delta_code = cntx.delta.code if cntx.delta is not None else False
 
         # The items are extracted from file names.
         # ~/<project_code>/<view_code>*/<vi_code>/<hor_code>/*.csv
-        if cntx.view.get_code() == def_view.code_cycle:
-            p = str(dash_utils.get_d_data(cntx)) + "<view_code>*/<vi_code>/<hor_code>/*<rcp_code>*.csv"
-            p = p.replace("<view_code>", cntx.view.get_code())
-            p = p.replace("<vi_code>", cntx.varidx.get_code())
-            p = p.replace("<hor_code>", cntx.hor.get_code())
-            p = p.replace("<rcp_code>", cntx.rcp.get_code())
+        if view_code == c.view_cycle:
+            p = cntx.d_project + "<view_code>*/<vi_code>/<hor_code>/*<rcp_code>*.csv"
+            p = p.replace("<view_code>", view_code)
+            p = p.replace("<vi_code>", vi_code)
+            p = p.replace("<hor_code>", hor_code)
+            p = p.replace("<rcp_code>", rcp_code)
 
             # The code of each simulation is set to <RCM>_<domain>_<GCM>_<RCP>.
+            ref_found = False
             for p in list(glob.glob(p)):
-                if def_rcp.rcp_ref in p:
-                    rcp_ref_found = True
+                if c.ref in p:
+                    ref_found = True
                 else:
                     tokens = os.path.basename(p).split("_")
-                    code = tokens[1] + "_" + tokens[2]+ "_" + tokens[3] + "_" + tokens[4]
+                    code = tokens[1] + "_" + tokens[2] + "_" + tokens[3] + "_" + tokens[4]
                     if code not in code_l:
                         code_l.append(code)
-            if rcp_ref_found:
-                code_l = [def_rcp.rcp_ref] + code_l
+            if ref_found:
+                code_l = [c.ref] + code_l
 
         # The items are extracted from columns.
         # ~/<project_code>/<view_code>/<vi_code>/<vi_code>_sim_*.csv
-        elif cntx.view.get_code() in [def_view.code_ts, def_view.code_ts_bias]:
-            p = str(dash_utils.get_d_data(cntx)) + "<view_code>/<vi_code>/<vi_code>_sim_<delta>.csv"
-            p = p.replace("<view_code>", cntx.view.get_code())
-            p = p.replace("<vi_code>", cntx.varidx.get_code())
-            p = p.replace("_<delta>", "_delta" if cntx.delta.get_code() else "")
+        elif view_code in [c.view_ts, c.view_ts_bias]:
+            p = cntx.d_project + "<view_code>/<vi_code>/<vi_code>_sim_<delta>.csv"
+            p = p.replace("<view_code>", view_code)
+            p = p.replace("<vi_code>", vi_code)
+            p = p.replace("_<delta>", "_delta" if delta_code == "True" else "")
             df = pd.read_csv(p)
-            df.drop(["year", def_rcp.rcp_ref], axis=1, inplace=True)
+            df.drop(["year", c.ref], axis=1, inplace=True)
             for column in list(df.columns):
-                rcp_code = cntx.rcp.get_code()
-                if (rcp_code == "") or ((rcp_code != "") and (rcp_code in column)):
+                if (rcp_code in ["", c.rcpxx]) or ((rcp_code not in ["", c.rcpxx]) and (rcp_code in column)):
                     code_l.append(column)
 
         # Sort list and put reference first.
@@ -251,7 +278,7 @@ class Sims(def_object.Objs):
 
     def add(
         self,
-        code: Union[str, List[str]],
+        item: Union[str, List[str], Sim],
         inplace: bool = True
     ):
 
@@ -261,51 +288,29 @@ class Sims(def_object.Objs):
 
         Parameters
         ----------
-        code : Union[str, List[str]]
-            Code or list of codes.
-        inplace : bool
+        item: Union[str, List[str], Sim]
+            Item (code, list of codes or instance of Sim).
+        inplace: bool
             If True, modifies the current instance.
         ----------------------------------------
         """
 
-        code_l = code
-        if isinstance(code, str):
-            code_l = [code]
-
         items = []
-        for i in range(len(code_l)):
-            items.append(Sim(code_l[i]))
 
-        return super(Sims, self).add_items(items, inplace)
+        if isinstance(item, Sim):
+            items = [item]
 
-    def get_code(
-        self,
-        desc: str
-    ) -> str:
+        else:
+            code_l = item
+            if isinstance(item, str):
+                code_l = [item]
+            for i in range(len(code_l)):
+                items.append(Sim(code_l[i]))
 
-        """
-        ----------------------------------------
-        Get code.
+        return super(Sims, self).add(items, inplace)
 
-        Paramters
-        ---------
-        desc : str
-            Description.
-
-        Returns
-        -------
-        str
-            Code.
-        ----------------------------------------
-        """
-
-        for item in self.items:
-            if item.get_desc() == desc:
-                return item.code
-
-        return ""
-
-    def get_desc_l(
+    @property
+    def desc_l(
         self
     ) -> List[str]:
 
@@ -323,6 +328,6 @@ class Sims(def_object.Objs):
         desc_l = []
 
         for item in self.items:
-            desc_l.append(item.get_desc())
+            desc_l.append(item.desc)
 
         return desc_l

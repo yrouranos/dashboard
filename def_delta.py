@@ -6,21 +6,20 @@
 #
 # Contributors:
 # 1. rousseau.yannick@ouranos.ca
-# (C) 2021 Ouranos Inc., Canada
+# (C) 2021-2022 Ouranos Inc., Canada
 # ----------------------------------------------------------------------------------------------------------------------
 
-import dash_utils
-import def_context
-import def_object
-import def_view
+# External libraries.
 import glob
 from typing import Union, List
 
-code_true = True
-code_false = False
+# Dashboard libraries.
+import def_object
+from def_constant import const as c
+from def_context import cntx
 
 
-class Del(def_object.Obj):
+class Delta(def_object.Obj):
 
     """
     --------------------------------------------------------------------------------------------------------------------
@@ -30,7 +29,7 @@ class Del(def_object.Obj):
 
     def __init__(
         self,
-        code: bool
+        code: str
     ):
 
         """
@@ -39,10 +38,10 @@ class Del(def_object.Obj):
         ----------------------------------------
         """
 
-        super(Del, self).__init__(code=code, desc=str(code))
+        super(Delta, self).__init__(code=code, desc=str(code))
 
 
-class Dels(def_object.Objs):
+class Deltas(def_object.Objs):
 
     """
     --------------------------------------------------------------------------------------------------------------------
@@ -61,56 +60,56 @@ class Dels(def_object.Objs):
         ----------------------------------------
         """
 
-        super(Dels, self).__init__()
+        super(Deltas, self).__init__()
 
         if len(args) == 1:
-            self.load(args[0])
+            if args[0] == "*":
+                self.load()
+            else:
+                self.add(args[0])
 
     def load(
         self,
-        cntx: def_context.Context
     ):
 
         """
         ----------------------------------------
         Load items.
-
-        Parameters
-        ----------
-        cntx : def_context.Context
-            Context.
         ----------------------------------------
         """
 
-        code_l = [code_false, code_false]
+        code_l = ["False", "False"]
+
+        # Codes.
+        view_code = cntx.view.code if cntx.view is not None else ""
 
         # The items are extracted from file names ('ts' or 'ts_bias' view).
         # ~/<project_code>/<view_code>/<vi_code>/*delta.csv
-        if cntx.view.get_code() in [def_view.code_ts, def_view.code_ts_bias]:
+        if view_code in [c.view_ts, c.view_ts_bias]:
 
-            p = str(dash_utils.get_d_data(cntx)) + "<view_code>/*/*delta.csv"
-            p = p.replace("<view_code>", cntx.view.get_code())
+            p = cntx.d_project + "<view_code>/*/*delta.csv"
+            p = p.replace("<view_code>", view_code)
             p_l = list(glob.glob(p))
             if len(p_l) > 0:
-                code_l = [code_false, code_true]
+                code_l = ["False", "True"]
 
         # The items are always available ('tbl' view).
-        elif cntx.view.get_code() == def_view.code_tbl:
-            code_l = [code_false, code_true]
+        elif view_code == c.view_tbl:
+            code_l = ["False", "True"]
 
         # The items are extracted from file names ('map' view).
-        elif cntx.view.get_code() == def_view.code_map:
-            p = str(dash_utils.get_d_data(cntx)) + "<view_code>/*/*/*delta.csv"
-            p = p.replace("<view_code>", cntx.view.get_code())
+        elif view_code == c.view_map:
+            p = cntx.d_project + "<view_code>/*/*/*delta.csv"
+            p = p.replace("<view_code>", view_code)
             p_l = list(glob.glob(p))
             if len(p_l) > 0:
-                code_l = [code_false, code_true]
+                code_l = ["False", "True"]
 
         self.add(code_l)
 
     def add(
         self,
-        code: Union[bool, List[bool]],
+        item: Union[str, List[str], Delta],
         inplace: bool = True
     ):
 
@@ -120,20 +119,23 @@ class Dels(def_object.Objs):
 
         Parameters
         ----------
-        code : Union[bool, List[bool]]
-            Code or list of codes.
-        inplace : bool
+        item: Union[bool, List[bool], Delta]
+            Item (code, list of codes or instance of Delta).
+        inplace: bool
             If True, modifies the current instance.
         ----------------------------------------
         """
 
-        code_l = code
-        if isinstance(code, bool):
-            code_l = [code]
-
         items = []
-        for i in range(len(code_l)):
-            items.append(Del(code_l[i]))
 
-        return super(Dels, self).add_items(items, inplace)
+        if isinstance(item, Delta):
+            items = [item]
 
+        else:
+            code_l = item
+            if isinstance(item, str):
+                code_l = [item]
+            for i in range(len(code_l)):
+                items.append(Delta(code_l[i]))
+
+        return super(Deltas, self).add(items, inplace)

@@ -9,19 +9,13 @@
 #
 # Contributors:
 # 1. rousseau.yannick@ouranos.ca
-# (C) 2021 Ouranos Inc., Canada
+# (C) 2021-2022 Ouranos Inc., Canada
 # ----------------------------------------------------------------------------------------------------------------------
 
+# External libraries.
 import altair as alt
-import dash_utils
-import def_context
-import def_lib
-import def_rcp
-import def_sim
-import def_stat
-import def_varidx as vi
-import def_view
 import holoviews as hv
+# Do not delete the following import statement (hvplot.pandas), even if it seems unused.
 import hvplot.pandas
 import math
 import matplotlib.colors as colors
@@ -40,6 +34,14 @@ from matplotlib.lines import Line2D
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from typing import Union, List, Optional
 
+# Dashboard libraries.
+import dash_utils as du
+import def_rcp
+import def_sim
+import def_stat
+from def_constant import const as c
+from def_context import cntx
+
 alt.renderers.enable("default")
 pn.extension("vega")
 hv.extension("bokeh", logo=False)
@@ -50,7 +52,6 @@ mode_sim = "sim"
 
 
 def gen_ts(
-    cntx: def_context.Context,
     df: pd.DataFrame,
     mode: Optional[str] = mode_rcp
 ) -> Union[alt.Chart, any, plt.figure]:
@@ -61,11 +62,9 @@ def gen_ts(
     
     Parameters
     ----------
-    cntx : def_context.Context
-        Context.
-    df : pd.DataFrame
+    df: pd.DataFrame
         Dataframe.
-    mode : Optional[str]
+    mode: Optional[str]
         If mode == mode_rcp: show curves and envelopes.
         If mode == mode_sim: show curves only.
 
@@ -102,11 +101,11 @@ def gen_ts(
 
     # Plot components.
     x_label = "Année"
-    y_label = ("Δ" if cntx.delta.get_code() else "") + cntx.varidx.get_label()
+    y_label = ("Δ" if cntx.delta.code == "True" else "") + cntx.varidx.label
 
     # Assign zero to all years (not only to the refrence period).
-    if cntx.delta.get_code():
-        df[def_rcp.rcp_ref] = 0
+    if cntx.delta.code == "True":
+        df[c.ref] = 0
 
     # If there is a single row, add a second line to allow time series to work.
     if len(df) == 1:
@@ -120,30 +119,51 @@ def gen_ts(
     if mode == mode_sim:
 
         # RCP specified.
-        rcp_code = cntx.rcp.get_code()
-        if rcp_code != "":
+        rcp_code = cntx.rcp.code
+        if rcp_code not in ["", c.rcpxx]:
             df_subset = df[["year", "ref"]]
             for column in df.columns:
                 if rcp_code in column:
                     df_subset[column] = df[column]
 
         # Simulation specified.
-        if cntx.sim.get_code() != "":
-            df_subset = df[["year", "ref", cntx.sim.get_code()]]
+        if cntx.sim.code not in ["", c.simxx]:
+            df_subset = df[["year", "ref", cntx.sim.code]]
+
+    # Combine RCPs.
+    if (cntx.view.code == c.view_ts_bias) and (cntx.rcp.code in ["", c.rcpxx]) and (mode == mode_rcp):
+
+        for stat in ["moy", c.stat_min, c.stat_max]:
+
+            # Identify the columns associated with the current statistic.
+            columns = []
+            for column in df_subset.columns:
+                if stat in column:
+                    columns.append(column)
+
+            # Calculate overall values.
+            if stat == "moy":
+                df_subset[c.rcpxx + "_" + stat] = df_subset[columns].mean(axis=1)
+            elif stat == c.stat_min:
+                df_subset[c.rcpxx + "_" + stat] = df_subset[columns].min(axis=1)
+            elif stat == c.stat_max:
+                df_subset[c.rcpxx + "_" + stat] = df_subset[columns].max(axis=1)
+
+            # Delete columns.
+            df_subset.drop(columns, axis=1, inplace=True)
 
     # Generate plot.
-    if cntx.lib.get_code() == def_lib.mode_mat:
-        ts = gen_ts_mat(cntx, df_subset, x_label, y_label, [x_min, x_max], [y_min, y_max], mode)
-    elif cntx.lib.get_code() == def_lib.mode_hv:
-        ts = gen_ts_hv(cntx, df_subset, x_label, y_label, [y_min, y_max], mode)
+    if cntx.lib.code == c.lib_mat:
+        ts = gen_ts_mat(df_subset, x_label, y_label, [x_min, x_max], [y_min, y_max], mode)
+    elif cntx.lib.code == c.lib_hv:
+        ts = gen_ts_hv(df_subset, x_label, y_label, [y_min, y_max], mode)
     else:
-        ts = gen_ts_alt(cntx, df_subset, x_label, y_label, [y_min, y_max], mode)
+        ts = gen_ts_alt(df_subset, x_label, y_label, [y_min, y_max], mode)
         
     return ts
 
 
 def gen_ts_alt(
-    cntx: def_context.Context,
     df: pd.DataFrame,
     x_label: str,
     y_label: str,
@@ -157,18 +177,16 @@ def gen_ts_alt(
     
     Parameters
     ----------
-    cntx : def_context.Context
-        Context.
-    df : pd.DataFrame
+    df: pd.DataFrame
         Dataframe.
-    x_label : str
+    x_label: str
         X-label.
-    y_label : str
+    y_label: str
         Y-label.
-    y_range : List[str]
+    y_range: List[str]
         Range of y_values to display [{y_min}, {y_max}].
         Dataframe.
-    mode : str
+    mode: str
         If mode == mode_rcp: show curves and envelopes.
         If mode == mode_sim: show curves only.
 
@@ -180,57 +198,67 @@ def gen_ts_alt(
     """
 
     # Move reference RCP at the end of the list.
-    rcps = cntx.rcps.copy()
-    rcps.remove_items(def_rcp.rcp_ref, inplace=True)
-    rcps.add_items(def_rcp.RCP(def_rcp.rcp_ref), inplace=True)
+    if (cntx.view.code == c.view_ts) or (cntx.rcp.code not in ["", c.rcpxx]):
+        rcps = cntx.rcps.copy()
+        rcps.remove(c.ref, inplace=True)
+    else:
+        rcps = def_rcp.RCPs([c.rcpxx])
+    rcps.add(def_rcp.RCP(c.ref), inplace=True)
 
     # Plot components.
     x_axis = alt.Axis(title=x_label, format="d")
     y_axis = alt.Axis(title=y_label, format="d")
     y_scale = alt.Scale(domain=y_range)
+    color_l = rcps.color_l
     col_legend = alt.Legend(title="", orient="top-left", direction="horizontal", symbolType="stroke")
-    col_scale = alt.Scale(range=cntx.rcps.get_color_l(), domain=cntx.rcps.get_desc_l())
-    
+    if cntx.view.code == c.view_ts_bias:
+        for i in range(len(color_l)):
+            if color_l[i] != def_rcp.RCP(c.ref).color:
+                color_l[i] = "darkgrey"
+    col_scale = alt.Scale(range=color_l, domain=rcps.desc_l)
+
     # Add layers.
     plot = None
     for item in ["area", "curve"]:
 
         for rcp in rcps.items:
-            rcp_code = rcp.get_code()
-            rcp_desc = rcp.get_desc()
 
-            if ((item == "area") and (rcp.is_ref() or (mode == mode_sim))) or \
-               ((cntx.rcp.get_code() != "") and (rcp_code not in [cntx.rcp.get_code(), def_rcp.rcp_ref])):
+            cond_ts      = (cntx.view.code == c.view_ts) and (cntx.rcp.code not in ["", c.rcpxx])
+            cond_ts_bias = (cntx.view.code == c.view_ts_bias) and (cntx.rcp.code != "")
+            if ((item == "area") and (rcp.is_ref or (mode == mode_sim))) or \
+               ((cond_ts or cond_ts_bias) and (rcp.code not in [cntx.rcp.code, c.ref])):
                 continue
+
+            rcp_desc = rcp.desc.replace(dict(def_rcp.code_props())[c.rcpxx][0], "Simulation(s)")
 
             # Subset columns.
             df_rcp = pd.DataFrame()
             df_rcp["Année"] = df["year"]
-            df_rcp["Scénario"] = [rcp.get_desc()] * len(df)
-            if rcp.is_ref():
-                df_rcp["Moy"] = df[def_rcp.rcp_ref]
+            df_rcp["Scénario"] = [rcp.desc] * len(df)
+            if rcp.is_ref:
+                df_rcp["Moy"] = df[c.ref]
             else:
                 if mode == mode_rcp:
-                    df_rcp["Min"] = df[str(rcp_code + "_min")]
-                    df_rcp["Moy"] = df[str(rcp_code + "_moy")]
-                    df_rcp["Max"] = df[str(rcp_code + "_max")]
+                    df_rcp["Min"] = df[rcp.code + "_" + c.stat_min]
+                    df_rcp["Moy"] = df[rcp.code + "_moy"]
+                    df_rcp["Max"] = df[rcp.code + "_" + c.stat_max]
                 else:
                     for column in list(df.columns):
-                        if rcp_code in column:
+                        if (rcp.code in column) or ((rcp.code == c.rcpxx) and ("rcp" in column)):
                             df_rcp[column] = df[column]
 
             # Round values and set tooltip.
-            n_dec = cntx.varidx.get_precision()
+            n_dec = cntx.varidx.precision
             tooltip = []
             if "Moy" in df_rcp:
                 column = "Moyenne"
                 if ("Min" not in list(df_rcp.columns)) and ("Max" not in list(df_rcp.columns)):
                     column = "Valeur"
-                df_rcp[column] = np.array(dash_utils.round_values(df_rcp["Moy"], n_dec)).astype(float)
+                df_rcp[column] = np.array(du.round_values(df_rcp["Moy"], n_dec)).astype(float)
                 tooltip = [column]
             if "Min" in df_rcp:
-                df_rcp["Minimum"] = np.array(dash_utils.round_values(df_rcp["Min"], n_dec)).astype(float)
-                df_rcp["Maximum"] = np.array(dash_utils.round_values(df_rcp["Max"], n_dec)).astype(float)
+                df_rcp["Minimum"] = np.array(du.round_values(df_rcp["Min"], n_dec)).astype(float)
+                df_rcp["Maximum"] = np.array(du.round_values(df_rcp["Max"], n_dec)).astype(float)
                 tooltip = ["Minimum", "Moyenne", "Maximum"]
             if mode == mode_sim:
                 excl_l = ["Scénario", "Année", "Moy", "Min", "Max"]
@@ -241,11 +269,11 @@ def gen_ts_alt(
             # Draw area.
             if (item == "area") and (mode == mode_rcp):
                 area_alpha = 0.3
-                area = alt.Chart(df_rcp).mark_area(opacity=area_alpha, text=rcp.get_desc()).encode(
+                area = alt.Chart(df_rcp).mark_area(opacity=area_alpha, text=rcp_desc).encode(
                     x=alt.X("Année", axis=x_axis),
                     y=alt.Y("Min", axis=y_axis, scale=y_scale),
                     y2="Max",
-                    color=alt.Color("Scénario", scale=col_scale)
+                    color=alt.Color("Scénario", scale=col_scale, legend=col_legend)
                 )
                 plot = area if plot is None else (plot + area)
             
@@ -253,8 +281,8 @@ def gen_ts_alt(
             elif item == "curve":
 
                 # Line width (see comment in the header of 'gen_ts').
-                if (rcp.is_ref() and (cntx.delta.get_code())) or \
-                   ((not rcp.is_ref()) and (mode == mode_sim) and (cntx.sim.get_code() == "")):
+                if (rcp.is_ref and (cntx.delta.code == "True")) or \
+                   ((not rcp.is_ref) and (mode == mode_sim) and (cntx.sim.code == "")):
                     line_alpha = 1.0
                 else:
                     line_alpha = 2.0
@@ -272,10 +300,12 @@ def gen_ts_alt(
 
                 # Draw curves.
                 for column in columns:
-                    if rcp.is_ref():
-                        curve = alt.Chart(df_rcp).mark_line(size=line_alpha, text=rcp.get_desc(), color=rcp.get_color()).encode(
+                    if rcp.is_ref:
+                        curve = alt.Chart(df_rcp).\
+                            mark_line(size=line_alpha, text=rcp_desc, color=rcp.color).encode(
                             x=alt.X("Année", axis=x_axis),
                             y=alt.Y(column, axis=y_axis, scale=y_scale),
+                            color=alt.Color("Scénario", scale=col_scale, legend=col_legend),
                             tooltip=tooltip
                         ).interactive()
                     else:
@@ -287,15 +317,16 @@ def gen_ts_alt(
                         ).interactive()
                     plot = curve if plot is None else (plot + curve)
 
-    # Adjust size.
-    height = 362 if cntx.code == def_context.code_streamlit else 300
-    plot = plot.configure_axis(grid=False).properties(height=height, width=650)
+    # Adjust size and title
+    height = 362 if cntx.code == c.platform_streamlit else 300
+    title = alt.TitleParams([plot_title(), plot_code()])
+    plot = plot.configure_axis(grid=False).properties(height=height, width=650, title=title).\
+        configure_title(offset=0, orient="top", anchor="start")
 
     return plot
 
 
 def gen_ts_hv(
-    cntx: def_context.Context,
     df: pd.DataFrame,
     x_label: str,
     y_label: str,
@@ -309,18 +340,16 @@ def gen_ts_hv(
     
     Parameters
     ----------
-    cntx : def_context.Context
-        Context.
-    df : pd.DataFrame
+    df: pd.DataFrame
         Dataframe.
-    x_label : str
+    x_label: str
         X-label.
-    y_label : str
+    y_label: str
         Y-label.
-    y_range : List[str]
+    y_range: List[str]
         Range of y_values to display [{y_min}, {y_max}].
         Dataframe.
-    mode : str
+    mode: str
         If mode == mode_rcp: show curves and envelopes.
         If mode == mode_sim: show curves only.
 
@@ -332,54 +361,59 @@ def gen_ts_hv(
     """
 
     # Move reference RCP at the end of the list.
-    rcps = cntx.rcps.copy()
-    rcps.remove_items(def_rcp.rcp_ref, inplace=True)
-    rcps.add_items(def_rcp.RCP(def_rcp.rcp_ref), inplace=True)
+    if (cntx.view.code == c.view_ts) or (cntx.rcp.code not in ["", c.rcpxx]):
+        rcps = cntx.rcps.copy()
+        rcps.remove(c.ref, inplace=True)
+    else:
+        rcps = def_rcp.RCPs([c.rcpxx])
+    rcps.add(def_rcp.RCP(c.ref), inplace=True)
 
     # Loop through RCPs.
     plot = None
     for item in ["area", "curve"]:
 
         for rcp in rcps.items:
-            rcp_code = rcp.get_code()
-            rcp_desc = rcp.get_desc()
 
-            if (item == "area") and (rcp.is_ref() or (mode == mode_sim)) or \
-               ((cntx.rcp.get_code() != "") and (rcp_code not in [cntx.rcp.get_code(), def_rcp.rcp_ref])):
+            cond_ts      = (cntx.view.code == c.view_ts) and (cntx.rcp.code not in ["", c.rcpxx])
+            cond_ts_bias = (cntx.view.code == c.view_ts_bias) and (cntx.rcp.code != "")
+            if (item == "area") and (rcp.is_ref or (mode == mode_sim)) or \
+               ((cond_ts or cond_ts_bias) and (rcp.code not in [cntx.rcp.code, c.ref])):
                 continue
+
+            # Color (area and curve).
+            color = rcp.color if (cntx.view.code == c.view_ts) or (rcp.code == c.ref) else "darkgrey"
 
             # Subset and rename columns.
             df_rcp = pd.DataFrame()
             df_rcp["Année"] = df["year"]
-            df_rcp["Scénario"] = [rcp.get_desc()] * len(df_rcp)
-            if rcp.is_ref():
-                df_rcp["Moyenne"] = df[def_rcp.rcp_ref]
+            df_rcp["Scénario"] = [rcp.desc] * len(df_rcp)
+            if rcp.is_ref:
+                df_rcp["Moyenne"] = df[c.ref]
             else:
                 if mode == mode_rcp:
-                    if str(rcp_code + "_min") in df.columns:
-                        df_rcp["Minimum"] = df[str(rcp_code + "_min")]
-                    if str(rcp_code + "_moy") in df.columns:
-                        df_rcp["Moyenne"] = df[str(rcp_code + "_moy")]
-                    if str(rcp_code + "_max") in df.columns:
-                        df_rcp["Maximum"] = df[str(rcp_code + "_max")]
+                    if str(rcp.code + "_" + c.stat_min) in df.columns:
+                        df_rcp["Minimum"] = df[str(rcp.code + "_" + c.stat_min)]
+                    if str(rcp.code + "_moy") in df.columns:
+                        df_rcp["Moyenne"] = df[str(rcp.code + "_moy")]
+                    if str(rcp.code + "_" + c.stat_max) in df.columns:
+                        df_rcp["Maximum"] = df[str(rcp.code + "_" + c.stat_max)]
                 else:
                     for column in list(df.columns):
-                        if rcp_code in column:
-                            sim_desc = def_sim.Sim(column).get_desc()
-                            df_rcp[sim_desc] = df[column]
+                        if (rcp.code in column) or ((rcp.code == c.rcpxx) and ("rcp" in column)):
+                            df_rcp[def_sim.Sim(column).desc] = df[column]
 
             # Round values and set tooltip.
-            n_dec = cntx.varidx.get_precision()
+            n_dec = cntx.varidx.precision
             tooltip = []
             if "Moyenne" in df_rcp:
                 column = "Moyenne"
                 if ("Minimum" not in df_rcp.columns) and ("Maximum" not in df_rcp.columns):
                     column = "Valeur"
-                df_rcp[column] = np.array(dash_utils.round_values(df_rcp["Moyenne"], n_dec)).astype(float)
+                df_rcp[column] = np.array(du.round_values(df_rcp["Moyenne"], n_dec)).astype(float)
                 tooltip = [column]
             if "Minimum" in df_rcp:
-                df_rcp["Minimum"] = np.array(dash_utils.round_values(df_rcp["Minimum"], n_dec)).astype(float)
-                df_rcp["Maximum"] = np.array(dash_utils.round_values(df_rcp["Maximum"], n_dec)).astype(float)
+                df_rcp["Minimum"] = np.array(du.round_values(df_rcp["Minimum"], n_dec)).astype(float)
+                df_rcp["Maximum"] = np.array(du.round_values(df_rcp["Maximum"], n_dec)).astype(float)
                 tooltip = ["Minimum", "Moyenne", "Maximum"]
             if mode == mode_sim:
                 excl_l = ["Scénario", "Année", "Moyenne", "Minimum", "Maximum"]
@@ -391,15 +425,15 @@ def gen_ts_hv(
             if item == "area":
                 area_alpha = 0.3
                 area = df_rcp.hvplot.area(x="Année", y="Minimum", y2="Maximum", ylim=y_range,
-                                          color=rcp.get_color(), alpha=area_alpha, line_alpha=0)
+                                          color=color, alpha=area_alpha, line_alpha=0)
                 plot = area if plot is None else plot * area
 
             # Draw curve(s).
             elif item == "curve":
 
                 # Line width (see comment in the header of 'gen_ts').
-                if (rcp.is_ref() and (cntx.delta.get_code())) or \
-                   ((not rcp.is_ref()) and (mode == mode_sim) and (cntx.sim.get_code() == "")):
+                if (rcp.is_ref and (cntx.delta.code == "True")) or \
+                   ((not rcp.is_ref) and (mode == mode_sim) and (cntx.sim.code == "")):
                     line_alpha = 0.3
                 else:
                     line_alpha = 1.0
@@ -417,11 +451,15 @@ def gen_ts_hv(
 
                 # Draw curves.
                 for column in columns:
-                    curve = df_rcp.hvplot.line(x="Année", y=column, ylim=y_range,
-                                               color=rcp.get_color(), line_alpha=line_alpha, label=rcp_desc,
-                                               hover_cols=tooltip)
+                    desc = rcp.desc.replace(dict(def_rcp.code_props())[c.rcpxx][0], "Simulation(s)")
+                    curve = df_rcp.hvplot.line(x="Année", y=column, ylim=y_range, color=color,
+                                               line_alpha=line_alpha, label=desc, hover_cols=tooltip)
                     plot = curve if plot is None else plot * curve
-            
+
+    # Title.
+    title = str(plot_title()) + "\n" + str(plot_code())
+    plot = plot.opts(hv.opts.Overlay(title=title))
+
     # Adjust size and add legend.
     plot = plot.opts(legend_position="top_left", legend_opts={"click_policy": "hide", "orientation": "horizontal"},
                      frame_height=300, frame_width=645, border_line_alpha=0.0, background_fill_alpha=0.0,
@@ -431,7 +469,6 @@ def gen_ts_hv(
 
 
 def gen_ts_mat(
-    cntx: def_context.Context,
     df: pd.DataFrame,
     x_label: str,
     y_label: str,
@@ -446,19 +483,17 @@ def gen_ts_mat(
     
     Parameters
     ----------
-    cntx : def_context.Context
-        Context.
-    df : pd.DataFrame
+    df: pd.DataFrame
         Dataframe.
-    x_label : str
+    x_label: str
         X-label.
-    y_label : str
+    y_label: str
         Y-label.
-    x_range : List[float]
+    x_range: List[float]
         Range of x_values to display [{x_min}, {x_max}].
-    y_range : List[float]
+    y_range: List[float]
         Range of y_values to display [{y_min}, {y_max}].
-    mode : str
+    mode: str
         If mode == mode_rcp: show curves and envelopes.
         If mode == mode_sim: show curves only.
 
@@ -470,12 +505,13 @@ def gen_ts_mat(
     """
 
     # Font size.
-    fs            = 9 if cntx.code == def_context.code_streamlit else 10
-    fs_labels     = fs
-    fs_ticks      = fs
+    fs        = 9 if cntx.code == c.platform_streamlit else 10
+    fs_title  = fs + 1
+    fs_labels = fs
+    fs_ticks  = fs
 
     # Initialize figure and axes.
-    if def_context.code_streamlit in cntx.code:
+    if c.platform_streamlit in cntx.code:
         fig = plt.figure(figsize=(9, 4.4), dpi=cntx.dpi)
     else:
         fig = plt.figure(figsize=(10.6, 4.8), dpi=cntx.dpi)
@@ -494,38 +530,43 @@ def gen_ts_mat(
     plt.ylim(y_range[0], y_range[1])
 
     # Move reference RCP at the end of the list.
-    rcps = cntx.rcps.copy()
-    rcps.remove_items(def_rcp.rcp_ref, inplace=True)
-    rcps.add_items(def_rcp.RCP(def_rcp.rcp_ref), inplace=True)
+    if (cntx.view.code == c.view_ts) or (cntx.rcp.code not in ["", c.rcpxx]):
+        rcps = cntx.rcps.copy()
+        rcps.remove(c.ref, inplace=True)
+    else:
+        rcps = def_rcp.RCPs([c.rcpxx])
+    rcps.add(def_rcp.RCP(c.ref), inplace=True)
 
     # Loop through RCPs.
     leg_labels = []
     leg_lines = []
     for rcp in rcps.items:
-        rcp_code = rcp.get_code()
-        rcp_desc = rcp.get_desc()
 
-        if (cntx.rcp.get_code() != "") and (rcp_code not in [cntx.rcp.get_code(), def_rcp.rcp_ref]):
+        cond_ts = (cntx.view.code == c.view_ts) and (cntx.rcp.code not in ["", c.rcpxx])
+        cond_ts_bias = (cntx.view.code == c.view_ts_bias) and (cntx.rcp.code != "")
+        if (cond_ts or cond_ts_bias) and (rcp.code not in [cntx.rcp.code, c.ref]):
             continue
+
+        # Color (area and curve).
+        color = rcp.color if (cntx.view.code == c.view_ts) or (rcp.code == c.ref) else "darkgrey"
 
         # Subset and rename columns.
         df_year = df.year
         df_rcp = pd.DataFrame()
-        if rcp.is_ref():
-            df_rcp["Moy"] = df[def_rcp.rcp_ref]
+        if rcp.is_ref:
+            df_rcp["Moy"] = df[c.ref]
         else:
             if mode == mode_rcp:
-                if str(rcp_code + "_min") in df.columns:
-                    df_rcp["Min"] = df[str(rcp_code + "_min")]
-                if str(rcp_code + "_moy") in df.columns:
-                    df_rcp["Moy"] = df[str(rcp_code + "_moy")]
-                if str(rcp_code + "_max") in df.columns:
-                    df_rcp["Max"] = df[str(rcp_code + "_max")]
+                if str(rcp.code + "_moy") in df.columns:
+                    df_rcp["Moy"] = df[str(rcp.code + "_moy")]
+                if str(rcp.code + "_" + c.stat_min) in df.columns:
+                    df_rcp["Min"] = df[str(rcp.code + "_" + c.stat_min)]
+                if str(rcp.code + "_" + c.stat_max) in df.columns:
+                    df_rcp["Max"] = df[str(rcp.code + "_" + c.stat_max)]
             else:
                 for column in df.columns:
-                    if rcp_code in column:
-                        sim_desc = def_sim.Sim(column).get_desc()
-                        df_rcp[sim_desc] = df[column]
+                    if (rcp.code in column) or ((rcp.code == c.rcpxx) and ("rcp" in column)):
+                        df_rcp[def_sim.Sim(column).desc] = df[column]
 
         # Skip if no data is available for this RCP.
         if len(df_rcp) == 0:
@@ -535,15 +576,14 @@ def gen_ts_mat(
         area_alpha = 0.3
 
         # Line width (see comment in the header of 'gen_ts').
-        if (rcp.is_ref() and (cntx.delta.get_code())) or \
-           ((not rcp.is_ref()) and (mode == mode_sim) and (cntx.sim.get_code() == "")):
+        if (rcp.is_ref and (cntx.delta.code == "True")) or \
+           ((not rcp.is_ref) and (mode == mode_sim) and (cntx.sim.code == "")):
             line_alpha = 0.3
         else:
             line_alpha = 1.0
 
         # Draw area and curves.
-        color = rcp.get_color()
-        if rcp.is_ref():
+        if rcp.is_ref:
             ax.plot(df_year, df_rcp, color=color, alpha=line_alpha)
         else:
             if mode == mode_rcp:
@@ -555,8 +595,13 @@ def gen_ts_mat(
                     ax.plot(df_year, df_rcp[df_rcp.columns[i]], color=color, alpha=line_alpha)
         
         # Collect legend label and line.
-        leg_labels.append(rcp_desc)
+        desc = rcp.desc.replace(dict(def_rcp.code_props())[c.rcpxx][0], "Simulation(s)")
+        leg_labels.append(desc)
         leg_lines.append(Line2D([0], [0], color=color, lw=2))
+
+    # Title.
+    title = str(plot_title()) + "\n" + str(plot_code())
+    plt.title(title, loc="left", fontweight="bold", fontsize=fs_title)
 
     # Legend.
     ax.legend(leg_lines, leg_labels, loc="upper left", ncol=len(leg_labels), mode="expland", frameon=False,
@@ -568,17 +613,11 @@ def gen_ts_mat(
 
 
 def gen_tbl(
-    cntx: def_context.Context
 ) -> Union[pd.DataFrame, go.Figure]:
 
     """
     --------------------------------------------------------------------------------------------------------------------
     Generate a table.
-    
-    Parameters
-    ----------
-    cntx : def_context.Context
-        Context.
 
     Returns
     -------
@@ -588,20 +627,20 @@ def gen_tbl(
     """
     
     # Load data.
-    df = dash_utils.load_data(cntx)
+    df = pd.DataFrame(du.load_data())
 
     # List of statistics (in a column).
     stat_l, stat_desc_l = [], []
-    for code in list(def_stat.get_code_desc().keys()):
-        if code in [def_stat.code_min, def_stat.code_max, def_stat.code_mean]:
+    for code in list(dict(def_stat.code_desc()).keys()):
+        if code in [c.stat_min, c.stat_max, c.stat_mean]:
             stat_l.append([code, -1])
-        elif code == "q" + cntx.project.get_quantiles_as_str()[0]:
-            stat_l.append(["quantile", cntx.project.get_quantiles()[0]])
-        elif code == "q" + cntx.project.get_quantiles_as_str()[1]:
-            stat_l.append(["quantile", cntx.project.get_quantiles()[1]])
+        elif code == "q" + cntx.project.quantiles_as_str[0]:
+            stat_l.append(["quantile", cntx.project.quantiles[0]])
+        elif code == "q" + cntx.project.quantiles_as_str[1]:
+            stat_l.append(["quantile", cntx.project.quantiles[1]])
         else:
             stat_l.append(["quantile", 0.5])
-        stat_desc_l.append(def_stat.get_code_desc()[code])
+        stat_desc_l.append(def_stat.code_desc()[code])
 
     # Initialize resulting dataframe.
     df_res = pd.DataFrame()
@@ -610,48 +649,58 @@ def gen_tbl(
     # Loop through RCPs.
     columns = []
     for rcp in cntx.rcps.items:
-        rcp_code = rcp.get_code()
 
-        if rcp.is_ref():
+        if rcp.is_ref:
             continue
 
         # Extract delta.
         delta = 0.0
-        if cntx.delta.get_code():
-            delta = float(df[df["rcp"] == def_rcp.rcp_ref]["val"])
+        if cntx.delta.code == "True":
+            delta = float(df[df["rcp"] == c.ref]["val"])
 
         # Extract statistics.
         vals = []
         for stat in stat_l:
-            df_cell = float(df[(df["rcp"] == rcp_code) &
-                               (df["hor"] == cntx.hor.get_code()) &
+            df_cell = float(df[(df["rcp"] == rcp.code) &
+                               (df["hor"] == cntx.hor.code) &
                                (df["stat"] == stat[0]) &
                                (df["q"] == stat[1])]["val"])
             val = df_cell - delta
             vals.append(val)
+        df_res[rcp.code] = vals
 
-        df_res[rcp_code] = vals
-        if cntx.varidx.get_precision() == 0:
-            df_res[rcp_code] = df_res[rcp_code].astype(int)
+        # Adjust precision.
+        n_dec = cntx.varidx.precision
+        if n_dec == 0:
+            df_res[rcp.code] = df_res[rcp.code].astype(int)
+        else:
+            for i in range(len(df_res)):
+                try:
+                    df_res[rcp.code] = str("{:." + str(n_dec) + "f}").format(float(df_res[rcp.code][i]))
+                except ValueError:
+                    pass
 
-        columns.append(rcp.get_desc())
+        columns.append(rcp.desc)
 
     df_res.columns = [df_res.columns[0]] + columns
 
-    if cntx.code == def_context.code_jupyter:
+    # Add units.
+    for column in df_res.columns[1:]:
+        df_res[column] = df_res[column].astype(str)
+        df_res[column] += (" " if cntx.varidx.unit != "°C" else "") + cntx.varidx.unit
+
+    # Title.
+    title = "<b>" + str(plot_title()) + "<br>" + str(plot_code()) + "</b>"
+
+    # In Jupyter Notebook, a dataframe appears nicely.
+    if cntx.code == c.platform_jupyter:
         res = df_res.set_index(df_res.columns[0])
 
+    # In Streamlit, a table needs to be formatted.
     else:
         values = []
         for col_name in df_res.columns:
-            col = df_res[col_name].astype(str)
-            n_dec = cntx.varidx.get_precision()
-            for i in range(len(col)):
-                try:
-                    col[i] = str("{:." + str(n_dec) + "f}").format(float(col[i]))
-                except ValueError:
-                    pass
-            values.append(col)
+            values.append(df_res[col_name])
         fig = go.Figure(data=[go.Table(
             header=dict(values=list(df_res.columns),
                         line_color="white",
@@ -662,65 +711,21 @@ def gen_tbl(
                        fill_color="white",
                        align="right"))
         ])
-        fig.data[0]["columnwidth"] = [200] + [100] * (len(df_res.columns) - 1)
         fig.update_layout(
-            font=dict(
-                size=15
-            )
+            font=dict(size=15),
+            width=700,
+            height=180,
+            margin=go.layout.Margin(l=0, r=0, b=0, t=50),
+            title_text=title,
+            title_x=0,
+            title_font=dict(size=15)
         )
         res = fig
 
     return res
 
 
-def get_ref_val(
-    cntx: def_context.Context
-) -> str:
-
-    """
-    --------------------------------------------------------------------------------------------------------------------
-    Get the reference value.
-
-    Parameters
-    ----------
-    cntx : def_context.Context
-        Context.
-        
-    Returns
-    -------
-    str
-        Reference value and unit.
-    --------------------------------------------------------------------------------------------------------------------
-    """
-
-    df = None
-    val = ""
-
-    # Extract from table.
-    if cntx.view.get_code() == def_view.code_tbl:
-        df = dash_utils.load_data(cntx)
-        val = df[df["rcp"] == def_rcp.rcp_ref]["val"][0]
-
-    # Extract from time series.
-    elif cntx.view.get_code() in [def_view.code_ts, def_view.code_ts_bias]:
-        df = dash_utils.load_data(cntx, mode_rcp)
-        val = np.nanmean(df[def_rcp.rcp_ref])
-
-    # Adjust precision and units.
-    if df is not None:
-        if cntx.varidx.get_precision == 0:
-            val = int(val)
-        val = str(val)
-        unit = cntx.varidx.get_unit()
-        if unit != "°C":
-            val += " "
-        val += unit
-    
-    return val
-
-
 def gen_map(
-    cntx: def_context.Context,
     df: pd.DataFrame,
     z_range: List[float]
 ) -> Union[any, plt.Figure]:
@@ -731,11 +736,9 @@ def gen_map(
 
     Parameters
     ----------
-    cntx : def_context.Context
-        Context.
-    df : pd.DataFrame
+    df: pd.DataFrame
         Dataframe (with 2 dimensions: longitude and latitude).
-    z_range : List[float]
+    z_range: List[float]
         Range of values to consider in colorbar.
 
     Returns
@@ -767,7 +770,7 @@ def gen_map(
 
     # Calculate ticks.
     ticks = None
-    tick_labels = None
+    tick_labels = []
     if cntx.opt_map_discrete:
         ticks = []
         for i in range(n_cluster + 1):
@@ -782,30 +785,23 @@ def gen_map(
         v_range = [ticks[0], ticks[n_cluster]]
 
     # Build color map (custom or matplotlib).
-    cmap_name = get_cmap_name(cntx, z_min, z_max)
+    cmap_name = str(get_cmap_name(z_min, z_max))
     hex_l = get_hex_l(cmap_name)
     if hex_l is not None:
         cmap = get_cmap(cmap_name, hex_l, n_cluster)
     else:
         cmap = plt.cm.get_cmap(cmap_name, n_cluster)
 
-    # Load locations.
-    p = cntx.p_locations
-    df_loc = None
-    if (p != "") and (os.path.exists(p)):
-        df_loc = pd.read_csv(p)
-
     # Generate map.
-    if cntx.lib.get_code() == def_lib.mode_hv:
-        fig = gen_map_hv(cntx, df, df_loc, v_range, cmap, ticks, tick_labels)
+    if cntx.lib.code == c.lib_hv:
+        fig = gen_map_hv(df, cntx.opt_map_locations, v_range, cmap, ticks, tick_labels)
     else:
-        fig = gen_map_mat(cntx, df, df_loc, v_range, cmap, ticks, tick_labels)
+        fig = gen_map_mat(df, cntx.opt_map_locations, v_range, cmap, ticks, tick_labels)
 
     return fig
 
 
 def gen_map_hv(
-    cntx: def_context.Context,
     df: pd.DataFrame,
     df_loc: pd.DataFrame,
     v_range: List[float],
@@ -816,29 +812,27 @@ def gen_map_hv(
 
     """
     --------------------------------------------------------------------------------------------------------------------
-    Generate a heat map using matplotlib.
+    Generate a heat map using hvplot.
 
     Parameters
     ----------
-    cntx : def_context.Context
-        Context.
-    df : pd.DataFrame
+    df: pd.DataFrame
         Dataframe.
-    df_loc : pd.DataFrame
+    df_loc: pd.DataFrame
         Dataframe.
-    v_range : List[float]
+    v_range: List[float]
         Minimum and maximum values in colorbar.
-    cmap : plt.cm
+    cmap: plt.cm
         Color map.
-    ticks : List[float]
+    ticks: List[float]
         Ticks.
-    tick_labels : List[str]
+    tick_labels: List[str]
         Tick labels.
 
     Returns
     -------
     any
-        Figure.
+        Plot.
     --------------------------------------------------------------------------------------------------------------------
     """
 
@@ -847,11 +841,10 @@ def gen_map_hv(
     fs_annotations = 8
 
     # Label.
-    label = ("Δ" if cntx.delta.get_code() else "") + cntx.varidx.get_label()
+    label = ("Δ" if cntx.delta.code == "True" else "") + cntx.varidx.label
 
     # Generate mesh.
-    df.rename(columns={cntx.varidx.get_name(): "Valeur", "longitude": "Longitude", "latitude": "Latitude"},
-              inplace=True)
+    df.rename(columns={cntx.varidx.name: "Valeur", "longitude": "Longitude", "latitude": "Latitude"}, inplace=True)
     heatmap = df.hvplot.heatmap(x="Longitude", y="Latitude", C="Valeur", aspect="equal").\
         opts(cmap=cmap, clim=(v_range[0], v_range[1]), clabel=label)
 
@@ -864,7 +857,7 @@ def gen_map_hv(
     # Create region boundary.
     bounds = None
     if (cntx.p_bounds != "") and os.path.exists(cntx.p_bounds):
-        df_curve = dash_utils.load_geojson(cntx.p_bounds, "pandas")
+        df_curve = pd.DataFrame(du.load_geojson(cntx.p_bounds, "pandas"))
         x_lim = (min(df_curve["longitude"]), max(df_curve["longitude"]))
         y_lim = (min(df_curve["latitude"]), max(df_curve["latitude"]))
         bounds = df_curve.hvplot.line(x="longitude", y="latitude", color="black", alpha=0.7, xlim=x_lim, ylim=y_lim)
@@ -873,6 +866,7 @@ def gen_map_hv(
     points = None
     labels = None
     if (df_loc is not None) and (len(df_loc) > 0):
+        df_loc = df_loc.copy()
         df_loc.rename(columns={"longitude": "Longitude", "latitude": "Latitude", "desc": "Emplacement"}, inplace=True)
         points = df_loc.hvplot.points(x="Longitude", y="Latitude", color="black", hover_cols=["Emplacement"])
         labels = hv.Labels(data=df_loc, x="Longitude", y="Latitude", text="Emplacement").\
@@ -880,20 +874,23 @@ def gen_map_hv(
                  text_font_style="italic", text_font_size=str(fs_annotations) + "pt")
 
     # Combine layers.
-    fig = heatmap
+    plot = heatmap
     if bounds is not None:
-        fig = fig * bounds
+        plot = plot * bounds
     if points is not None:
-        fig = fig * points * labels
+        plot = plot * points * labels
+
+    # Title.
+    title = str(plot_title()) + "\n" + str(plot_code())
+    plot = plot.opts(hv.opts.Overlay(title=title))
 
     # Add legend.
-    fig = fig.opts(height=400, width=740, xlabel="Longitude (C)", ylabel="Latitude (C)", fontsize=fs_labels)
+    plot = plot.opts(height=400, width=740, xlabel="Longitude (º)", ylabel="Latitude (º)", fontsize=fs_labels)
 
-    return fig
+    return plot
 
 
 def gen_map_mat(
-    cntx: def_context.Context,
     df: pd.DataFrame,
     df_loc: pd.DataFrame,
     v_range: List[float],
@@ -908,19 +905,17 @@ def gen_map_mat(
     
     Parameters
     ----------
-    cntx : def_context.Context
-        Context.
-    df : pd.DataFrame
+    df: pd.DataFrame
         Dataframe.
-    df_loc : pd.DataFrame
+    df_loc: pd.DataFrame
         Dataframe.
-    v_range : List[float]
+    v_range: List[float]
         Minimum and maximum values in colorbar..
-    cmap : plt.cm
+    cmap: plt.cm
         Color map.
-    ticks : List[float]
+    ticks: List[float]
         Ticks.
-    tick_labels : List[str]
+    tick_labels: List[str]
         Tick labels.
 
     Returns
@@ -931,18 +926,19 @@ def gen_map_mat(
     """
 
     # Font size.
-    fs            = 6 if cntx.code == def_context.code_streamlit else 10
+    fs            = 6 if cntx.code == c.platform_streamlit else 10
+    fs_title      = fs + 2
     fs_labels     = fs
     fs_ticks      = fs
     fs_ticks_cbar = fs
-    if cntx.delta.get_code():
+    if cntx.delta.code == "True":
         fs_ticks_cbar = fs_ticks_cbar - 1
 
     # Label.
-    label = ("Δ" if cntx.delta.get_code() else "") + cntx.varidx.get_label()
+    label = ("Δ" if cntx.delta.code == "True" else "") + cntx.varidx.label
 
     # Initialize figure and axes.
-    if def_context.code_streamlit in cntx.code:
+    if c.platform_streamlit in cntx.code:
         fig = plt.figure(figsize=(9, 4.45), dpi=cntx.dpi)
     else:
         fig = plt.figure(dpi=cntx.dpi)
@@ -954,14 +950,18 @@ def gen_map_mat(
     specs = gridspec.GridSpec(ncols=1, nrows=1, figure=fig)
     ax = fig.add_subplot(specs[:], aspect="equal")
 
+    # Title.
+    title = str(plot_title()) + "\n" + str(plot_code())
+    plt.title(title, loc="left", fontweight="bold", fontsize=fs_title)
+
     # Convert to DataArray.
-    df = pd.DataFrame(df, columns=["longitude", "latitude", cntx.varidx.get_code()])
+    df = pd.DataFrame(df, columns=["longitude", "latitude", cntx.varidx.code])
     df = df.sort_values(by=["latitude", "longitude"])
     lat = list(set(df["latitude"]))
     lat.sort()
     lon = list(set(df["longitude"]))
     lon.sort()
-    arr = np.reshape(list(df[cntx.varidx.get_code()]), (len(lat), len(lon)))
+    arr = np.reshape(list(df[cntx.varidx.code]), (len(lat), len(lon)))
     da = xr.DataArray(data=arr, dims=["latitude", "longitude"], coords=[("latitude", lat), ("longitude", lon)])
 
     # Generate mesh.
@@ -984,7 +984,7 @@ def gen_map_mat(
 
     # Draw region boundary.
     if (cntx.p_bounds != "") and os.path.exists(cntx.p_bounds):
-        draw_region_boundary(cntx, ax)
+        draw_region_boundary(ax)
 
     # Draw locations.
     if df_loc is not None:
@@ -1000,7 +1000,6 @@ def gen_map_mat(
 
 
 def get_cmap_name(
-    cntx: def_context.Context,
     z_min: float,
     z_max: float
 ) -> str:
@@ -1011,11 +1010,9 @@ def get_cmap_name(
 
     Parameters
     ----------
-    cntx : def_context.Context
-        Context.
-    z_min : float
+    z_min: float
         Minimum value.
-    z_max : float
+    z_max: float
         Maximum value.
 
     Returns
@@ -1026,8 +1023,8 @@ def get_cmap_name(
     """
 
     # Determine color scale index.
-    is_wind_var = cntx.varidx.get_code() in [vi.v_uas, vi.v_vas, vi.v_sfcwindmax]
-    if (not cntx.delta.get_code()) and (not is_wind_var):
+    is_wind_var = cntx.varidx.code in [c.v_uas, c.v_vas, c.v_sfcwindmax]
+    if (cntx.delta.code == "False") and (not is_wind_var):
         cmap_idx = 0
     elif (z_min < 0) and (z_max > 0):
         cmap_idx = 1
@@ -1037,38 +1034,30 @@ def get_cmap_name(
         cmap_idx = 3
 
     # Temperature-related.
-    if cntx.varidx.get_code() in \
-        [vi.v_tas, vi.v_tasmin, vi.v_tasmax, vi.i_etr, vi.i_tgg,
-         vi.i_tng, vi.i_tnx, vi.i_txx, vi.i_txg]:
+    if cntx.varidx.code in \
+        [c.v_tas, c.v_tasmin, c.v_tasmax, c.i_etr, c.i_tgg, c.i_tng, c.i_tnx, c.i_txx, c.i_txg]:
         cmap_name = cntx.opt_map_col_temp_var[cmap_idx]
-    elif cntx.varidx.get_code() in \
-        [vi.i_tx_days_above, vi.i_heat_wave_max_length, vi.i_heat_wave_total_length,
-         vi.i_hot_spell_frequency, vi.i_hot_spell_max_length, vi.i_tropical_nights,
-         vi.i_tx90p, vi.i_wsdi]:
+    elif cntx.varidx.code in \
+        [c.i_tx_days_above, c.i_heat_wave_max_length, c.i_heat_wave_total_length, c.i_hot_spell_frequency,
+         c.i_hot_spell_max_length, c.i_tropical_nights, c.i_tx90p, c.i_wsdi]:
         cmap_name = cntx.opt_map_col_temp_idx_1[cmap_idx]
-    elif cntx.varidx.get_code() in [vi.i_tn_days_below, vi.i_tng_months_below]:
+    elif cntx.varidx.code in [c.i_tn_days_below, c.i_tng_months_below]:
         cmap_name = cntx.opt_map_col_temp_idx_2[cmap_idx]
 
     # Precipitation-related.
-    elif cntx.varidx.get_code() in \
-        [vi.v_pr, vi.i_prcptot, vi.i_rx1day, vi.i_rx5day, vi.i_sdii,
-         vi.i_rain_season_prcptot]:
+    elif cntx.varidx.code in [c.v_pr, c.i_prcptot, c.i_rx1day, c.i_rx5day, c.i_sdii, c.i_rain_season_prcptot]:
         cmap_name = cntx.opt_map_col_prec_var[cmap_idx]
-    elif cntx.varidx.get_code() in \
-        [vi.i_cwd, vi.i_r10mm, vi.i_r20mm, vi.i_wet_days, vi.i_rain_season_length,
-         vi.i_rnnmm]:
+    elif cntx.varidx.code in [c.i_cwd, c.i_r10mm, c.i_r20mm, c.i_wet_days, c.i_rain_season_length, c.i_rnnmm]:
         cmap_name = cntx.opt_map_col_prec_idx_1[cmap_idx]
-    elif cntx.varidx.get_code() in \
-        [vi.i_cdd, vi.i_dry_days, vi.i_drought_code,
-         vi.i_dry_spell_total_length]:
+    elif cntx.varidx.code in [c.i_cdd, c.i_dry_days, c.i_drought_code, c.i_dry_spell_total_length]:
         cmap_name = cntx.opt_map_col_prec_idx_2[cmap_idx]
-    elif cntx.varidx.get_code() in [vi.i_rain_season_start, vi.i_rain_season_end]:
+    elif cntx.varidx.code in [c.i_rain_season_start, c.i_rain_season_end]:
         cmap_name = cntx.opt_map_col_prec_idx_3[cmap_idx]
 
     # Wind-related.
-    elif cntx.varidx.get_code() in [vi.v_uas, vi.v_vas, vi.v_sfcwindmax]:
+    elif cntx.varidx.code in [c.v_uas, c.v_vas, c.v_sfcwindmax]:
         cmap_name = cntx.opt_map_col_wind_var[cmap_idx]
-    elif cntx.varidx.get_code() in [vi.i_wg_days_above, vi.i_wx_days_above]:
+    elif cntx.varidx.code in [c.i_wg_days_above, c.i_wx_days_above]:
         cmap_name = cntx.opt_map_col_wind_idx_1[cmap_idx]
 
     # Default values.
@@ -1164,10 +1153,10 @@ def get_cmap(
 
     Parameters
     ----------
-    cmap_name : str
-        Name of a color map.
+    cmap_name: str
+        Color map name.
     hex_l: [str]
-        List of hex code strings.
+        Hex code string list.
     n_cluster: int
         Number of clusters.
 
@@ -1197,9 +1186,8 @@ def get_cmap(
     for num, col in enumerate(["red", "green", "blue"]):
         col_l = [[pos_l[i], rgb_l[i][num], rgb_l[i][num]] for i in range(len(pos_l))]
         cdict[col] = col_l
-    cmap = colors.LinearSegmentedColormap("custom_cmap", segmentdata=cdict, N=n_cluster)
 
-    return cmap
+    return colors.LinearSegmentedColormap("custom_cmap", segmentdata=cdict, N=n_cluster)
 
 
 def adjust_precision(
@@ -1213,9 +1201,9 @@ def adjust_precision(
 
     Parameters
     ----------
-    vals : [float]
+    vals: [float]
         List of values.
-    n_dec_max : int, optional
+    n_dec_max: int, optional
         Maximum number of decimal places.
     
     Returns
@@ -1258,7 +1246,6 @@ def adjust_precision(
 
 
 def draw_region_boundary(
-    cntx: def_context.Context,
     ax: plt.axes
 ) -> plt.axes:
 
@@ -1268,8 +1255,6 @@ def draw_region_boundary(
 
     Parameters
     ----------
-    cntx: def_context.Context
-        Context.
     ax : plt.axes
         Plots axes.
     --------------------------------------------------------------------------------------------------------------------
@@ -1297,21 +1282,21 @@ def draw_region_boundary(
         
         return _ax
 
-    def _plot_feature(_coordinates, _ax):
+    def _plot_feature(_coords, _ax):
         
-        _patch = PolygonPatch({"type": "Polygon", "coordinates": _coordinates},
+        _patch = PolygonPatch({"type": "Polygon", "coordinates": _coords},
                               fill=False, ec="black", alpha=0.75, zorder=2)
         _ax.add_patch(_patch)
         
         return _ax
 
     # Load geojson file.
-    vertices, coordinates = dash_utils.load_geojson(cntx.p_bounds, "vertices")
+    vertices, coords = du.load_geojson(cntx.p_bounds, "vertices")
 
     # Draw feature.
     ax_new = ax
     ax_new = _set_plot_extent(ax_new, vertices)
-    ax_new = _plot_feature(coordinates, ax_new)
+    ax_new = _plot_feature(coords, ax_new)
     
     return ax_new
 
@@ -1364,7 +1349,6 @@ def rgb_to_dec(
 
 
 def gen_cycle_ms(
-    cntx: def_context.Context,
     df: pd.DataFrame
 ) -> Union[any, plt.Figure]:
 
@@ -1374,8 +1358,6 @@ def gen_cycle_ms(
 
     Parameters:
     ----------
-    cntx: def_context.Context
-        Context.
     df: pd.DataFrame
         Dataframe.
 
@@ -1386,16 +1368,15 @@ def gen_cycle_ms(
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    if cntx.lib.get_code() == def_lib.mode_hv:
-        fig = gen_cycle_ms_hv(cntx, df)
+    if cntx.lib.code == c.lib_hv:
+        fig = gen_cycle_ms_hv(df)
     else:
-        fig = gen_cycle_ms_mat(cntx, df)
+        fig = gen_cycle_ms_mat(df)
 
     return fig
 
 
 def gen_cycle_ms_hv(
-    cntx: def_context.Context,
     df: pd.DataFrame
 ) -> any:
 
@@ -1405,15 +1386,13 @@ def gen_cycle_ms_hv(
 
     Parameters:
     ----------
-    cntx: def_context.Context
-        Context.
     df: pd.DataFrame
         Dataframe.
 
     Returns
     -------
     any
-        Figure.
+        Plot.
     --------------------------------------------------------------------------------------------------------------------
     """
 
@@ -1439,16 +1418,18 @@ def gen_cycle_ms_hv(
         df.iloc[i, 1] = ticks_dict[df.iloc[i, 1]]
     df["Valeur"] = col_val
 
-    # Generate plot.
-    fig = df.hvplot.box(y="Valeur", by="Mois", height=375, width=730, legend=False,
-                        box_fill_color="white", hover_cols=["Mois", "Valeur"]).\
-        opts(tools=["hover"], ylabel=cntx.varidx.get_label())
+    # Title.
+    title = str(plot_title()) + "\n" + str(plot_code())
 
-    return fig
+    # Generate plot.
+    y_label = ("Δ" if cntx.delta.code == "True" else "") + cntx.varidx.label
+    plot = df.hvplot.box(y="Valeur", by="Mois", height=375, width=730, legend=False, box_fill_color="white",
+                         hover_cols=["Mois", "Valeur"]).opts(tools=["hover"], ylabel=y_label, title=title)
+
+    return plot
 
 
 def gen_cycle_ms_mat(
-    cntx: def_context.Context,
     df: pd.DataFrame
 ) -> plt.Figure:
 
@@ -1458,8 +1439,6 @@ def gen_cycle_ms_mat(
 
     Parameters:
     ----------
-    cntx: def_context.Context
-        Context.
     df: pd.DataFrame
         Dataframe.
         
@@ -1480,7 +1459,7 @@ def gen_cycle_ms_mat(
     fs_axes = fs
 
     # Draw.
-    height = 5.45 if cntx.code == def_context.code_streamlit else 5.15
+    height = 5.45 if cntx.code == c.platform_streamlit else 5.15
     fig = plt.figure(figsize=(9.95, height), dpi=cntx.dpi)
     plt.subplots_adjust(top=0.99, bottom=0.13, left=0.08, right=0.98, hspace=0.10, wspace=0.10)
     specs = gridspec.GridSpec(ncols=1, nrows=1, figure=fig)
@@ -1491,10 +1470,15 @@ def gen_cycle_ms_mat(
     plt.xticks([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
                ["Jan", "Fév", "Mar", "Avr", "Mai", "Jui", "Jul", "Aoû", "Sep", "Oct", "Nov", "Déc"], rotation=0)
     plt.xlabel("Mois", fontsize=fs_axes)
-    plt.ylabel(cntx.varidx.get_label(), fontsize=fs_axes)
+    y_label = ("Δ" if cntx.delta.code == "True" else "") + cntx.varidx.label
+    plt.ylabel(y_label, fontsize=fs_axes)
     plt.setp(bp["medians"], color="black")
     plt.tick_params(axis="x", labelsize=fs_axes)
     plt.tick_params(axis="y", labelsize=fs_axes)
+
+    # Title.
+    title = str(plot_title()) + "\n" + str(plot_code())
+    plt.title(title, loc="left", fontweight="bold")
 
     # Close plot.
     plt.close(fig)
@@ -1503,7 +1487,6 @@ def gen_cycle_ms_mat(
 
 
 def gen_cycle_d(
-    cntx: def_context.Context,
     df: pd.DataFrame
 ) -> Union[any, plt.Figure]:
 
@@ -1513,8 +1496,6 @@ def gen_cycle_d(
 
     Parameters
     ----------
-    cntx: def_context.Context
-        Context.
     df: pd.DataFrame
         Dataframe.
 
@@ -1525,26 +1506,24 @@ def gen_cycle_d(
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    if cntx.lib.get_code() == def_lib.mode_hv:
-        fig = gen_cycle_d_hv(cntx, df)
+    if cntx.lib.code == c.lib_hv:
+        fig = gen_cycle_d_hv(df)
     else:
-        fig = gen_cycle_d_mat(cntx, df)
+        fig = gen_cycle_d_mat(df)
 
     return fig
 
 
 def gen_cycle_d_hv(
-    cntx: def_context.Context,
     df: pd.DataFrame
 ) -> plt.Figure:
+
     """
     --------------------------------------------------------------------------------------------------------------------
     Generate a time series of daily values using hvplot
 
     Parameters
     ----------
-    cntx: def_context.Context
-        Context.
     df: pd.DataFrame
         Dataframe.
 
@@ -1559,8 +1538,9 @@ def gen_cycle_d_hv(
     df.rename(columns={"day": "Jour", "mean": "Moyenne", "min": "Minimum", "max": "Maximum"}, inplace=True)
 
     # Draw area.
+    y_label = ("Δ" if cntx.delta.code == "True" else "") + cntx.varidx.label
     area = df.hvplot.area(x="Jour", y="Minimum", y2="Maximum",
-                          color="darkgrey", alpha=0.3, line_alpha=0, xlabel="Jour", ylabel=cntx.varidx.get_label())
+                          color="darkgrey", alpha=0.3, line_alpha=0, xlabel="Jour", ylabel=y_label)
 
     # Draw curve.
     tooltip = ["Jour", "Minimum", "Moyenne", "Maximum"]
@@ -1568,6 +1548,10 @@ def gen_cycle_d_hv(
 
     # Combine components.
     plot = area * curve
+
+    # Title.
+    title = str(plot_title()) + "\n" + str(plot_code())
+    plot = plot.opts(hv.opts.Overlay(title=title))
 
     # Add legend.
     plot = plot.opts(legend_position="top_left", legend_opts={"click_policy": "hide", "orientation": "horizontal"},
@@ -1577,7 +1561,6 @@ def gen_cycle_d_hv(
 
     
 def gen_cycle_d_mat(
-    cntx: def_context.Context,
     df: pd.DataFrame,
     plt_type: Optional[int] = 1
 ) -> Union[plt.Figure, None]:
@@ -1588,8 +1571,6 @@ def gen_cycle_d_mat(
 
     Parameters
     ----------
-    cntx: def_context.Context
-        Context.
     df: pd.DataFrame
         Dataframe.
     plt_type: Optional[int]
@@ -1612,34 +1593,39 @@ def gen_cycle_d_mat(
     n = len(df)
 
     # Draw curve (mean values) and shadow (zone between minimum and maximum values).
-    height = 5.45 if cntx.code == def_context.code_streamlit else 5.15
+    height = 5.45 if cntx.code == c.platform_streamlit else 5.15
     fig, ax = plt.subplots(figsize=(9.95, height), dpi=cntx.dpi)
     plt.subplots_adjust(top=0.99, bottom=0.13, left=0.08, right=0.98, hspace=0.10, wspace=0.10)
 
     # Draw areas.
-    ref_color = def_rcp.RCP(def_rcp.rcp_ref).get_color()
+    ref_color = def_rcp.RCP(c.ref).color
     rcp_color = "darkgrey"
     if plt_type == 1:
-        ax.plot(range(1, n + 1), df["mean"], color=ref_color, alpha=1.0)
-        ax.fill_between(np.array(range(1, n + 1)), df["mean"], df["max"], color=rcp_color, alpha=1.0)
-        ax.fill_between(np.array(range(1, n + 1)), df["mean"], df["min"], color=rcp_color, alpha=1.0)
+        ax.plot(range(1, n + 1), df[c.stat_mean], color=ref_color, alpha=1.0)
+        ax.fill_between(np.array(range(1, n + 1)), df[c.stat_mean], df[c.stat_max], color=rcp_color, alpha=1.0)
+        ax.fill_between(np.array(range(1, n + 1)), df[c.stat_mean], df[c.stat_min], color=rcp_color, alpha=1.0)
     else:
         bar_width = 1.0
-        plt.bar(range(1, n + 1), df["max"], width=bar_width, color=rcp_color)
-        plt.bar(range(1, n + 1), df["mean"], width=bar_width, color=rcp_color)
-        plt.bar(range(1, n + 1), df["min"], width=bar_width, color="white")
-        ax.plot(range(1, n + 1), df["mean"], color=ref_color, alpha=1.0)
-        y_lim_lower = min(df["min"])
-        y_lim_upper = max(df["max"])
+        plt.bar(range(1, n + 1), df[c.stat_max], width=bar_width, color=rcp_color)
+        plt.bar(range(1, n + 1), df[c.stat_mean], width=bar_width, color=rcp_color)
+        plt.bar(range(1, n + 1), df[c.stat_min], width=bar_width, color="white")
+        ax.plot(range(1, n + 1), df[c.stat_mean], color=ref_color, alpha=1.0)
+        y_lim_lower = min(df[c.stat_min])
+        y_lim_upper = max(df[c.stat_max])
         plt.ylim([y_lim_lower, y_lim_upper])
 
     # Format.
     plt.xlim([1, n])
     plt.xticks(np.arange(1, n + 1, 30))
     plt.xlabel("Jour", fontsize=fs_axes)
-    plt.ylabel(cntx.varidx.get_label(), fontsize=fs_axes)
+    y_label = ("Δ" if cntx.delta.code == "True" else "") + cntx.varidx.label
+    plt.ylabel(y_label, fontsize=fs_axes)
     plt.tick_params(axis="x", labelsize=fs_axes)
     plt.tick_params(axis="y", labelsize=fs_axes)
+
+    # Title.
+    title = str(plot_title()) + "\n" + str(plot_code())
+    plt.title(title, loc="left", fontweight="bold")
 
     # Format.
     plt.legend(["Valeur moyenne", "Étendue des valeurs"], fontsize=fs_legend)
@@ -1648,3 +1634,58 @@ def gen_cycle_d_mat(
     plt.close(fig)
     
     return fig
+
+
+def plot_title(
+) -> str:
+
+    """
+    --------------------------------------------------------------------------------------------------------------------
+    Get plot title.
+
+    Returns
+    -------
+    str
+        Plot title.
+    --------------------------------------------------------------------------------------------------------------------
+    """
+
+    return cntx.varidx.title
+
+
+def plot_code(
+) -> str:
+
+    """
+    --------------------------------------------------------------------------------------------------------------------
+    Get plot code.
+
+    Returns
+    -------
+    str
+        Plot code.
+    --------------------------------------------------------------------------------------------------------------------
+    """
+
+    code = ""
+
+    if cntx.view.code in [c.view_ts, c.view_ts_bias, c.view_cycle]:
+        code = cntx.varidx.code
+        if cntx.rcp.code not in ["", c.rcpxx]:
+            code += " - " + cntx.rcp.desc
+        if cntx.view.code == c.view_cycle:
+            code += " - " + cntx.hor.code
+        if cntx.sim.code not in ["", c.simxx]:
+            code += " - " + cntx.sim.rcm + "_" + cntx.sim.gcm
+            if (cntx.rcp.code in ["", c.rcpxx]) and (cntx.sim.rcp is not None):
+                code += " (" + cntx.sim.rcp.desc + ")"
+
+    elif cntx.view.code == c.view_tbl:
+        code = cntx.varidx.code + " - " + cntx.hor.code
+
+    elif cntx.view.code == c.view_map:
+        code = cntx.varidx.code + " - " + cntx.hor.code + " - " + cntx.rcp.desc
+        if cntx.rcp.code != c.ref:
+            code += " - " + cntx.stat.desc
+
+    return ("Δ" if cntx.delta.code == "True" else "") + code

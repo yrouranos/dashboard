@@ -6,12 +6,10 @@
 #
 # Contributors:
 # 1. rousseau.yannick@ouranos.ca
-# (C) 2021 Ouranos Inc., Canada
+# (C) 2021-2022 Ouranos Inc., Canada
 # ----------------------------------------------------------------------------------------------------------------------
 
-import def_context
-import def_rcp
-import def_view
+# External libraries.
 import glob
 import numpy as np
 import os
@@ -21,13 +19,14 @@ import warnings
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
-warnings.filterwarnings("ignore")
+# Dashboard libraries.
+from def_constant import const as c
+from def_context import cntx
 
-d_data = "./data/"
+warnings.filterwarnings("ignore")
 
 
 def load_data(
-    cntx: def_context.Context,
     mode: Optional[str] = ""
 ) -> Union[pd.DataFrame, None]:
 
@@ -37,8 +36,6 @@ def load_data(
 
     Parameters
     ----------
-    cntx : def_context.Context
-        Context.
     mode : Optional[str]
         Mode.
         ts|ts_bias: mode = {"rcp", "sim"}
@@ -112,44 +109,44 @@ def load_data(
             |                ex: -17.30,14.8,226.06
             |
             +-- boundaries.geojson
-            +-- locations.csv
     --------------------------------------------------------------------------------------------------------------------
     """
     
     # Load data.
     p = ""
 
-    view_code = cntx.view.get_code() if cntx.view is not None else ""
-    delta     = cntx.delta.get_code() if cntx.delta is not None else False
-    vi_code   = cntx.varidx.get_code() if cntx.varidx is not None else ""
-    hor_code  = cntx.hor.get_code() if cntx.hor is not None else ""
-    rcp_code  = cntx.rcp.get_code() if cntx.rcp is not None else ""
-    stat_code = cntx.stat.get_code() if cntx.stat is not None else ""
-    sim_code  = cntx.sim.get_code() if cntx.sim is not None else ""
+    view_code  = cntx.view.code if cntx.view is not None else ""
+    delta_code = cntx.delta.code if cntx.delta is not None else False
+    vi_code    = cntx.varidx.code if cntx.varidx is not None else ""
+    vi_precision = cntx.varidx.precision if cntx.varidx is not None else 0
+    hor_code   = cntx.hor.code if cntx.hor is not None else ""
+    rcp_code   = cntx.rcp.code if cntx.rcp is not None else ""
+    stat_code  = cntx.stat.code if cntx.stat is not None else ""
+    sim_code   = cntx.sim.code if cntx.sim is not None else ""
 
-    if view_code == def_view.code_tbl:
-        p = str(get_d_data(cntx)) + "<view_code>/<vi_code>.csv"
+    if view_code == c.view_tbl:
+        p = cntx.d_project + "<view_code>/<vi_code>.csv"
         p = p.replace("<view_code>", view_code)
         p = p.replace("<vi_code>", vi_code)
 
-    elif view_code in [def_view.code_ts, def_view.code_ts_bias]:
-        p = str(get_d_data(cntx)) + "<view_code>/<vi_code>/<vi_code>_<mode>_<delta>.csv"
+    elif view_code in [c.view_ts, c.view_ts_bias]:
+        p = cntx.d_project + "<view_code>/<vi_code>/<vi_code>_<mode>_<delta>.csv"
         p = p.replace("_<mode>", "_" + mode)
         p = p.replace("<view_code>", view_code)
         p = p.replace("<vi_code>", vi_code)
-        p = p.replace("_<delta>", "" if not delta else "_delta")
+        p = p.replace("_<delta>", "" if delta_code == "False" else "_delta")
 
-    elif view_code == def_view.code_map:
-        p = str(get_d_data(cntx)) + "<view_code>/<vi_code>/<hor_code>/*_<rcp_code>_*_<stat>_<delta>.csv"
+    elif view_code == c.view_map:
+        p = cntx.d_project + "<view_code>/<vi_code>/<hor_code>/*<rcp_code>*<stat>_<delta>.csv"
         p = p.replace("<view_code>", view_code)
         p = p.replace("<vi_code>", vi_code)
         p = p.replace("<hor_code>", hor_code)
         p = p.replace("<rcp_code>", rcp_code)
         p = p.replace("<stat>", stat_code)
-        p = p.replace("_<delta>", "" if not delta else "_delta")
+        p = p.replace("_<delta>", "" if delta_code == "False" else "_delta")
 
-    elif view_code == def_view.code_cycle:
-        p = str(get_d_data(cntx)) + "<view_code>/<vi_code>/<hor_code>/*<sim_code>*<rcp_code>*.csv"
+    elif c.view_cycle in view_code:
+        p = cntx.d_project + "<view_code>/<vi_code>/<hor_code>/*<sim_code>*<rcp_code>*.csv"
         view_code += "_" + mode.lower()
         p = p.replace("<view_code>", view_code)
         p = p.replace("<vi_code>", vi_code)
@@ -158,7 +155,7 @@ def load_data(
         if sim_code != "":
             p = p.replace("<rcp_code>", "")
 
-    if (def_view.code_cycle in view_code) or (view_code == def_view.code_map):
+    if (view_code == c.view_map) or (c.view_cycle in view_code):
         p = list(glob.glob(p))[0]
 
     if not os.path.exists(p):
@@ -167,14 +164,14 @@ def load_data(
         df = pd.read_csv(p)
 
     # Round values.
-    n_dec = cntx.varidx.get_precision()
-    if cntx.view.get_code() in [def_view.code_ts, def_view.code_cycle, def_view.code_ts_bias]:
+    n_dec = vi_precision
+    if (view_code in [c.view_ts, c.view_ts_bias]) or (c.view_cycle in view_code):
         for col in df.select_dtypes("float64").columns:
             df.loc[:, col] = df.copy()[col].round(n_dec).to_numpy()
-    elif cntx.view.get_code() == def_view.code_tbl:
+    elif view_code == c.view_tbl:
         df["val"] = df["val"].round(decimals=n_dec)
     else:
-        df[cntx.varidx.get_code()] = df[cntx.varidx.get_code()].round(decimals=n_dec)
+        df[vi_code] = df[vi_code].round(decimals=n_dec)
 
     return df
 
@@ -190,9 +187,9 @@ def load_geojson(
 
     Parameters
     ----------
-    p : str
+    p: str
         Path.
-    out_format : str
+    out_format: str
         Format = {"vertices-coordinates", "pandas"}
 
     Returns
@@ -207,13 +204,13 @@ def load_geojson(
         pydata = simplejson.load(f)
 
     # Extract vertices.
-    coordinates = pydata["features"][0]["geometry"]["coordinates"][0]
-    vertices = coordinates[0]
+    coords = pydata["features"][0]["geometry"]["coordinates"][0]
+    vertices = coords[0]
     if len(vertices) == 2:
-        coordinates = pydata["features"][0]["geometry"]["coordinates"]
-        vertices = coordinates[0]
+        coords = pydata["features"][0]["geometry"]["coordinates"]
+        vertices = coords[0]
     if out_format == "vertices":
-        return vertices, coordinates
+        return vertices, coords
 
     # Create dataframe.
     df = pd.DataFrame()
@@ -223,18 +220,12 @@ def load_geojson(
     return df
 
 
-def get_range(
-    cntx: def_context.Context
+def calc_range(
 ) -> List[float]:
 
     """
     --------------------------------------------------------------------------------------------------------------------
     Extract the minimum and maximum values, considering all the maps for a single variable.
-    
-    Parameters
-    ----------
-    cntx : def_context.Context
-        Context.
     
     Returns
     -------
@@ -244,36 +235,82 @@ def get_range(
     """
     
     min_val, max_val = np.nan, np.nan
-    
-    if cntx.view.get_code() == def_view.code_map:
+
+    # Codes.
+    view_code = cntx.view.code if cntx.view is not None else ""
+    vi_code = cntx.varidx.code if cntx.varidx is not None else ""
+    delta_code = cntx.delta.code if cntx.delta is not None else False
+    project_q_low = cntx.project.quantiles_as_str[0] if cntx.project is not None else ""
+    project_q_high = cntx.project.quantiles_as_str[1] if cntx.project is not None else ""
+
+    if view_code == c.view_map:
         
         # Reference file.
-        p_ref = str(get_d_data(cntx)) + "<view>/<vi_code>/*/<vi_code>_ref*_mean.csv"
-        p_ref = p_ref.replace("<view>", cntx.view.get_code())
-        p_ref = p_ref.replace("<vi_code>", cntx.varidx.get_code())
+        p_ref = cntx.d_project + "<view>/<vi_code>/*/<vi_code>_ref*_mean.csv"
+        p_ref = p_ref.replace("<view>", view_code)
+        p_ref = p_ref.replace("<vi_code>", vi_code)
         p_ref = glob.glob(p_ref)
 
         # RCP files.
-        p_rcp = str(get_d_data(cntx)) + "<view>/<vi_code>/*/<vi_code>_rcp*_q<q>_<delta>.csv"
-        p_rcp = p_rcp.replace("<view>", cntx.view.get_code())
-        p_rcp = p_rcp.replace("<vi_code>", cntx.varidx.get_code())
-        p_rcp = p_rcp.replace("_<delta>", "" if not cntx.delta.get_code() else "_delta")
-        p_rcp_q_low = glob.glob(p_rcp.replace("<q>", cntx.project.get_quantiles_as_str()[0]))
-        p_rcp_q_high = glob.glob(p_rcp.replace("<q>", cntx.project.get_quantiles_as_str()[1]))
+        p_rcp = cntx.d_project + "<view>/<vi_code>/*/<vi_code>_rcp*_q<q>_<delta>.csv"
+        p_rcp = p_rcp.replace("<view>", view_code)
+        p_rcp = p_rcp.replace("<vi_code>", vi_code)
+        p_rcp = p_rcp.replace("_<delta>", "" if delta_code == "False" else "_delta")
+        p_rcp_q_low = glob.glob(p_rcp.replace("<q>", project_q_low))
+        p_rcp_q_high = glob.glob(p_rcp.replace("<q>", project_q_high))
         p_l = p_rcp_q_low + p_rcp_q_high
-        if not cntx.delta.get_code():
+        if delta_code == "False":
             p_l = p_ref + p_l
 
         # Find the minimum and maximum values.
         for p in p_l:
             if os.path.exists(p):
                 df = pd.read_csv(p)
-                min_vals = list(df[cntx.varidx.get_code()]) + [min_val]
-                max_vals = list(df[cntx.varidx.get_code()]) + [max_val]
+                min_vals = list(df[vi_code]) + [min_val]
+                max_vals = list(df[vi_code]) + [max_val]
                 min_val = np.nanmin(min_vals)
                 max_val = np.nanmax(max_vals)
 
     return [min_val, max_val]
+
+
+def ref_val(
+) -> str:
+    """
+    --------------------------------------------------------------------------------------------------------------------
+    Get the reference value.
+
+    Returns
+    -------
+    str
+        Reference value and unit.
+    --------------------------------------------------------------------------------------------------------------------
+    """
+
+    df = None
+    val = ""
+
+    # Extract from table.
+    if cntx.view.code == c.view_tbl:
+        df = pd.DataFrame(load_data())
+        val = df[df["rcp"] == c.ref]["val"][0]
+
+    # Extract from time series.
+    elif cntx.view.code in [c.view_ts, c.view_ts_bias]:
+        df = pd.DataFrame(load_data("rcp"))
+        val = np.nanmean(df[c.ref])
+
+    # Adjust precision and units.
+    if df is not None:
+        if cntx.varidx.precision == 0:
+            val = int(val)
+        val = str(val)
+        unit = cntx.varidx.unit
+        if unit != "°C":
+            val += " "
+        val += unit
+
+    return val
 
 
 def list_dir(
@@ -286,7 +323,7 @@ def list_dir(
     
     Parameters
     ----------
-    p : str
+    p: str
         Path.
     
     Returns
@@ -308,97 +345,6 @@ def list_dir(
     return dir_l
 
 
-def get_d_data(
-    cntx: def_context.Context
-) -> str:
-
-    """
-    --------------------------------------------------------------------------------------------------------------------
-    Get the base directory of data.
-
-    Parameters
-    ----------
-    cntx : def_context.Context
-        Context.
-
-    Returns
-    -------
-    str
-        Base directory of data.
-    --------------------------------------------------------------------------------------------------------------------
-    """
-
-    d = d_data + "<project_code>/"
-    d = d.replace("<project_code>/", "" if cntx.project is None else cntx.project.get_code() + "/")
-
-    return d
-
-
-def get_p_logo() -> str:
-
-    """
-    Get path of logo.
-
-    Returns
-    -------
-    str
-        Path of logo.
-    """
-
-    return "./data/ouranos.png"
-
-
-def get_p_locations(
-    cntx: def_context.Context
-) -> str:
-
-    """
-    --------------------------------------------------------------------------------------------------------------------
-    Get the path of the file defining locations.
-
-    Parameters
-    ----------
-    cntx : def_context.Context
-        Context
-
-    Returns
-    -------
-    str
-        Path of CSV file containing region boundaries.
-    --------------------------------------------------------------------------------------------------------------------
-    """
-
-    p = str(get_d_data(cntx)) + "map/locations.csv"
-
-    return p
-
-
-def get_p_bounds(
-    cntx: def_context.Context
-) -> str:
-
-    """
-    --------------------------------------------------------------------------------------------------------------------
-    Get the path of the file defining region boundaries.
-
-    Parameters
-    ----------
-    cntx : def_context.Context
-        Context
-
-    Returns
-    -------
-    str
-        Path of geojson file containing region boundaries.
-    --------------------------------------------------------------------------------------------------------------------
-    """
-
-    p = str(get_d_data(cntx)) + "<view_code>/boundaries.geojson"
-    p = p.replace("<view_code>", cntx.view.get_code())
-
-    return p
-
-
 def round_values(vals: List[float], n_dec: int) -> List[str]:
 
     """
@@ -407,9 +353,9 @@ def round_values(vals: List[float], n_dec: int) -> List[str]:
 
     Parameters
     ----------
-    vals : List[float]
+    vals: List[float]
         Values.
-    n_dec : int
+    n_dec: int
         Number of decimals.
 
     Returns

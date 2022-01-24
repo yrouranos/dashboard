@@ -6,28 +6,41 @@
 #
 # Contributors:
 # 1. rousseau.yannick@ouranos.ca
-# (C) 2021 Ouranos Inc., Canada
+# (C) 2021-2022 Ouranos Inc., Canada
 # ----------------------------------------------------------------------------------------------------------------------
 
-import dash_utils
-import def_context
-import def_object
+# External libraries.
 import glob
 from typing import List, Union
 
-code_ts = "ts"
-code_ts_bias = "ts_bias"
-code_tbl = "tbl"
-code_map = "map"
-code_cycle = "cycle"
+# Dashboard libraries.
+import def_object
+from def_constant import const as c
+from def_context import cntx
 
-code_desc = {
-    code_ts: "Série temporelle",
-    code_ts_bias: "Série temporelle (biais)",
-    code_tbl: "Tableau",
-    code_map: "Carte",
-    code_cycle: "Cycle annuel"
-}
+
+def code_desc(
+) -> dict:
+
+    """
+    --------------------------------------------------------------------------------------------------------------------
+    Get a dictionary of codes and descriptions.
+
+    Returns
+    -------
+    dict
+        Dictionary of codes and descriptions.
+    --------------------------------------------------------------------------------------------------------------------
+    """
+
+    return {
+        c.view_ts:      "Série temporelle",
+        c.view_ts_bias: "Série temporelle " +
+                        ("(biais)" if cntx.code == c.platform_jupyter else "avant ajustement de biais"),
+        c.view_tbl:     "Tableau",
+        c.view_map:     "Carte",
+        c.view_cycle:   "Cycle annuel"
+    }
 
 
 class View(def_object.Obj):
@@ -50,7 +63,7 @@ class View(def_object.Obj):
         """
 
         code = code.split("-")[0]
-        desc = "" if code == "" else code_desc[code]
+        desc = "" if code == "" else dict(code_desc())[code]
         super(View, self).__init__(code=code, desc=desc)
 
 
@@ -76,24 +89,18 @@ class Views(def_object.Objs):
         super(Views, self).__init__()
 
         if len(args) > 0:
-            if isinstance(args[0], def_context.Context):
-                self.load(args[0])
+            if args[0] == "*":
+                self.load()
             else:
                 self.add(args[0])
 
     def load(
-        self,
-        cntx: def_context.Context
+        self
     ):
 
         """
         ----------------------------------------
         Load items.
-
-        Parameters
-        ----------
-        cntx: def_context.Context
-            Context.
         ----------------------------------------
         """
 
@@ -101,15 +108,15 @@ class Views(def_object.Objs):
 
         # The items are extracted from directory names. They must be comprised in 'code_desc'.
         # ~/<project_code>/*
-        for code in list(code_desc.keys()):
-            if len(list(glob.glob(str(dash_utils.get_d_data(cntx)) + code + "*/"))) > 0:
+        for code in list(dict(code_desc()).keys()):
+            if len(list(glob.glob(cntx.d_project + code + "*/"))) > 0:
                 code_l.append(code)
 
         self.add(code_l)
 
     def add(
         self,
-        code: Union[str, List[str]],
+        item: Union[str, List[str], View],
         inplace: bool = True
     ):
 
@@ -119,19 +126,23 @@ class Views(def_object.Objs):
 
         Parameters
         ----------
-        code : Union[str, List[str]]
-            Code or list of codes.
-        inplace : bool
+        item: Union[str, List[str]]
+            Item (code, list of codes or instance of View).
+        inplace: bool
             If True, modifies the current instance.
         ----------------------------------------
         """
 
-        code_l = code
-        if isinstance(code, str):
-            code_l = [code]
-
         items = []
-        for i in range(len(code_l)):
-            items.append(View(code_l[i]))
 
-        return super(Views, self).add_items(items, inplace)
+        if isinstance(item, View):
+            items = [item]
+
+        else:
+            code_l = item
+            if isinstance(item, str):
+                code_l = [item]
+            for i in range(len(code_l)):
+                items.append(View(code_l[i]))
+
+        return super(Views, self).add(items, inplace)

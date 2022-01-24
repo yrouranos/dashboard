@@ -6,22 +6,38 @@
 #
 # Contributors:
 # 1. rousseau.yannick@ouranos.ca
-# (C) 2021 Ouranos Inc., Canada
+# (C) 2021-2022 Ouranos Inc., Canada
 # ----------------------------------------------------------------------------------------------------------------------
 
-import def_object
-import def_view
+# External libraries.
 from typing import Union, List
 
-mode_alt = "alt"
-mode_hv = "hv"
-mode_mat = "mat"
-mode_ply = "ply"
+# Dashboard libraries.
+import def_object
+from def_constant import const as c
+from def_context import cntx
 
-code_desc = {mode_alt: "altair",
-             mode_hv: "hvplot",
-             mode_mat: "matplotlib",
-             mode_ply: "plotly"}
+
+def code_desc(
+) -> dict:
+
+    """
+    --------------------------------------------------------------------------------------------------------------------
+    Get a dictionary of codes and descriptions.
+
+    Returns
+    -------
+    dict
+        Dictionary of codes and descriptions.
+    --------------------------------------------------------------------------------------------------------------------
+    """
+
+    return {
+        c.lib_alt: "altair",
+        c.lib_hv:  "hvplot",
+        c.lib_mat: "matplotlib",
+        c.lib_ply: "plotly"
+    }
 
 
 class Lib(def_object.Obj):
@@ -43,7 +59,7 @@ class Lib(def_object.Obj):
         ----------------------------------------
         """
 
-        desc = "" if code == "" else code_desc[code]
+        desc = "" if code == "" else dict(code_desc())[code]
         super(Lib, self).__init__(code=code, desc=desc)
 
 
@@ -68,19 +84,24 @@ class Libs(def_object.Objs):
 
         super(Libs, self).__init__()
 
-        if len(args) == 1:
+        if (len(args) == 1) and (args[0] == "*"):
             code_l = []
-            if args[0] in [def_view.code_ts, def_view.code_ts_bias]:
-                code_l = [mode_alt, mode_hv, mode_mat]
-            elif args[0] == def_view.code_tbl:
-                code_l = [mode_ply]
-            elif args[0] in [def_view.code_map, def_view.code_cycle]:
-                code_l = [mode_hv, mode_mat]
+            if not cntx.opt_lib:
+                lib_code = c.lib_hv
+                if cntx.view.code == c.view_tbl:
+                    lib_code = c.lib_ply
+                code_l = [lib_code]
+            elif cntx.view.code in [c.view_ts, c.view_ts_bias]:
+                code_l = [c.lib_alt, c.lib_hv, c.lib_mat]
+            elif cntx.view.code == c.view_tbl:
+                code_l = [c.lib_ply]
+            elif cntx.view.code in [c.view_map, c.view_cycle]:
+                code_l = [c.lib_hv, c.lib_mat]
             self.add(code_l)
 
     def add(
         self,
-        code: Union[str, List[str]],
+        item: Union[str, List[str], Lib],
         inplace: bool = True
     ):
         
@@ -90,17 +111,21 @@ class Libs(def_object.Objs):
         
         Paramters
         ---------
-        code : Union[str, List[str]]
-            Code or list of codes.
+        item: Union[str, List[str], Lib]
+            Item (code, list of codes or instance of Lib).
         ----------------------------------------
         """        
-        
-        code_l = code
-        if isinstance(code, str):
-            code_l = [code]
-        
+
         items = []
-        for i in range(len(code_l)):
-            items.append(Lib(code_l[i]))
+
+        if isinstance(item, Lib):
+            items = [item]
+
+        else:
+            code_l = item
+            if isinstance(item, str):
+                code_l = [item]
+            for i in range(len(code_l)):
+                items.append(Lib(code_l[i]))
         
-        return super(Libs, self).add_items(items, inplace)
+        return super(Libs, self).add(items, inplace)

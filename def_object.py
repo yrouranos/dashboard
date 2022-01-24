@@ -6,9 +6,10 @@
 #
 # Contributors:
 # 1. rousseau.yannick@ouranos.ca
-# (C) 2021 Ouranos Inc., Canada
+# (C) 2021-2022 Ouranos Inc., Canada
 # ----------------------------------------------------------------------------------------------------------------------
 
+# External libraries.
 import copy
 from typing import List, Union
 
@@ -20,12 +21,12 @@ class Obj:
     Class defining the object Obj.
     --------------------------------------------------------------------------------------------------------------------
     """
-    
+
     # Code.
-    code = ""
+    _code: str = ""
 
     # Description.
-    desc = ""
+    _desc: str = ""
 
     def __init__(
         self,
@@ -39,10 +40,11 @@ class Obj:
         ----------------------------------------
         """
 
-        self.code = code
-        self.desc = desc
+        self._code = code
+        self._desc = desc
 
-    def get_code(
+    @property
+    def code(
         self
     ) -> str:
     
@@ -57,9 +59,29 @@ class Obj:
         ----------------------------------------
         """
 
-        return self.code
+        return self._code
 
-    def get_desc(
+    @code.setter
+    def code(
+        self,
+        code: str
+    ):
+
+        """
+        ----------------------------------------
+        Set code.
+
+        Parameters
+        ----------
+        code: str
+            Code.
+        ----------------------------------------
+        """
+
+        self._code = code
+
+    @property
+    def desc(
         self
     ) -> str:
 
@@ -74,7 +96,26 @@ class Obj:
         ----------------------------------------
         """
 
-        return self.desc
+        return self._desc
+
+    @desc.setter
+    def desc(
+        self,
+        desc: str
+    ):
+
+        """
+        ----------------------------------------
+        Set description.
+
+        Parameters
+        ----------
+        desc: str
+            Description.
+        ----------------------------------------
+        """
+
+        self._desc = desc
 
     def copy(
         self
@@ -103,7 +144,7 @@ class Objs:
     """
     
     # List of instances.
-    items = []
+    _items = []
 
     def __init__(
         self,
@@ -116,9 +157,44 @@ class Objs:
         ----------------------------------------
         """
 
-        self.items = []
+        self._items = []
 
-    def set_items(
+    def inst_from_code(
+        self,
+        code: str
+    ) -> Union[Obj, None]:
+
+        """
+        ----------------------------------------
+        Get an instance based on its code.
+
+        Returns
+        -------
+        Obj
+            Instance corresponding to the code.
+        ----------------------------------------
+        """
+
+        for item in self._items:
+            if item.code == code:
+                return item.copy()
+
+        return None
+
+    @property
+    def items(
+        self
+    ):
+
+        """
+        ----------------------------------------
+        Get items.
+        ----------------------------------------
+        """
+        return self._items
+
+    @items.setter
+    def items(
         self,
         items
     ):
@@ -129,20 +205,21 @@ class Objs:
         ----------------------------------------
         """
 
-        self.items = items
+        self._items = items
 
-    def get_items(
+    @property
+    def count(
         self
     ):
 
         """
         ----------------------------------------
-        Get items.
+        Get the number of items.
         ----------------------------------------
         """
-        return self.items
+        return len(self._items)
 
-    def get_code(
+    def code_from_desc(
         self,
         desc: str
     ) -> Union[str, bool]:
@@ -153,7 +230,7 @@ class Objs:
 
         Paramters
         ---------
-        desc : str
+        desc: str
             Description.
 
         Returns
@@ -163,13 +240,13 @@ class Objs:
         ----------------------------------------
         """
 
-        for item in self.items:
-            if item.get_desc() == desc:
+        for item in self._items:
+            if item.desc == desc:
                 return item.code
 
         return ""
 
-    def get_desc(
+    def desc_from_code(
         self,
         code: str
     ) -> str:
@@ -180,7 +257,7 @@ class Objs:
 
         Paramters
         ---------
-        code : str
+        code: str
             Code.
 
         Returns
@@ -190,13 +267,14 @@ class Objs:
         ----------------------------------------
         """
 
-        for item in self.items:
-            if item.get_code() == code:
+        for item in self._items:
+            if item.code == code:
                 return item.desc
 
         return ""
 
-    def get_code_l(
+    @property
+    def code_l(
         self
     ) -> List[Union[str, bool]]:
 
@@ -213,12 +291,13 @@ class Objs:
 
         code_l = []
 
-        for item in self.items:
-            code_l.append(item.get_code())
+        for item in self._items:
+            code_l.append(item.code)
 
         return code_l
 
-    def get_desc_l(
+    @property
+    def desc_l(
         self
     ) -> List[str]:
 
@@ -235,12 +314,12 @@ class Objs:
 
         desc_l = []
 
-        for item in self.items:
-            desc_l.append(item.get_desc())
+        for item in self._items:
+            desc_l.append(item.desc)
 
         return desc_l
 
-    def add_items(
+    def add(
         self,
         items: Union[any, List[any]],
         inplace: bool = True
@@ -252,9 +331,9 @@ class Objs:
 
         Paramters
         ---------
-        items : Union[any, List[any]]
+        items: Union[any, List[any]]
             Item or list of items.
-        inplace : bool
+        inplace: bool
             If True, modifies the current instance.
         ----------------------------------------
         """
@@ -265,11 +344,11 @@ class Objs:
         new = self.copy()
         new.items = new.items + items
         if inplace:
-            self.items = new.items
+            self._items = new.items
         else:
             return new
 
-    def remove_items(
+    def remove(
         self,
         code: Union[str, List[str]],
         inplace: bool = True
@@ -281,9 +360,9 @@ class Objs:
 
         Paramters
         ---------
-        code : Union[str, List[str]]
+        code: Union[str, List[str]]
             Code or list of codes.
-        inplace : bool
+        inplace: bool
             If True, modifies the current instance.
         ----------------------------------------
         """
@@ -300,7 +379,7 @@ class Objs:
                     break
 
         if inplace:
-            self.items = new.items
+            self._items = new.items
         else:
             return new
 
