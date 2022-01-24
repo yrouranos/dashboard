@@ -167,10 +167,6 @@ def refresh():
         hor_f = st.selectbox("Horizon", options=cntx.hors.code_l)
         cntx.hor = def_hor.Hor(hor_f)
 
-    # TODO: remove
-    cntx.view = def_view.View(c.view_cycle)
-    cntx.hor = def_hor.Hor("1981-2010")
-
     # Emission scenarios.
     cntx.rcps = def_rcp.RCPs("*")
     if cntx.view.code in [c.view_ts, c.view_ts_bias, c.view_map, c.view_cycle]:
