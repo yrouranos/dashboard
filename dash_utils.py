@@ -329,6 +329,8 @@ def get_n_cluster_max(
     --------------------------------------------------------------------------------------------------------------------
     """
 
+    rcp_code = cntx.rcp.code if cntx.rcp is not None else ""
+
     # List simulations associated with each variable, and put them into an array.
     arr_sim_l = []
     for varidx in cntx.varidxs.items:
@@ -344,7 +346,7 @@ def get_n_cluster_max(
             if sim not in arr_sim_l[i]:
                 available = False
                 break
-        if available:
+        if available and ((rcp_code == c.rcpxx) or ((rcp_code != c.rcpxx) and (rcp_code in sim))):
             sim_l.append(sim)
 
     return len(sim_l)

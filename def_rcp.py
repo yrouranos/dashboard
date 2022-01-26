@@ -142,6 +142,9 @@ class RCPs(def_object.Objs):
         # Codes.
         view_code  = cntx.view.code if cntx.view is not None else ""
         vi_code    = cntx.varidx.code if cntx.varidx is not None else ""
+        if view_code == c.view_cluster:
+            view_code = c.view_ts
+            vi_code = cntx.varidxs.items[0].code
         hor_code   = cntx.hor.code if cntx.hor is not None else ""
         delta_code = cntx.delta.code if cntx.delta is not None else False
 

@@ -231,6 +231,8 @@ class Sims(def_object.Objs):
 
         # Codes.
         view_code  = cntx.view.code if cntx.view is not None else ""
+        if view_code == c.view_cluster:
+            view_code = c.view_ts
         vi_code    = cntx.varidx.code if cntx.varidx is not None else ""
         hor_code   = cntx.hor.code if cntx.hor is not None else ""
         rcp_code   = cntx.rcp.code if cntx.rcp is not None else ""

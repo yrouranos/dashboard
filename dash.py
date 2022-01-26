@@ -174,15 +174,6 @@ def refresh():
                 var_l.append(cntx.varidxs.items[i].code)
         cntx.varidxs = vi.VarIdxs(var_l)
 
-    # Number of clusters.
-    n_cluster = 0
-    if cntx.view.code == c.view_cluster:
-        n_cluster_min = 1
-        n_cluster_max = int(du.get_n_cluster_max())
-        n_cluster_suggested = math.ceil(0.2 * float(n_cluster_max))
-        n_cluster = st.number_input("Nombre de groupes", format="%i", min_value=n_cluster_min,
-                                    max_value=n_cluster_max, value=n_cluster_suggested)
-
     # Horizons.
     if cntx.view.code in [c.view_tbl, c.view_map, c.view_cycle]:
         cntx.hors = def_hor.Hors("*")
@@ -191,9 +182,9 @@ def refresh():
 
     # Emission scenarios.
     cntx.rcps = def_rcp.RCPs("*")
-    if cntx.view.code in [c.view_ts, c.view_ts_bias, c.view_map, c.view_cycle]:
+    if cntx.view.code in [c.view_ts, c.view_ts_bias, c.view_map, c.view_cycle, c.view_cluster]:
         rcp_l = cntx.rcps.desc_l
-        if cntx.view.code in [c.view_ts, c.view_ts_bias]:
+        if cntx.view.code in [c.view_ts, c.view_ts_bias, c.view_cluster]:
             rcp_l = [dict(def_rcp.code_props())[c.rcpxx][0]] + rcp_l
         hor_code_ref = str(cntx.per_ref[0]) + "-" + str(cntx.per_ref[1])
         if (cntx.view.code in [c.view_map, c.view_cycle]) and (cntx.hor.code == hor_code_ref):
@@ -202,6 +193,15 @@ def refresh():
             rcp_f = st.selectbox("Scénario d'émissions", options=rcp_l)
             rcp_code = cntx.rcps.code_from_desc(rcp_f) if cntx.rcps is not None else ""
         cntx.rcp = def_rcp.RCP(rcp_code)
+
+    # Number of clusters.
+    n_cluster = 0
+    if cntx.view.code == c.view_cluster:
+        n_cluster_min = 1
+        n_cluster_max = du.get_n_cluster_max()
+        n_cluster_suggested = math.ceil(0.2 * float(n_cluster_max))
+        n_cluster = st.number_input("Nombre de groupes", format="%i", min_value=n_cluster_min,
+                                    max_value=n_cluster_max, value=n_cluster_suggested)
 
     # Statistics.
     if cntx.view.code == c.view_map:
@@ -214,8 +214,8 @@ def refresh():
             cntx.stat = def_stat.Stat(stat_code)
 
     # Simulations.
+    cntx.sims = def_sim.Sims("*")
     if cntx.view.code in [c.view_ts, c.view_ts_bias, c.view_cycle]:
-        cntx.sims = def_sim.Sims("*")
         sim_l = cntx.sims.desc_l
         if cntx.view.code in [c.view_ts, c.view_ts_bias]:
             sim_l = [dict(def_sim.code_desc())[c.simxx]] + sim_l

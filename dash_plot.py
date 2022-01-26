@@ -1717,6 +1717,8 @@ def gen_cluster_tbl(
 
     normalize = True
 
+    rcp_code = cntx.rcp.code if cntx.rcp is not None else ""
+
     # Normalize data.
     def norm(df: pd.DataFrame) -> pd.DataFrame:
 
@@ -1741,10 +1743,27 @@ def gen_cluster_tbl(
         df = df[np.isnan(df[c.ref]) == False]
         df["year"] = df["year"].astype(str)
         df.drop([c.ref], axis=1, inplace=True)
+
+        # Select the columns associated with the current RPC.
+        if rcp_code != c.rcpxx:
+            df_tmp = df[["year"]]
+            for column in df.columns:
+                if rcp_code in column:
+                    df_tmp[column] = df[column]
+            df = df_tmp
+
+        # Transpose.
         df = df.transpose()
         columns = df.iloc[0]
         df = df[1:]
         df.columns = columns
+
+        # Set mean and quantiles as attributes.
+        n_columns = len(columns)
+        df["mean"] = df.iloc[:, 0:n_columns].mean(axis=1)
+        df["q10"] = df.iloc[:, 0:n_columns].quantile(q=0.1, axis=1, numeric_only=False, interpolation="linear")
+        df["q90"] = df.iloc[:, 0:n_columns].quantile(q=0.9, axis=1, numeric_only=False, interpolation="linear")
+        df = df[["mean", "q10", "q90"]]
 
         # Normalize data.
         if normalize:
@@ -1811,7 +1830,7 @@ def gen_cluster_tbl(
         fig.update_layout(
             font=dict(size=15),
             width=700,
-            height=50 + 22 * len(df_display),
+            height=50 + 25 * len(df_display),
             margin=go.layout.Margin(l=0, r=0, b=0, t=50),
             title_text=title,
             title_x=0,
