@@ -198,7 +198,7 @@ def refresh():
     n_cluster = 0
     if cntx.view.code == c.view_cluster:
         n_cluster_min = 1
-        n_cluster_max = du.get_n_cluster_max()
+        n_cluster_max = len(du.get_shared_sims())
         n_cluster_suggested = math.ceil(0.2 * float(n_cluster_max))
         n_cluster = st.number_input("Nombre de groupes", format="%i", min_value=n_cluster_min,
                                     max_value=n_cluster_max, value=n_cluster_suggested)

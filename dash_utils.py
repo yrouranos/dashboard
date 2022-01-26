@@ -315,17 +315,17 @@ def ref_val(
     return val
 
 
-def get_n_cluster_max(
+def get_shared_sims(
 ) -> int:
 
     """
     --------------------------------------------------------------------------------------------------------------------
-    Get maximum number of clusters.
+    Get the simulations that are shared between multiple variables.
 
     Returns
     -------
     int
-        Maximum number of clusters.
+        Simulations that are shared between multiple variables.
     --------------------------------------------------------------------------------------------------------------------
     """
 
@@ -349,7 +349,7 @@ def get_n_cluster_max(
         if available and ((rcp_code == c.rcpxx) or ((rcp_code != c.rcpxx) and (rcp_code in sim))):
             sim_l.append(sim)
 
-    return len(sim_l)
+    return sim_l
 
 
 def list_dir(

@@ -1719,6 +1719,9 @@ def gen_cluster_tbl(
 
     rcp_code = cntx.rcp.code if cntx.rcp is not None else ""
 
+    # Identify the simulations that shared between variables.
+    sim_l = du.get_shared_sims()
+
     # Normalize data.
     def norm(df: pd.DataFrame) -> pd.DataFrame:
 
@@ -1751,7 +1754,7 @@ def gen_cluster_tbl(
         if rcp_code != c.rcpxx:
             df_tmp = df[["year"]]
             for column in df.columns:
-                if rcp_code in column:
+                if (rcp_code in column) and (column in sim_l):
                     df_tmp[column] = df[column]
             df = df_tmp
 
@@ -1761,15 +1764,20 @@ def gen_cluster_tbl(
         df = df[1:]
         df.columns = columns
 
+        # Sort by simulation name.
+        df["sim"] = df.index
+        df.sort_values(by="sim", inplace=True)
+        df.drop(columns=["sim"], inplace=True)
+
         # Set mean and quantiles as attributes.
         n_columns = len(columns)
-        df[c.stat_mean] = df.iloc[:, 0:n_columns].mean(axis=1)
         df["q10"] = df.iloc[:, 0:n_columns].quantile(q=0.1, axis=1, numeric_only=False, interpolation="linear")
+        df["q50"] = df.iloc[:, 0:n_columns].quantile(q=0.5, axis=1, numeric_only=False, interpolation="linear")
         df["q90"] = df.iloc[:, 0:n_columns].quantile(q=0.9, axis=1, numeric_only=False, interpolation="linear")
-        df = df[[c.stat_mean, "q10", "q90"]]
+        df = df[["q10", "q50", "q90"]]
 
         # Update the dataframe holding absolute values.
-        df_abs[cntx.varidx.code] = df[c.stat_mean]
+        df_abs[cntx.varidx.code] = df["q50"]
         if len(df_abs.columns) == 1:
             df_abs.index = df.index
 
@@ -1796,7 +1804,7 @@ def gen_cluster_tbl(
     # Perform clustering.
     ac = AgglomerativeClustering(n_clusters=n_cluster, affinity="euclidean", linkage="ward").fit(df_x)
     groups = ac.fit_predict(df_x)
-    df_x["Moyenne"] = df_x.mean(axis=1)
+    df_x["Moyenne"] = df_x["q50"]
     df_x["Groupe"] = groups + 1
 
     # Add real values.
