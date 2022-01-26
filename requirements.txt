@@ -12,6 +12,7 @@ panel
 pathlib
 pillow
 plotly
+sklearn
 simplejson
 streamlit
 xarray
