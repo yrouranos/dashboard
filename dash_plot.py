@@ -1735,6 +1735,9 @@ def gen_cluster_tbl(
 
         return df
 
+    # Dataset holding absolute values.
+    df_abs = pd.DataFrame()
+
     # Load dataset for the current variable.
     def load() -> pd.DataFrame:
 
@@ -1760,10 +1763,15 @@ def gen_cluster_tbl(
 
         # Set mean and quantiles as attributes.
         n_columns = len(columns)
-        df["mean"] = df.iloc[:, 0:n_columns].mean(axis=1)
+        df[c.stat_mean] = df.iloc[:, 0:n_columns].mean(axis=1)
         df["q10"] = df.iloc[:, 0:n_columns].quantile(q=0.1, axis=1, numeric_only=False, interpolation="linear")
         df["q90"] = df.iloc[:, 0:n_columns].quantile(q=0.9, axis=1, numeric_only=False, interpolation="linear")
-        df = df[["mean", "q10", "q90"]]
+        df = df[[c.stat_mean, "q10", "q90"]]
+
+        # Update the dataframe holding absolute values.
+        df_abs[cntx.varidx.code] = df[c.stat_mean]
+        if len(df_abs.columns) == 1:
+            df_abs.index = df.index
 
         # Normalize data.
         if normalize:
@@ -1791,7 +1799,10 @@ def gen_cluster_tbl(
     df_x["Moyenne"] = df_x.mean(axis=1)
     df_x["Groupe"] = groups + 1
 
+    # Add real values.
     if not format_nicely:
+        df_x = df_abs
+        df_x["Groupe"] = groups + 1
         return df_x
 
     # Format table.
@@ -1814,15 +1825,31 @@ def gen_cluster_tbl(
 
     # In Streamlit, a table needs to be formatted.
     else:
+
+        # Determine text colors.
+        cmap = plt.cm.get_cmap("rainbow", n_cluster)
+        text_color_l = []
+        for i in range(n_cluster):
+            text_color_l_i = []
+            for j in range(len(df_display)):
+                group = df_display["Groupe"].values[j]
+                hex = colors.to_hex(cmap((group - 1) / (n_cluster - 1)))
+                text_color_l_i.append(hex)
+            text_color_l.append(text_color_l_i)
+
+        # Values.
         values = []
         for col_name in df_display.columns:
             values.append(df_display[col_name])
+
+        # Table
         fig = go.Figure(data=[go.Table(
             header=dict(values=list(df_display.columns),
                         line_color="white",
                         fill_color=cntx.col_sb_fill,
                         align="right"),
             cells=dict(values=values,
+                       font=dict(color=text_color_l),
                        line_color="white",
                        fill_color="white",
                        align="right"))
@@ -1864,17 +1891,56 @@ def gen_cluster_plot(
     # Generate clusters.
     df = gen_cluster_tbl(n_cluster, False)
 
+    # Font size.
+    fs        = 9 if cntx.code == c.platform_streamlit else 10
+    fs_title  = fs + 1
+    fs_labels = fs
+
+    # Initialize figure and axes.
+    if c.platform_streamlit in cntx.code:
+        fig = plt.figure(figsize=(9, 4.4), dpi=cntx.dpi)
+    else:
+        fig = plt.figure(figsize=(10.6, 4.8), dpi=cntx.dpi)
+        plt.subplots_adjust(top=0.98, bottom=0.10, left=0.08, right=0.92, hspace=0.0, wspace=0.0)
+    specs = gridspec.GridSpec(ncols=1, nrows=1, figure=fig)
+    ax = fig.add_subplot(specs[:])
+
+    # Get variable names.
+    if cntx.varidxs.count == 1:
+        var_1 = var_2 = cntx.varidxs.items[0]
+    else:
+        var_1 = cntx.varidxs.items[0]
+        var_2 = cntx.varidxs.items[1]
+
+    # Format.
+    ax.set_xlabel(var_1.desc + " (" + var_1.unit + ")")
+    ax.set_ylabel(var_2.desc + " (" + var_2.unit + ")")
+
     # Create scatter plot (matplotlib).
-    fig = plt.figure()
+    leg_labels = []
+    leg_lines = []
+    cmap = plt.cm.get_cmap("rainbow", n_cluster)
     for i in range(n_cluster):
-        plt.scatter(x=df[df["Groupe"] == i + 1]["Moyenne"], y=df[df["Groupe"] == i + 1]["Moyenne"],
-                    cmap=plt.cm.get_cmap("hsv", n_cluster))
+        color = cmap(i / (n_cluster - 1))
+        ax.scatter(x=df[df["Groupe"] == i + 1][var_1.code], y=df[df["Groupe"] == i + 1][var_2.code],
+                   color=color)
+        leg_labels.append("Groupe " + str(i + 1))
+        leg_lines.append(Line2D([0], [0], color=color, lw=2))
     plt.legend()
-    plt.show()
+
+    # Title.
+    title = "Regroupement des simulations par similarité"
+    plt.title(title, loc="left", fontweight="bold", fontsize=fs_title)
+
+    # Legend.
+    ax.legend(leg_lines, leg_labels, loc="upper left", ncol=5, mode="expland", frameon=False,
+              fontsize=fs_labels)
 
     # Create scatter plot (hvplot).
     # fig = df_x.hvplot.scatter(x="mean", y="mean", by="Groupe", legend="top", height=400, width=400,
     #                           hover_cols=["index"])
+
+    plt.close(fig)
 
     return fig
 

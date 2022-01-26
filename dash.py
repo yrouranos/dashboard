@@ -275,8 +275,8 @@ def refresh():
                 st.write(hv.render(cycle_d), backend="bokeh")
     else:
         st.write(dash_plot.gen_cluster_tbl(n_cluster))
-        # if cntx.varidxs.count <= 2:
-        #     st.write(dash_plot.gen_cluster_plot(n_cluster))
+        if cntx.varidxs.count in [1, 2]:
+            st.write(dash_plot.gen_cluster_plot(n_cluster))
     if cntx.view.code in [c.view_ts, c.view_tbl]:
         tbl_ref = str(du.ref_val())
         st.write("Valeur moyenne pour la période de référence : " + tbl_ref)
