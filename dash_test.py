@@ -223,6 +223,38 @@ def gen_cycle(
                         dash_plot.gen_cycle_d(df_d)
 
 
+def gen_cluster(
+    project_code: str
+):
+
+    """
+    --------------------------------------------------------------------------------------------------------------------
+    Test cluster plot generation.
+
+    Parameters
+    ----------
+    project_code : str
+        Project code.
+    --------------------------------------------------------------------------------------------------------------------
+    """
+
+    cntx.view = def_view.View(c.view_cluster)
+    cntx.libs = def_lib.Libs(cntx.view.code)
+
+    for lib in cntx.libs.code_l:
+
+        cntx.lib = def_lib.Lib(lib)
+
+        cntx.delta = def_delta.Delta("False")
+
+        cntx.varidxs = vi.VarIdxs("*")
+
+        cntx.projects = def_project.Projects("*")
+        cntx.project = def_project.Project(project_code)
+
+        dash_plot.gen_cluster(5)
+
+
 def run(
     project_code: str
 ):
@@ -242,6 +274,7 @@ def run(
     cntx.project = def_project.Project(project_code)
     cntx.views = def_view.Views()
 
+    gen_cluster(project_code)
     gen_ts(project_code, c.view_ts)
     gen_ts(project_code, c.view_ts_bias)
     gen_tbl(project_code)

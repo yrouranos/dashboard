@@ -17,6 +17,7 @@ class Constant:
     view_cycle               = "cycle"
     view_cycle_ms            = "cycle_ms"
     view_cycle_d             = "cycle_d"
+    view_cluster             = "cluster"
 
     # Plotting libraries.
     lib_alt                  = "alt"

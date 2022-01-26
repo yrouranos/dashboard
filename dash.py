@@ -11,6 +11,7 @@
 
 # External libraries.
 import holoviews as hv
+import math
 import pandas as pd
 import streamlit as st
 from PIL import Image
@@ -156,10 +157,31 @@ def refresh():
 
     # Variables and indices.
     cntx.varidxs = vi.VarIdxs("*")
-    vi_f = st.selectbox("Variable ou indice", options=cntx.varidxs.desc_l)
-    vi_code = cntx.varidxs.code_from_desc(vi_f) if cntx.varidxs is not None else ""
-    cntx.varidx = vi.VarIdx(vi_code)
-    cntx.project.load_quantiles()
+    if cntx.view.code in [c.view_ts, c.view_ts_bias, c.view_tbl, c.view_map, c.view_cycle]:
+        vi_f = st.selectbox("Variable ou indice", options=cntx.varidxs.desc_l)
+        vi_code = cntx.varidxs.code_from_desc(vi_f) if cntx.varidxs is not None else ""
+        cntx.varidx = vi.VarIdx(vi_code)
+        cntx.project.load_quantiles()
+    else:
+        st.write("Variable(s)")
+        opts = []
+        for varidx in cntx.varidxs.items:
+            if varidx.is_var:
+                opts.append(st.checkbox(varidx.desc, value=True))
+        var_l = []
+        for i in range(len(opts)):
+            if opts[i]:
+                var_l.append(cntx.varidxs.items[i].code)
+        cntx.varidxs = vi.VarIdxs(var_l)
+
+    # Number of clusters.
+    n_cluster = 0
+    if cntx.view.code == c.view_cluster:
+        n_cluster_min = 1
+        n_cluster_max = int(du.get_n_cluster_max())
+        n_cluster_suggested = math.ceil(0.2 * float(n_cluster_max))
+        n_cluster = st.number_input("Nombre de groupes", format="%i", min_value=n_cluster_min,
+                                    max_value=n_cluster_max, value=n_cluster_suggested)
 
     # Horizons.
     if cntx.view.code in [c.view_tbl, c.view_map, c.view_cycle]:
@@ -236,7 +258,7 @@ def refresh():
             st.write(dash_plot.gen_map(df, range_vals))
         else:
             st.write(hv.render(dash_plot.gen_map(df, range_vals)), backend="bokeh")
-    else:
+    elif cntx.view.code == c.view_cycle:
         df_ms = pd.DataFrame(du.load_data("MS"))
         cycle_ms = dash_plot.gen_cycle_ms(df_ms)
         if cycle_ms is not None:
@@ -251,6 +273,10 @@ def refresh():
                 st.write(cycle_d)
             else:
                 st.write(hv.render(cycle_d), backend="bokeh")
+    else:
+        st.write(dash_plot.gen_cluster_tbl(n_cluster))
+        # if cntx.varidxs.count <= 2:
+        #     st.write(dash_plot.gen_cluster_plot(n_cluster))
     if cntx.view.code in [c.view_ts, c.view_tbl]:
         tbl_ref = str(du.ref_val())
         st.write("Valeur moyenne pour la période de référence : " + tbl_ref)

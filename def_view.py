@@ -39,7 +39,8 @@ def code_desc(
                         ("(biais)" if cntx.code == c.platform_jupyter else "avant ajustement de biais"),
         c.view_tbl:     "Tableau",
         c.view_map:     "Carte",
-        c.view_cycle:   "Cycle annuel"
+        c.view_cycle:   "Cycle annuel",
+        c.view_cluster: "Similarité entre les simulations"
     }
 
 
@@ -111,6 +112,8 @@ class Views(def_object.Objs):
         for code in list(dict(code_desc()).keys()):
             if len(list(glob.glob(cntx.d_project + code + "*/"))) > 0:
                 code_l.append(code)
+        if c.view_ts in code_l:
+            code_l.append(c.view_cluster)
 
         self.add(code_l)
 

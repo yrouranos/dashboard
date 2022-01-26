@@ -501,6 +501,8 @@ class VarIdxs(def_object.Objs):
 
         # Codes.
         view_code = cntx.view.code if cntx.view is not None else ""
+        if view_code == c.view_cluster:
+            view_code = c.view_ts
 
         # The items are extracted from directory names.
         # ~/<project_code>/<view_code>/*
@@ -514,7 +516,7 @@ class VarIdxs(def_object.Objs):
 
         # The items are extracted from directory names.
         # ~/<project_code>/<view_code>/<varidx_code>/*
-        elif view_code in [c.view_ts, c.view_map, c.view_cycle, c.view_ts_bias]:
+        elif view_code in [c.view_ts, c.view_map, c.view_cycle, c.view_ts_bias, c.view_cluster]:
             p = cntx.d_project + "<view_code>*/*"
             p = p.replace("<view_code>", view_code)
             for p_i in list(glob.glob(p)):

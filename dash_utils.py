@@ -116,6 +116,8 @@ def load_data(
     p = ""
 
     view_code  = cntx.view.code if cntx.view is not None else ""
+    if view_code == c.view_cluster:
+        view_code = c.view_ts
     delta_code = cntx.delta.code if cntx.delta is not None else False
     vi_code    = cntx.varidx.code if cntx.varidx is not None else ""
     vi_precision = cntx.varidx.precision if cntx.varidx is not None else 0
@@ -311,6 +313,41 @@ def ref_val(
         val += unit
 
     return val
+
+
+def get_n_cluster_max(
+) -> int:
+
+    """
+    --------------------------------------------------------------------------------------------------------------------
+    Get maximum number of clusters.
+
+    Returns
+    -------
+    int
+        Maximum number of clusters.
+    --------------------------------------------------------------------------------------------------------------------
+    """
+
+    # List simulations associated with each variable, and put them into an array.
+    arr_sim_l = []
+    for varidx in cntx.varidxs.items:
+        cntx.varidx = varidx
+        if varidx.is_var:
+            arr_sim_l.append(pd.DataFrame(load_data("sim")).columns[2:])
+
+    # Identify the simulations that are available for all variables.
+    sim_l = []
+    for sim in arr_sim_l[0]:
+        available = True
+        for i in range(1, len(arr_sim_l)):
+            if sim not in arr_sim_l[i]:
+                available = False
+                break
+        if available:
+            sim_l.append(sim)
+
+    return len(sim_l)
 
 
 def list_dir(

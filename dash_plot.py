@@ -32,6 +32,8 @@ from bokeh.models import FixedTicker
 from descartes import PolygonPatch
 from matplotlib.lines import Line2D
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from sklearn import preprocessing
+from sklearn.cluster import AgglomerativeClustering
 from typing import Union, List, Optional
 
 # Dashboard libraries.
@@ -1689,3 +1691,171 @@ def plot_code(
             code += " - " + cntx.stat.desc
 
     return ("Δ" if cntx.delta.code == "True" else "") + code
+
+
+def gen_cluster_tbl(
+    n_cluster: int,
+    format_nicely: bool = True
+) -> pd.DataFrame:
+
+    """
+    --------------------------------------------------------------------------------------------------------------------
+    Generate cluster table (based on time series).
+
+    Parameters
+    ----------
+    n_cluster: int
+        Number of clusters.
+    format_nicely: bool
+        Format nicely (for display)
+
+    Returns
+    -------
+    pd.DataFrame
+    --------------------------------------------------------------------------------------------------------------------
+    """
+
+    normalize = True
+
+    # Normalize data.
+    def norm(df: pd.DataFrame) -> pd.DataFrame:
+
+        # Memorize column names and indices.
+        # columns = df.columns
+        # indices = df.index
+
+        # df = pd.DataFrame(preprocessing.MinMaxScaler().fit(df).transform(df))
+        # df.columns = columns
+        # df.index = indices
+        min_val = np.nanmin(df.values)
+        max_val = np.nanmax(df.values)
+        df = (df - min_val) / (max_val - min_val)
+
+        return df
+
+    # Load dataset for the current variable.
+    def load() -> pd.DataFrame:
+
+        # Load and format dataset.
+        df = pd.DataFrame(du.load_data("sim"))
+        df = df[np.isnan(df[c.ref]) == False]
+        df["year"] = df["year"].astype(str)
+        df.drop([c.ref], axis=1, inplace=True)
+        df = df.transpose()
+        columns = df.iloc[0]
+        df = df[1:]
+        df.columns = columns
+
+        # Normalize data.
+        if normalize:
+            df = norm(df)
+
+        return df
+
+    # Calculate the normalized values, combining all variables.
+    df_x = None
+    for i in range(cntx.varidxs.count):
+        cntx.varidx = cntx.varidxs.items[i]
+        df_i = load()
+        df_x = df_i if df_x is None else (df_x + df_i ** 2)
+    df_x = df_x ** 0.5
+    df_x = df_x.dropna()
+    indices = df_x.index
+
+    # Normalize data.
+    if normalize:
+        df_x = norm(df_x)
+
+    # Perform clustering.
+    ac = AgglomerativeClustering(n_clusters=n_cluster, affinity="euclidean", linkage="ward").fit(df_x)
+    groups = ac.fit_predict(df_x)
+    df_x["Moyenne"] = df_x.mean(axis=1)
+    df_x["Groupe"] = groups + 1
+
+    if not format_nicely:
+        return df_x
+
+    # Format table.
+    df_display = pd.DataFrame(indices)
+    df_display["RCP"] = [""] * len(df_display)
+    df_display["Groupe"] = groups + 1
+    df_display.sort_values(by="Groupe", inplace=True)
+    df_display.columns = ["Simulation", "RCP", "Groupe"]
+    for i in range(len(df_display)):
+        sim = def_sim.Sim(df_display["Simulation"][i])
+        df_display["Simulation"][i] = sim.rcm + "_" + sim.gcm
+        df_display["RCP"][i] = sim.rcp.desc
+
+    # Title.
+    title = "<b>Regroupement des simulations par similarité</b>"
+
+    # In Jupyter Notebook, a dataframe appears nicely.
+    if cntx.code == c.platform_jupyter:
+        tbl = df_display.set_index(df_display.columns[0])
+
+    # In Streamlit, a table needs to be formatted.
+    else:
+        values = []
+        for col_name in df_display.columns:
+            values.append(df_display[col_name])
+        fig = go.Figure(data=[go.Table(
+            header=dict(values=list(df_display.columns),
+                        line_color="white",
+                        fill_color=cntx.col_sb_fill,
+                        align="right"),
+            cells=dict(values=values,
+                       line_color="white",
+                       fill_color="white",
+                       align="right"))
+        ])
+        fig.update_layout(
+            font=dict(size=15),
+            width=700,
+            height=50 + 22 * len(df_display),
+            margin=go.layout.Margin(l=0, r=0, b=0, t=50),
+            title_text=title,
+            title_x=0,
+            title_font=dict(size=15)
+        )
+        tbl = fig
+
+    return tbl
+
+
+def gen_cluster_plot(
+    n_cluster: int
+) -> plt.Figure:
+
+    """
+    --------------------------------------------------------------------------------------------------------------------
+    Plot a cluster scatter plot (based on time series).
+
+    Parameters
+    ----------
+    n_cluster: int
+        Number of clusters.
+
+    Returns
+    -------
+    plt.Figure
+        Figure
+    --------------------------------------------------------------------------------------------------------------------
+    """
+
+    # Generate clusters.
+    df = gen_cluster_tbl(n_cluster, False)
+
+    # Create scatter plot (matplotlib).
+    fig = plt.figure()
+    for i in range(n_cluster):
+        plt.scatter(x=df[df["Groupe"] == i + 1]["Moyenne"], y=df[df["Groupe"] == i + 1]["Moyenne"],
+                    cmap=plt.cm.get_cmap("hsv", n_cluster))
+    plt.legend()
+    plt.show()
+
+    # Create scatter plot (hvplot).
+    # fig = df_x.hvplot.scatter(x="mean", y="mean", by="Groupe", legend="top", height=400, width=400,
+    #                           hover_cols=["index"])
+
+    return fig
+
