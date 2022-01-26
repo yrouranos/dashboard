@@ -1715,27 +1715,20 @@ def gen_cluster_tbl(
     --------------------------------------------------------------------------------------------------------------------
     """
 
+    # Tells whether to normalize values or not (between 0 and 1).
     normalize = True
 
-    rcp_code = cntx.rcp.code if cntx.rcp is not None else ""
+    # Tells whether to take all years as attributes. The opposite is to take a few quantiles representing these years.
+    years_as_attributes = False
 
     # Identify the simulations that shared between variables.
     sim_l = du.get_shared_sims()
 
     # Normalize data.
     def norm(df: pd.DataFrame) -> pd.DataFrame:
-
-        # Memorize column names and indices.
-        # columns = df.columns
-        # indices = df.index
-
-        # df = pd.DataFrame(preprocessing.MinMaxScaler().fit(df).transform(df))
-        # df.columns = columns
-        # df.index = indices
         min_val = np.nanmin(df.values)
         max_val = np.nanmax(df.values)
         df = (df - min_val) / (max_val - min_val)
-
         return df
 
     # Dataset holding absolute values.
@@ -1751,6 +1744,7 @@ def gen_cluster_tbl(
         df.drop([c.ref], axis=1, inplace=True)
 
         # Select the columns associated with the current RPC.
+        rcp_code = cntx.rcp.code if cntx.rcp is not None else ""
         if rcp_code != c.rcpxx:
             df_tmp = df[["year"]]
             for column in df.columns:
@@ -1771,10 +1765,11 @@ def gen_cluster_tbl(
 
         # Set mean and quantiles as attributes.
         n_columns = len(columns)
-        df["q10"] = df.iloc[:, 0:n_columns].quantile(q=0.1, axis=1, numeric_only=False, interpolation="linear")
         df["q50"] = df.iloc[:, 0:n_columns].quantile(q=0.5, axis=1, numeric_only=False, interpolation="linear")
-        df["q90"] = df.iloc[:, 0:n_columns].quantile(q=0.9, axis=1, numeric_only=False, interpolation="linear")
-        df = df[["q10", "q50", "q90"]]
+        if not years_as_attributes:
+            df["q10"] = df.iloc[:, 0:n_columns].quantile(q=0.1, axis=1, numeric_only=False, interpolation="linear")
+            df["q90"] = df.iloc[:, 0:n_columns].quantile(q=0.9, axis=1, numeric_only=False, interpolation="linear")
+            df = df[["q10", "q50", "q90"]]
 
         # Update the dataframe holding absolute values.
         df_abs[cntx.varidx.code] = df["q50"]
