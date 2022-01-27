@@ -97,6 +97,8 @@ class Libs(def_object.Objs):
                 code_l = [c.lib_ply]
             elif cntx.view.code in [c.view_map, c.view_cycle]:
                 code_l = [c.lib_hv, c.lib_mat]
+            elif cntx.view_code == c.view_cluster:
+                code_l = [c.lib_hv, c.lib_mat]
             self.add(code_l)
 
     def add(

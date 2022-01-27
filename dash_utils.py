@@ -316,15 +316,21 @@ def ref_val(
 
 
 def get_shared_sims(
-) -> int:
+    p: str = ""
+) -> List[str]:
 
     """
     --------------------------------------------------------------------------------------------------------------------
     Get the simulations that are shared between multiple variables.
 
+    Parameters
+    ----------
+    p: str
+        Path.
+
     Returns
     -------
-    int
+    Listr[str]
         Simulations that are shared between multiple variables.
     --------------------------------------------------------------------------------------------------------------------
     """
@@ -336,7 +342,11 @@ def get_shared_sims(
     for varidx in cntx.varidxs.items:
         cntx.varidx = varidx
         if varidx.is_var:
-            arr_sim_l.append(pd.DataFrame(load_data("sim")).columns[2:])
+            if p == "":
+                sim_l = pd.DataFrame(load_data("sim")).columns[2:]
+            else:
+                sim_l = pd.read(p).columns[2:]
+            arr_sim_l.append(sim_l)
 
     # Identify the simulations that are available for all variables.
     sim_l = []

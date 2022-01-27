@@ -32,15 +32,15 @@ from bokeh.models import FixedTicker
 from descartes import PolygonPatch
 from matplotlib.lines import Line2D
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-from sklearn import preprocessing
-from sklearn.cluster import AgglomerativeClustering
 from typing import Union, List, Optional
 
 # Dashboard libraries.
+import dash_statistics as stats
 import dash_utils as du
 import def_rcp
 import def_sim
 import def_stat
+import def_varidx as vi
 from def_constant import const as c
 from def_context import cntx
 
@@ -1694,8 +1694,7 @@ def plot_code(
 
 
 def gen_cluster_tbl(
-    n_cluster: int,
-    format_nicely: bool = True
+    n_cluster: int
 ) -> pd.DataFrame:
 
     """
@@ -1706,8 +1705,6 @@ def gen_cluster_tbl(
     ----------
     n_cluster: int
         Number of clusters.
-    format_nicely: bool
-        Format nicely (for display)
 
     Returns
     -------
@@ -1715,116 +1712,16 @@ def gen_cluster_tbl(
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    # Tells whether to normalize values or not (between 0 and 1).
-    normalize = True
-
-    # Tells whether to take all years as attributes. The opposite is to take a few quantiles representing these years.
-    years_as_attributes = False
-
-    # Identify the simulations that shared between variables.
-    sim_l = du.get_shared_sims()
-
-    # Normalize data.
-    def norm(df: pd.DataFrame) -> pd.DataFrame:
-        min_val = np.nanmin(df.values)
-        max_val = np.nanmax(df.values)
-        df = (df - min_val) / (max_val - min_val)
-        return df
-
-    # Dataset holding absolute values.
-    df_abs = pd.DataFrame()
-
-    # Load dataset for the current variable.
-    def load() -> pd.DataFrame:
-
-        # Load and format dataset.
-        df = pd.DataFrame(du.load_data("sim"))
-        df = df[np.isnan(df[c.ref]) == False]
-        df["year"] = df["year"].astype(str)
-        df.drop([c.ref], axis=1, inplace=True)
-
-        # Select the columns associated with the current RPC.
-        rcp_code = cntx.rcp.code if cntx.rcp is not None else ""
-        if rcp_code != c.rcpxx:
-            df_tmp = df[["year"]]
-            for column in df.columns:
-                if (rcp_code in column) and (column in sim_l):
-                    df_tmp[column] = df[column]
-            df = df_tmp
-
-        # Transpose.
-        df = df.transpose()
-        columns = df.iloc[0]
-        df = df[1:]
-        df.columns = columns
-
-        # Sort by simulation name.
-        df["sim"] = df.index
-        df.sort_values(by="sim", inplace=True)
-        df.drop(columns=["sim"], inplace=True)
-
-        # Set mean and quantiles as attributes.
-        n_columns = len(columns)
-        df["q50"] = df.iloc[:, 0:n_columns].quantile(q=0.5, axis=1, numeric_only=False, interpolation="linear")
-        if not years_as_attributes:
-            df["q10"] = df.iloc[:, 0:n_columns].quantile(q=0.1, axis=1, numeric_only=False, interpolation="linear")
-            df["q90"] = df.iloc[:, 0:n_columns].quantile(q=0.9, axis=1, numeric_only=False, interpolation="linear")
-            df = df[["q10", "q50", "q90"]]
-
-        # Update the dataframe holding absolute values.
-        df_abs[cntx.varidx.code] = df["q50"]
-        if len(df_abs.columns) == 1:
-            df_abs.index = df.index
-
-        # Normalize data.
-        if normalize:
-            df = norm(df)
-
-        return df
-
-    # Calculate the normalized values, combining all variables.
-    df_x = None
-    for i in range(cntx.varidxs.count):
-        cntx.varidx = cntx.varidxs.items[i]
-        df_i = load()
-        df_x = df_i if df_x is None else (df_x + df_i ** 2)
-    df_x = df_x ** 0.5
-    df_x = df_x.dropna()
-    indices = df_x.index
-
-    # Normalize data.
-    if normalize:
-        df_x = norm(df_x)
-
-    # Perform clustering.
-    ac = AgglomerativeClustering(n_clusters=n_cluster, affinity="euclidean", linkage="ward").fit(df_x)
-    groups = ac.fit_predict(df_x)
-    df_x["Moyenne"] = df_x["q50"]
-    df_x["Groupe"] = groups + 1
-
-    # Add real values.
-    if not format_nicely:
-        df_x = df_abs
-        df_x["Groupe"] = groups + 1
-        return df_x
-
-    # Format table.
-    df_display = pd.DataFrame(indices)
-    df_display["RCP"] = [""] * len(df_display)
-    df_display["Groupe"] = groups + 1
-    df_display.sort_values(by="Groupe", inplace=True)
-    df_display.columns = ["Simulation", "RCP", "Groupe"]
-    for i in range(len(df_display)):
-        sim = def_sim.Sim(df_display["Simulation"][i])
-        df_display["Simulation"][i] = sim.rcm + "_" + sim.gcm
-        df_display["RCP"][i] = sim.rcp.desc
+    # Calculate clusters.
+    df = pd.DataFrame(stats.calc_clusters(n_cluster, True))
+    df = df[["Simulation", "RCP", "Groupe"]]
 
     # Title.
     title = "<b>Regroupement des simulations par similarité</b>"
 
     # In Jupyter Notebook, a dataframe appears nicely.
     if cntx.code == c.platform_jupyter:
-        tbl = df_display.set_index(df_display.columns[0])
+        tbl = df.set_index(df.columns[0])
 
     # In Streamlit, a table needs to be formatted.
     else:
@@ -1834,20 +1731,19 @@ def gen_cluster_tbl(
         text_color_l = []
         for i in range(n_cluster):
             text_color_l_i = []
-            for j in range(len(df_display)):
-                group = df_display["Groupe"].values[j]
-                hex = colors.to_hex(cmap((group - 1) / (n_cluster - 1)))
-                text_color_l_i.append(hex)
+            for j in range(len(df)):
+                group = df["Groupe"].values[j]
+                text_color_l_i.append(colors.to_hex(cmap((group - 1) / (n_cluster - 1))))
             text_color_l.append(text_color_l_i)
 
         # Values.
         values = []
-        for col_name in df_display.columns:
-            values.append(df_display[col_name])
+        for col_name in df.columns:
+            values.append(df[col_name])
 
         # Table
         fig = go.Figure(data=[go.Table(
-            header=dict(values=list(df_display.columns),
+            header=dict(values=list(df.columns),
                         line_color="white",
                         fill_color=cntx.col_sb_fill,
                         align="right"),
@@ -1860,7 +1756,7 @@ def gen_cluster_tbl(
         fig.update_layout(
             font=dict(size=15),
             width=700,
-            height=50 + 25 * len(df_display),
+            height=50 + 22 * len(df),
             margin=go.layout.Margin(l=0, r=0, b=0, t=50),
             title_text=title,
             title_x=0,
@@ -1873,11 +1769,11 @@ def gen_cluster_tbl(
 
 def gen_cluster_plot(
     n_cluster: int
-) -> plt.Figure:
+) -> Union[any, plt.figure]:
 
     """
     --------------------------------------------------------------------------------------------------------------------
-    Plot a cluster scatter plot (based on time series).
+    Generate a cluster scatter plot (based on time series).
 
     Parameters
     ----------
@@ -1886,13 +1782,154 @@ def gen_cluster_plot(
 
     Returns
     -------
+    Union[any, plt.figure] :
+        Cluster scatter plot.
+    --------------------------------------------------------------------------------------------------------------------
+    """
+
+    # Calculate clusters.
+    df = pd.DataFrame(stats.calc_clusters(n_cluster, True))
+
+    # Extract variables.
+    if cntx.varidxs.count == 1:
+        var_1 = var_2 = cntx.varidxs.items[0]
+    else:
+        var_1 = cntx.varidxs.items[0]
+        var_2 = cntx.varidxs.items[1]
+
+    # Title.
+    title = "Regroupement des simulations par similarité"
+
+    # Labels.
+    x_label = var_1.desc + " (" + var_1.unit + ")"
+    y_label = var_2.desc + " (" + var_2.unit + ")"
+
+    # Color map.
+    cmap = plt.cm.get_cmap("rainbow", n_cluster)
+
+    # Generate plot.
+    if cntx.lib.code == c.lib_mat:
+        plot = gen_cluster_plot_mat(df, var_1, var_2, title, x_label, y_label, cmap)
+    else:
+        plot = gen_cluster_plot_hv(df, var_1, var_2, title, x_label, y_label, cmap)
+
+    return plot
+
+
+def gen_cluster_plot_hv(
+    df: pd.DataFrame,
+    var_1: vi.VarIdx,
+    var_2: vi.VarIdx,
+    title: str,
+    x_label: str,
+    y_label: str,
+    cmap: Union[colors.Colormap, str]
+) -> any:
+
+    """
+    --------------------------------------------------------------------------------------------------------------------
+    Generate a cluster scatter plot (based on time series) using hvplot.
+
+    Parameters
+    ----------
+    df: pd.DataFrame
+        Dataframe.
+    var_1: vi.VarIdx
+        First variable.
+    var_2: vi.VarIdx
+        Second variable.
+    title: str
+        Title.
+    x_label: str
+        X-label.
+    y_label: str
+        Y-label.
+    cmap: Union[colors.Colormap, str]
+        Color map.
+
+    Returns
+    -------
+    any
+        Cluster scatter plot.
+    --------------------------------------------------------------------------------------------------------------------
+    """
+
+    # Number of clusters.
+    n_cluster = len(df["Groupe"].unique())
+
+    # Rename columns.
+    columns = list(df.columns)
+    columns = [sub.replace(var_1.code, var_1.desc) for sub in columns]
+    columns = [sub.replace(var_2.code, var_2.desc) for sub in columns]
+    df.columns = columns
+
+    # Add point layers.
+    plot = None
+    for i in range(n_cluster):
+
+        # Select the rows corresponding to the current cluster.
+        df_i = df[df["Groupe"] == i + 1]
+
+        # Color.
+        color = cmap(i / (n_cluster - 1))
+
+        # Add point layer.
+        # label=("Groupe " + str(i + 1))
+        plot_i = df_i.hvplot.scatter(x=var_1.desc, y=var_2.desc, color=color,
+                                     hover_cols=list(df.columns))
+        plot = plot_i if plot is None else plot * plot_i
+
+    # Title.
+    plot = plot.opts(hv.opts.Overlay(title=title))
+
+    # Adjust size and add legend.
+    # legend_position="top_left", legend_opts={"click_policy": "hide", "orientation": "horizontal"}
+    plot = plot.opts(frame_height=300, frame_width=645, border_line_alpha=0.0, background_fill_alpha=0.0,
+                     xlabel=x_label, ylabel=y_label)
+
+    return plot
+
+
+def gen_cluster_plot_mat(
+    df: pd.DataFrame,
+    var_1: vi.VarIdx,
+    var_2: vi.VarIdx,
+    title: str,
+    x_label: str,
+    y_label: str,
+    cmap: Union[colors.Colormap, str]
+) -> plt.Figure:
+
+    """
+    --------------------------------------------------------------------------------------------------------------------
+    Plot a cluster scatter plot (based on time series) using matplotlib.
+
+    Parameters
+    ----------
+    df: pd.DataFrame
+        Dataframe.
+    var_1: vi.VarIdx
+        First variable.
+    var_2: vi.VarIdx
+        Second variable.
+    title: str
+        Title.
+    x_label: str
+        X-label.
+    y_label: str
+        Y-label.
+    cmap: Union[colors.Colormap, str]
+        Color map.
+
+    Returns
+    -------
     plt.Figure
         Figure
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    # Generate clusters.
-    df = gen_cluster_tbl(n_cluster, False)
+    # Number of clusters.
+    n_cluster = len(df["Groupe"].unique())
 
     # Font size.
     fs        = 9 if cntx.code == c.platform_streamlit else 10
@@ -1908,42 +1945,27 @@ def gen_cluster_plot(
     specs = gridspec.GridSpec(ncols=1, nrows=1, figure=fig)
     ax = fig.add_subplot(specs[:])
 
-    # Get variable names.
-    if cntx.varidxs.count == 1:
-        var_1 = var_2 = cntx.varidxs.items[0]
-    else:
-        var_1 = cntx.varidxs.items[0]
-        var_2 = cntx.varidxs.items[1]
-
     # Format.
-    ax.set_xlabel(var_1.desc + " (" + var_1.unit + ")")
-    ax.set_ylabel(var_2.desc + " (" + var_2.unit + ")")
+    ax.set_xlabel(x_label)
+    ax.set_ylabel(y_label)
 
     # Create scatter plot (matplotlib).
     leg_labels = []
     leg_lines = []
-    cmap = plt.cm.get_cmap("rainbow", n_cluster)
     for i in range(n_cluster):
         color = cmap(i / (n_cluster - 1))
-        ax.scatter(x=df[df["Groupe"] == i + 1][var_1.code], y=df[df["Groupe"] == i + 1][var_2.code],
-                   color=color)
+        ax.scatter(x=df[df["Groupe"] == i + 1][var_1.code], y=df[df["Groupe"] == i + 1][var_2.code], color=color)
         leg_labels.append("Groupe " + str(i + 1))
         leg_lines.append(Line2D([0], [0], color=color, lw=2))
     plt.legend()
 
     # Title.
-    title = "Regroupement des simulations par similarité"
     plt.title(title, loc="left", fontweight="bold", fontsize=fs_title)
 
     # Legend.
-    ax.legend(leg_lines, leg_labels, loc="upper left", ncol=5, mode="expland", frameon=False,
-              fontsize=fs_labels)
-
-    # Create scatter plot (hvplot).
-    # fig = df_x.hvplot.scatter(x="mean", y="mean", by="Groupe", legend="top", height=400, width=400,
-    #                           hover_cols=["index"])
+    # ax.legend(leg_lines, leg_labels, loc="upper left", ncol=5, mode="expland", frameon=False,
+    #           fontsize=fs_labels)
 
     plt.close(fig)
 
     return fig
-

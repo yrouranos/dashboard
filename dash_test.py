@@ -252,7 +252,9 @@ def gen_cluster(
         cntx.projects = def_project.Projects("*")
         cntx.project = def_project.Project(project_code)
 
-        dash_plot.gen_cluster(5)
+        n_cluster = 5
+        dash_plot.gen_cluster_tbl(n_cluster)
+        dash_plot.gen_cluster_plot(n_cluster)
 
 
 def run(
