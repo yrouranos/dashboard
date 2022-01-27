@@ -1218,7 +1218,7 @@ def adjust_precision(
     str_vals = []
 
     # Loop through potential numbers of decimal places.
-    for n_dec in range(0, n_dec_max):
+    for n_dec in range(0, n_dec_max + 1):
 
         # Loop through values.
         unique_vals = True
@@ -1756,7 +1756,7 @@ def gen_cluster_tbl(
         fig.update_layout(
             font=dict(size=15),
             width=700,
-            height=50 + 22 * len(df),
+            height=50 + 23 * len(df),
             margin=go.layout.Margin(l=0, r=0, b=0, t=50),
             title_text=title,
             title_x=0,
@@ -1859,9 +1859,14 @@ def gen_cluster_plot_hv(
 
     # Rename columns.
     columns = list(df.columns)
-    columns = [sub.replace(var_1.code, var_1.desc) for sub in columns]
-    columns = [sub.replace(var_2.code, var_2.desc) for sub in columns]
+    # for i in range(len(columns)):
+    #     if columns[i] == var_1.code:
+    #         columns[i] = var_1.desc
+    #     if columns[i] == var_2.code:
+    #         columns[i] = var_2.desc
     df.columns = columns
+    df[var_1.desc] = adjust_precision(df[var_1.code], n_dec_max=var_1.precision)
+    df[var_2.desc] = adjust_precision(df[var_2.code], n_dec_max=var_2.precision)
 
     # Add point layers.
     plot = None
@@ -1876,7 +1881,7 @@ def gen_cluster_plot_hv(
         # Add point layer.
         # label=("Groupe " + str(i + 1))
         plot_i = df_i.hvplot.scatter(x=var_1.desc, y=var_2.desc, color=color,
-                                     hover_cols=list(df.columns))
+                                     hover_cols=["Simulation", "RCP", "Groupe", var_1.desc, var_2.desc])
         plot = plot_i if plot is None else plot * plot_i
 
     # Title.
