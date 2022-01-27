@@ -136,8 +136,6 @@ class Project(def_object.Obj):
             quantiles = [0.0, 1.0]
 
         self._quantiles = quantiles
-        c.stat_q_low = "q" + self.quantiles_as_str[0]
-        c.stat_q_high = "q" + self.quantiles_as_str[len(self.quantiles_as_str) - 1]
 
     @property
     def quantiles_as_str(
@@ -155,11 +153,11 @@ class Project(def_object.Obj):
         ----------------------------------------
         """
 
-        q_l = []
+        q_str_l = []
         for i in range(len(self.quantiles)):
-            q_l.append(str(math.ceil(self.quantiles[i] * 100)))
+            q_str_l.append(str(math.ceil(self.quantiles[i] * 100)))
 
-        return q_l
+        return q_str_l
 
 
 class Projects(def_object.Objs):

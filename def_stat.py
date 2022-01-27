@@ -33,11 +33,18 @@ def code_desc(
     --------------------------------------------------------------------------------------------------------------------
     """
 
+    project_code = cntx.project.code if cntx.project is not None else ""
+    q_str_low = "10"
+    q_str_high = "90"
+    if project_code != "":
+        q_str_low  = cntx.project.quantiles_as_str[0]
+        q_str_high = cntx.project.quantiles_as_str[len(cntx.project.quantiles_as_str) - 1]
+
     return {
         c.stat_min:    "Minimum",
-        c.stat_q_low:  c.stat_q_low.replace("q", "") + "e percentile",
+        c.stat_q_low:  q_str_low + "e percentile",
         c.stat_median: "Médiane",
-        c.stat_q_high: c.stat_q_high.replace("q", "") + "e percentile",
+        c.stat_q_high: q_str_high + "e percentile",
         c.stat_max:    "Maximum",
         c.stat_mean:   "Moyenne"
     }

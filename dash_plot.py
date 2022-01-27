@@ -1218,12 +1218,14 @@ def adjust_precision(
     --------------------------------------------------------------------------------------------------------------------
     """
 
+    val_opt_l = []
+
     # Loop through potential numbers of decimal places.
     for n_dec in range(0, n_dec_max + 1):
 
         # Loop through values.
         unique_vals = True
-        val_n_dec_l = []
+        val_opt_l = []
         for i in range(len(val_l)):
             val_i = float(val_l[i])
 
@@ -1237,11 +1239,11 @@ def adjust_precision(
                 val_i = str("{:." + str(n_dec) + "f}").format(float(str(round(val_i, n_dec))))
 
             # Add value to list.
-            val_n_dec_l.append(val_i)
+            val_opt_l.append(val_i)
 
             # Two consecutive rounded values are equal.
             if i > 0:
-                if val_n_dec_l[i - 1] == val_n_dec_l[i]:
+                if val_opt_l[i - 1] == val_opt_l[i]:
                     unique_vals = False
 
         # Stop loop if all values are unique.
@@ -1250,14 +1252,13 @@ def adjust_precision(
 
     # Convert values to output type if it's not numerical.
     val_new_l = []
-    if output_type != "str":
-        for i in range(len(val_l)):
-            if output_type == "int":
-                val_new_l.append(int(val_l[i]))
-            elif output_type == "float":
-                val_new_l.append(float(val_l[i]))
-    else:
-        val_new_l = val_l
+    for i in range(len(val_l)):
+        if output_type == "int":
+            val_new_l.append(int(val_opt_l[i]))
+        elif output_type == "float":
+            val_new_l.append(float(val_opt_l[i]))
+        else:
+            val_new_l.append(val_opt_l[i])
 
     return val_new_l
 
@@ -1885,9 +1886,9 @@ def gen_cluster_plot_hv(
     # Number of clusters.
     n_cluster = len(df[col_grp].unique())
 
-    # Adjust precision.
-    df[var_1.code] = adjust_precision(list(df[var_1.code].values), n_dec_max=var_1.precision, output_type="float")
-    df[var_2.code] = adjust_precision(list(df[var_2.code].values), n_dec_max=var_2.precision, output_type="float")
+    # Adjust precision (not working great).
+    # df[var_1.code] = adjust_precision(list(df[var_1.code].values), n_dec_max=var_1.precision, output_type="float")
+    # df[var_2.code] = adjust_precision(list(df[var_2.code].values), n_dec_max=var_2.precision, output_type="float")
 
     # Rename columns.
     df.rename(columns={var_1.code: var_1.desc, var_2.code: var_2.desc}, inplace=True)
