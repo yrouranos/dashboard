@@ -780,7 +780,7 @@ def gen_map(
             ticks.append(tick)
 
         # Adjust tick precision.
-        tick_labels = adjust_precision(ticks, n_dec_max)
+        tick_labels = adjust_precision(ticks, n_dec_max=n_dec_max, output_type="str")
 
     # Adjust minimum and maximum values.
     if ticks is not None:
@@ -1193,9 +1193,10 @@ def get_cmap(
 
 
 def adjust_precision(
-    vals: [float],
-    n_dec_max: int = 4
-) -> List[str]:
+    val_l: List[float],
+    n_dec_max: Optional[int] = 4,
+    output_type: Optional[str] = "float"
+) -> List[Union[int, float, str]]:
 
     """
     --------------------------------------------------------------------------------------------------------------------
@@ -1203,48 +1204,62 @@ def adjust_precision(
 
     Parameters
     ----------
-    vals: [float]
+    val_l: List[float]
         List of values.
-    n_dec_max: int, optional
+    n_dec_max: Optional[int]
         Maximum number of decimal places.
-    
+    output_type: Optional[str]
+        Output type = {"int", "float", "str"}
+
     Returns
     -------
-    str
-        Value with adjusted precision.
+    List[Union[int, float, str]]
+        Values with adjusted precision.
     --------------------------------------------------------------------------------------------------------------------
     """
-
-    str_vals = []
 
     # Loop through potential numbers of decimal places.
     for n_dec in range(0, n_dec_max + 1):
 
         # Loop through values.
         unique_vals = True
-        str_vals = []
-        for i in range(len(vals)):
-            val = vals[i]
+        val_n_dec_l = []
+        for i in range(len(val_l)):
+            val_i = float(val_l[i])
+
+            # Adjust precision.
             if n_dec == 0:
-                if not np.isnan(float(val)):
-                    str_val = str(int(round(val, n_dec)))
+                if not np.isnan(float(val_i)):
+                    val_i = str(int(round(val_i, n_dec)))
                 else:
-                    str_val = str(val)
-                str_vals.append(str_val)
+                    val_i = str(val_i)
             else:
-                str_val = str(round(val, n_dec))
-                str_vals.append(str("{:." + str(n_dec) + "f}").format(float(str_val)))
+                val_i = str("{:." + str(n_dec) + "f}").format(float(str(round(val_i, n_dec))))
+
+            # Add value to list.
+            val_n_dec_l.append(val_i)
 
             # Two consecutive rounded values are equal.
             if i > 0:
-                if str_vals[i - 1] == str_vals[i]:
+                if val_n_dec_l[i - 1] == val_n_dec_l[i]:
                     unique_vals = False
 
         # Stop loop if all values are unique.
         if unique_vals or (n_dec == n_dec_max):
             break
 
-    return str_vals
+    # Convert values to output type if it's not numerical.
+    val_new_l = []
+    if output_type != "str":
+        for i in range(len(val_l)):
+            if output_type == "int":
+                val_new_l.append(int(val_l[i]))
+            elif output_type == "float":
+                val_new_l.append(float(val_l[i]))
+    else:
+        val_new_l = val_l
+
+    return val_new_l
 
 
 def draw_region_boundary(
@@ -1712,9 +1727,17 @@ def gen_cluster_tbl(
     --------------------------------------------------------------------------------------------------------------------
     """
 
+    # Column names.
+    col_sim = "Simulation"
+    col_rcp = "RCP"
+    col_grp = "Groupe"
+
     # Calculate clusters.
-    df = pd.DataFrame(stats.calc_clusters(n_cluster, True))
-    df = df[["Simulation", "RCP", "Groupe"]]
+    df = pd.DataFrame(stats.calc_clusters(n_cluster))
+
+    # Subset columns and sort rows.
+    df = df[[col_sim, col_rcp, col_grp]]
+    df.sort_values(by=[col_grp, col_rcp], inplace=True)
 
     # Title.
     title = "<b>Regroupement des simulations par similarité</b>"
@@ -1732,7 +1755,7 @@ def gen_cluster_tbl(
         for i in range(n_cluster):
             text_color_l_i = []
             for j in range(len(df)):
-                group = df["Groupe"].values[j]
+                group = df[col_grp].values[j]
                 text_color_l_i.append(colors.to_hex(cmap((group - 1) / (n_cluster - 1))))
             text_color_l.append(text_color_l_i)
 
@@ -1788,7 +1811,7 @@ def gen_cluster_plot(
     """
 
     # Calculate clusters.
-    df = pd.DataFrame(stats.calc_clusters(n_cluster, True))
+    df = pd.DataFrame(stats.calc_clusters(n_cluster))
 
     # Extract variables.
     if cntx.varidxs.count == 1:
@@ -1854,34 +1877,35 @@ def gen_cluster_plot_hv(
     --------------------------------------------------------------------------------------------------------------------
     """
 
+    # Column names.
+    col_sim = "Simulation"
+    col_rcp = "RCP"
+    col_grp = "Groupe"
+
     # Number of clusters.
-    n_cluster = len(df["Groupe"].unique())
+    n_cluster = len(df[col_grp].unique())
+
+    # Adjust precision.
+    df[var_1.code] = adjust_precision(list(df[var_1.code].values), n_dec_max=var_1.precision, output_type="float")
+    df[var_2.code] = adjust_precision(list(df[var_2.code].values), n_dec_max=var_2.precision, output_type="float")
 
     # Rename columns.
-    columns = list(df.columns)
-    # for i in range(len(columns)):
-    #     if columns[i] == var_1.code:
-    #         columns[i] = var_1.desc
-    #     if columns[i] == var_2.code:
-    #         columns[i] = var_2.desc
-    df.columns = columns
-    df[var_1.desc] = adjust_precision(df[var_1.code], n_dec_max=var_1.precision)
-    df[var_2.desc] = adjust_precision(df[var_2.code], n_dec_max=var_2.precision)
+    df.rename(columns={var_1.code: var_1.desc, var_2.code: var_2.desc}, inplace=True)
 
     # Add point layers.
     plot = None
     for i in range(n_cluster):
 
         # Select the rows corresponding to the current cluster.
-        df_i = df[df["Groupe"] == i + 1]
+        df_i = df[df[col_grp] == i + 1]
 
         # Color.
         color = cmap(i / (n_cluster - 1))
 
         # Add point layer.
-        # label=("Groupe " + str(i + 1))
+        # label=(col_grp + " " + str(i + 1))
         plot_i = df_i.hvplot.scatter(x=var_1.desc, y=var_2.desc, color=color,
-                                     hover_cols=["Simulation", "RCP", "Groupe", var_1.desc, var_2.desc])
+                                     hover_cols=[col_sim, col_rcp, col_grp, var_1.desc, var_2.desc])
         plot = plot_i if plot is None else plot * plot_i
 
     # Title.
@@ -1933,13 +1957,16 @@ def gen_cluster_plot_mat(
     --------------------------------------------------------------------------------------------------------------------
     """
 
+    # Column names.
+    col_grp = "Groupe"
+
     # Number of clusters.
-    n_cluster = len(df["Groupe"].unique())
+    n_cluster = len(df[col_grp].unique())
 
     # Font size.
     fs        = 9 if cntx.code == c.platform_streamlit else 10
     fs_title  = fs + 1
-    fs_labels = fs
+    # fs_labels = fs
 
     # Initialize figure and axes.
     if c.platform_streamlit in cntx.code:
@@ -1959,8 +1986,8 @@ def gen_cluster_plot_mat(
     leg_lines = []
     for i in range(n_cluster):
         color = cmap(i / (n_cluster - 1))
-        ax.scatter(x=df[df["Groupe"] == i + 1][var_1.code], y=df[df["Groupe"] == i + 1][var_2.code], color=color)
-        leg_labels.append("Groupe " + str(i + 1))
+        ax.scatter(x=df[df[col_grp] == i + 1][var_1.code], y=df[df[col_grp] == i + 1][var_2.code], color=color)
+        leg_labels.append(col_grp + " " + str(i + 1))
         leg_lines.append(Line2D([0], [0], color=color, lw=2))
     plt.legend()
 

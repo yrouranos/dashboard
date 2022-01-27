@@ -22,8 +22,7 @@ from def_context import cntx
 
 
 def calc_clusters(
-    n_cluster: int,
-    format_nicely: bool = True
+    n_cluster: int
 ) -> pd.DataFrame:
 
     """
@@ -34,8 +33,6 @@ def calc_clusters(
     ----------
     n_cluster: int
         Number of clusters.
-    format_nicely: bool
-        Format nicely (for display)
 
     Returns
     -------
@@ -43,11 +40,25 @@ def calc_clusters(
     --------------------------------------------------------------------------------------------------------------------
     """
 
+    # Column names.
+    col_year = "year"
+    col_sim = "Simulation"
+    col_rcp = "RCP"
+    col_grp = "Groupe"
+
     # Tells whether to normalize values or not (between 0 and 1).
     normalize = True
 
     # Tells whether to take all years as attributes. The opposite is to take a few quantiles representing these years.
-    years_as_attributes = False
+    use_years = False
+
+    # Quantiles to consider (in addition of the median).
+    use_quantiles = (not use_years) or (cntx.varidxs.count == 1)
+    q_l     = cntx.project.quantiles
+    q_str_l = np.char.add("q", cntx.project.quantiles_as_str)
+
+    # Column that will hold the representative value (mean or middle quantile).
+    column_rep = q_str_l[int((len(q_str_l) - 1) / 2)] if use_quantiles else c.stat_mean
 
     # Identify the simulations that shared between variables.
     sim_l = du.get_shared_sims()
@@ -68,13 +79,13 @@ def calc_clusters(
         # Load and format dataset.
         df = pd.DataFrame(du.load_data("sim"))
         df = df[np.isnan(df[c.ref]) == False]
-        df["year"] = df["year"].astype(str)
+        df[col_year] = df[col_year].astype(str)
         df.drop([c.ref], axis=1, inplace=True)
 
         # Select the columns associated with the current RPC.
         rcp_code = cntx.rcp.code if cntx.rcp is not None else ""
         if rcp_code != c.rcpxx:
-            df_tmp = df[["year"]]
+            df_tmp = df[[col_year]]
             for column in df.columns:
                 if (rcp_code in column) and (column in sim_l):
                     df_tmp[column] = df[column]
@@ -87,20 +98,24 @@ def calc_clusters(
         df.columns = columns
 
         # Sort by simulation name.
-        df["sim"] = df.index
-        df.sort_values(by="sim", inplace=True)
-        df.drop(columns=["sim"], inplace=True)
+        df[col_sim] = df.index
+        df.sort_values(by=col_sim, inplace=True)
+        df.drop(columns=[col_sim], inplace=True)
 
-        # Set mean and quantiles as attributes.
+        # Set quantiles as attributes.
         n_columns = len(columns)
-        df["q50"] = df.iloc[:, 0:n_columns].quantile(q=0.5, axis=1, numeric_only=False, interpolation="linear")
-        if not years_as_attributes:
-            df["q10"] = df.iloc[:, 0:n_columns].quantile(q=0.1, axis=1, numeric_only=False, interpolation="linear")
-            df["q90"] = df.iloc[:, 0:n_columns].quantile(q=0.9, axis=1, numeric_only=False, interpolation="linear")
-            df = df[["q10", "q50", "q90"]]
+        if not use_years:
+            if use_quantiles:
+                for _i in range(0, len(q_l)):
+                    df[q_str_l[_i]] =\
+                        df.iloc[:, 0:n_columns].quantile(q=q_l[_i], axis=1, numeric_only=False, interpolation="linear")
+                df = df[q_str_l]
+            else:
+                df[c.stat_mean] = df.iloc[:, 0:n_columns].mean(axis=1)
+                df = df[c.stat_mean]
 
-        # Update the dataframe holding absolute values.
-        df_abs[cntx.varidx.code] = df["q50"]
+        # Update the dataframe holding absolute values (use middle quantile.
+        df_abs[cntx.varidx.code] = df[column_rep]
         if len(df_abs.columns) == 1:
             df_abs.index = df.index
 
@@ -115,33 +130,29 @@ def calc_clusters(
     for i in range(cntx.varidxs.count):
         cntx.varidx = cntx.varidxs.items[i]
         df_i = load()
-        df_res = df_i if df_res is None else (df_res + df_i ** 2)
-    df_res = df_res ** 0.5
+        if df_res is None:
+            df_res = df_i[[column_rep]]
+            df_res.columns = [cntx.varidx.code]
+        df_res[cntx.varidx.code] = df_i[column_rep]
     df_res = df_res.dropna()
     indices = df_res.index
-
-    # Normalize data.
-    if normalize:
-        df_res = norm(df_res)
 
     # Perform clustering.
     ac = AgglomerativeClustering(n_clusters=n_cluster, affinity="euclidean", linkage="ward").fit(df_res)
     groups = ac.fit_predict(df_res)
-    df_res["Moyenne"] = df_res["q50"]
-    df_res["Groupe"] = groups + 1
 
     # Format table.
     df_format = pd.DataFrame(indices)
-    df_format["RCP"] = [""] * len(df_format)
-    df_format["Groupe"] = groups + 1
+    df_format[col_rcp] = [""] * len(df_format)
+    df_format[col_grp] = groups + 1
     var_code_l = cntx.varidxs.code_l
     for var_code in var_code_l:
         df_format[var_code] = df_abs[var_code].values
-    df_format.sort_values(by="Groupe", inplace=True)
-    df_format.columns = ["Simulation", "RCP", "Groupe"] + var_code_l
+    df_format.sort_values(by=col_grp, inplace=True)
+    df_format.columns = [col_sim, col_rcp, col_grp] + var_code_l
     for i in range(len(df_format)):
-        sim = def_sim.Sim(df_format["Simulation"][i])
-        df_format["Simulation"][i] = sim.rcm + "_" + sim.gcm
-        df_format["RCP"][i] = sim.rcp.desc
+        sim = def_sim.Sim(df_format[col_sim][i])
+        df_format[col_sim][i] = sim.rcm + "_" + sim.gcm
+        df_format[col_rcp][i] = sim.rcp.desc
 
     return df_format

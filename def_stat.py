@@ -26,8 +26,6 @@ def code_desc(
     --------------------------------------------------------------------------------------------------------------------
     Get a dictionary of codes and descriptions.
 
-    Note that 'code_q_low' and 'code_q_high' vary with the context (project and variable).
-
     Returns
     -------
     dict

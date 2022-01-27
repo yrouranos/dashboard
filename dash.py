@@ -161,7 +161,6 @@ def refresh():
         vi_f = st.selectbox("Variable ou indice", options=cntx.varidxs.desc_l)
         vi_code = cntx.varidxs.code_from_desc(vi_f) if cntx.varidxs is not None else ""
         cntx.varidx = vi.VarIdx(vi_code)
-        cntx.project.load_quantiles()
     else:
         st.write("Variable(s)")
         opts = []
@@ -173,6 +172,7 @@ def refresh():
             if opts[i]:
                 var_l.append(cntx.varidxs.items[i].code)
         cntx.varidxs = vi.VarIdxs(var_l)
+    cntx.project.load_quantiles()
 
     # Horizons.
     if cntx.view.code in [c.view_tbl, c.view_map, c.view_cycle]:

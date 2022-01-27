@@ -102,40 +102,42 @@ class Project(def_object.Obj):
         view_code = cntx.view.code if cntx.view is not None else ""
         vi_code = cntx.varidx.code if cntx.varidx is not None else ""
 
-        if view_code in [c.view_map, c.view_tbl]:
+        quantiles = []
 
-            quantiles = []
+        # The items are extracted from the 'q' column of data files.
+        # ~/<project_code>/tbl/<vi_code>.csv
+        if view_code == c.view_tbl:
+            df = pd.DataFrame(du.load_data())
+            df = df[(df["q"] > 0.01) & (df["q"] < 0.99) & (df["q"] != 0.5)]["q"]
+            quantiles = [min(df), max(df)]
 
-            # The items are extracted from the 'q' column of data files.
-            # ~/<project_code>/tbl/<vi_code>.csv
-            if view_code == c.view_tbl:
-                df = pd.DataFrame(du.load_data())
-                df = df[(df["q"] > 0.01) & (df["q"] < 0.99) & (df["q"] != 0.5)]["q"]
-                quantiles = [min(df), max(df)]
+        # The items are extracted from file names.
+        # ~/<project_code>/map/<vi_code>/*/*_q*.csv
+        elif view_code == c.view_map:
+            p = cntx.d_data + "<project_code>/<view_code>/<vi_code>"
+            p = p.replace("<project_code>", project_code)
+            p = p.replace("<view_code>", view_code)
+            p = p.replace("<vi_code>", vi_code)
+            p_l = glob.glob(p + "/*/*_q*.csv")
+            for p_i in p_l:
+                tokens = p_i.replace(".csv", "").replace("_delta", "").split("_q")
+                q = float(tokens[len(tokens) - 1])/100
+                if q not in quantiles:
+                    quantiles.append(q)
+            if len(quantiles) > 0:
+                quantiles.sort()
 
-            # The items are extracted from file names.
-            # ~/<project_code>/map/<vi_code>/*/*_q*.csv
-            elif view_code == c.view_map:
-                p = cntx.d_data + "<project_code>/<view_code>/<vi_code>"
-                p = p.replace("<project_code>", project_code)
-                p = p.replace("<view_code>", view_code)
-                p = p.replace("<vi_code>", vi_code)
-                p_l = glob.glob(p + "/*/*_q*.csv")
-                for p_i in p_l:
-                    tokens = p_i.replace(".csv", "").replace("_delta", "").split("_q")
-                    q = float(tokens[len(tokens) - 1])/100
-                    if q not in quantiles:
-                        quantiles.append(q)
-                if len(quantiles) > 0:
-                    quantiles.sort()
+        # The items are hardcoded (there must be an even number of cells).
+        elif view_code == c.view_cluster:
+            quantiles = [0.1, 0.5, 0.9]
 
-        # Does not apply to the other views.
-        else:
-            quantiles = [0, 1]
+        # The items are hardcoded.
+        elif view_code in [c.view_ts, c.view_ts_bias]:
+            quantiles = [0.0, 1.0]
 
         self._quantiles = quantiles
-        def_stat.code_q_low = "q" + self.quantiles_as_str[0]
-        def_stat.code_q_high = "q" + self.quantiles_as_str[1]
+        c.stat_q_low = "q" + self.quantiles_as_str[0]
+        c.stat_q_high = "q" + self.quantiles_as_str[len(self.quantiles_as_str) - 1]
 
     @property
     def quantiles_as_str(
@@ -153,10 +155,11 @@ class Project(def_object.Obj):
         ----------------------------------------
         """
 
-        q_low = str(math.ceil(self.quantiles[0] * 100))
-        q_high = str(math.ceil(self.quantiles[1] * 100))
+        q_l = []
+        for i in range(len(self.quantiles)):
+            q_l.append(str(math.ceil(self.quantiles[i] * 100)))
 
-        return [q_low, q_high]
+        return q_l
 
 
 class Projects(def_object.Objs):
