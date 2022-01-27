@@ -1741,7 +1741,8 @@ def gen_cluster_tbl(
     df.sort_values(by=[col_grp, col_rcp], inplace=True)
 
     # Title.
-    title = "<b>Regroupement des simulations par similarité</b>"
+    vars_str = str(cntx.varidxs.code_l).replace("[", "").replace("]", "").replace("'", "")
+    title = "<b>Regroupement des simulations par similarité<br>=f(" + vars_str + ")</b>"
 
     # In Jupyter Notebook, a dataframe appears nicely.
     if cntx.code == c.platform_jupyter:
@@ -1822,7 +1823,8 @@ def gen_cluster_plot(
         var_2 = cntx.varidxs.items[1]
 
     # Title.
-    title = "Regroupement des simulations par similarité"
+    vars_str = str(cntx.varidxs.code_l).replace("[", "").replace("]", "").replace("'", "")
+    title = "Regroupement des simulations par similarité\n=f(" + vars_str + ")"
 
     # Labels.
     x_label = var_1.desc + " (" + var_1.unit + ")"
