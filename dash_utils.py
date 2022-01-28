@@ -316,7 +316,7 @@ def ref_val(
 
 
 def get_shared_sims(
-    p: str = ""
+    p_l: Optional[List[str]] = None
 ) -> List[str]:
 
     """
@@ -325,7 +325,7 @@ def get_shared_sims(
 
     Parameters
     ----------
-    p: str
+    p_l: Optional[List[str]]
         Path.
 
     Returns
@@ -339,13 +339,13 @@ def get_shared_sims(
 
     # List simulations associated with each variable, and put them into an array.
     arr_sim_l = []
-    for varidx in cntx.varidxs.items:
-        cntx.varidx = varidx
-        if varidx.is_var:
-            if p == "":
+    for i in range(cntx.varidxs.count):
+        cntx.varidx = cntx.varidxs.items[i]
+        if cntx.varidx.is_var:
+            if p_l is None:
                 sim_l = pd.DataFrame(load_data("sim")).columns[2:]
             else:
-                sim_l = pd.read(p).columns[2:]
+                sim_l = pd.read_csv(p_l[i]).columns[2:]
             arr_sim_l.append(sim_l)
 
     # Identify the simulations that are available for all variables.

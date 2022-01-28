@@ -13,6 +13,7 @@
 import numpy as np
 import pandas as pd
 from sklearn.cluster import AgglomerativeClustering
+from typing import List, Optional
 
 # Dashboard libraries.
 import dash_utils as du
@@ -22,7 +23,8 @@ from def_context import cntx
 
 
 def calc_clusters(
-    n_cluster: int
+    n_cluster: int,
+    p_l: Optional[List[str]] = None
 ) -> pd.DataFrame:
 
     """
@@ -33,6 +35,8 @@ def calc_clusters(
     ----------
     n_cluster: int
         Number of clusters.
+    p_l: Optional[List[str]]
+        Path of data files (one per variable).
 
     Returns
     -------
@@ -61,7 +65,7 @@ def calc_clusters(
     column_rep = q_str_l[int((len(q_str_l) - 1) / 2)] if use_quantiles else c.stat_mean
 
     # Identify the simulations that shared between variables.
-    sim_l = du.get_shared_sims()
+    sim_l = du.get_shared_sims(p_l)
 
     # Normalize data.
     def norm(df: pd.DataFrame) -> pd.DataFrame:
@@ -77,7 +81,14 @@ def calc_clusters(
     def load() -> pd.DataFrame:
 
         # Load and format dataset.
-        df = pd.DataFrame(du.load_data("sim"))
+        df = None
+        if p_l is None:
+            df = pd.DataFrame(du.load_data("sim"))
+        else:
+            for _i in range(cntx.varidxs.count):
+                if cntx.varidx.code + "_" + c.f_csv in p_l[_i]:
+                    df = pd.read_csv(p_l[_i])
+                    break
         df = df[np.isnan(df[c.ref]) == False]
         df[col_year] = df[col_year].astype(str)
         df.drop([c.ref], axis=1, inplace=True)

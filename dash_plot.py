@@ -1793,7 +1793,8 @@ def gen_cluster_tbl(
 
 
 def gen_cluster_plot(
-    n_cluster: int
+    n_cluster: int,
+    p_l: Optional[List[str]] = None
 ) -> Union[any, plt.figure]:
 
     """
@@ -1804,6 +1805,8 @@ def gen_cluster_plot(
     ----------
     n_cluster: int
         Number of clusters.
+    p_l: Optional[List[str]]
+        Path of data files (one per variable).
 
     Returns
     -------
@@ -1813,7 +1816,7 @@ def gen_cluster_plot(
     """
 
     # Calculate clusters.
-    df = pd.DataFrame(stats.calc_clusters(n_cluster))
+    df = pd.DataFrame(stats.calc_clusters(n_cluster, p_l))
 
     # Extract variables.
     if cntx.varidxs.count == 1:
@@ -1988,7 +1991,7 @@ def gen_cluster_plot_mat(
     leg_labels = []
     leg_lines = []
     for i in range(n_cluster):
-        color = cmap(i / (n_cluster - 1))
+        color = "black" if n_cluster == 1 else cmap(i / (n_cluster - 1))
         ax.scatter(x=df[df[col_grp] == i + 1][var_1.code], y=df[df[col_grp] == i + 1][var_2.code], color=color)
         leg_labels.append(col_grp + " " + str(i + 1))
         leg_lines.append(Line2D([0], [0], color=color, lw=2))
