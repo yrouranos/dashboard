@@ -1979,7 +1979,7 @@ def gen_cluster_plot_mat(
         fig = plt.figure(figsize=(9, 4.4), dpi=cntx.dpi)
     else:
         fig = plt.figure(figsize=(10.6, 4.8), dpi=cntx.dpi)
-        plt.subplots_adjust(top=0.98, bottom=0.10, left=0.08, right=0.92, hspace=0.0, wspace=0.0)
+        plt.subplots_adjust(top=0.89, bottom=0.13, left=0.09, right=0.98, hspace=0.0, wspace=0.0)
     specs = gridspec.GridSpec(ncols=1, nrows=1, figure=fig)
     ax = fig.add_subplot(specs[:])
 
