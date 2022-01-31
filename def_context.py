@@ -201,6 +201,9 @@ class Context(def_object.Obj):
         # Discrete vs. continuous colors scales (maps).
         self.opt_map_discrete = True
 
+        # Color scale (cluster plot).
+        self.opt_cluster_col = "Dark2"
+
     def load(
         self,
         p_ini: str = "config.ini"

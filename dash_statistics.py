@@ -149,7 +149,7 @@ def calc_clusters(
     indices = df_res.index
 
     # Perform clustering.
-    ac = AgglomerativeClustering(n_clusters=n_cluster, affinity="euclidean", linkage="ward").fit(df_res)
+    ac = AgglomerativeClustering(n_clusters=int(n_cluster), affinity="euclidean", linkage="ward").fit(df_res)
     groups = ac.fit_predict(df_res)
 
     # Format table.

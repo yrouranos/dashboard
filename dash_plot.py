@@ -1752,7 +1752,7 @@ def gen_cluster_tbl(
     else:
 
         # Determine text colors.
-        cmap = plt.cm.get_cmap("rainbow", n_cluster)
+        cmap = plt.cm.get_cmap(cntx.opt_cluster_col, n_cluster)
         text_color_l = []
         for i in range(n_cluster):
             text_color_l_i = []
@@ -1815,8 +1815,15 @@ def gen_cluster_plot(
     --------------------------------------------------------------------------------------------------------------------
     """
 
+    # Column names.
+    col_grp   = "Groupe"
+    col_leg_x = "leg_x"
+    col_leg_y = "leg_y"
+    col_color = "color"
+
     # Calculate clusters.
     df = pd.DataFrame(stats.calc_clusters(n_cluster, p_l))
+    df.sort_index(inplace=True)
 
     # Extract variables.
     if cntx.varidxs.count == 1:
@@ -1830,17 +1837,44 @@ def gen_cluster_plot(
     title = "Regroupement des simulations par similarité\n=f(" + vars_str + ")"
 
     # Labels.
-    x_label = var_1.desc + " (" + var_1.unit + ")"
-    y_label = var_2.desc + " (" + var_2.unit + ")"
+    axis_labels = dict({"x": var_1.desc + " (" + var_1.unit + ")",
+                        "y": var_2.desc + " (" + var_2.unit + ")"})
 
     # Color map.
-    cmap = plt.cm.get_cmap("rainbow", n_cluster)
+    cmap = plt.cm.get_cmap(cntx.opt_cluster_col, n_cluster)
+
+    # Legend: number of columns and rows.
+    n_col_max = 30
+    n_row = math.ceil(n_cluster / n_col_max)
+    n_row_max = 15
+
+    # Legend: spacing between legend items.
+    x_min = np.nanmin(df[var_1.code])
+    x_max = np.nanmax(df[var_1.code])
+    dx = (x_max - x_min) / n_col_max
+    y_min = np.nanmin(df[var_2.code])
+    y_max = np.nanmax(df[var_2.code])
+    dy = (y_max - y_min) / n_row_max
+    leg_pos = {"x": x_min, "y": y_min + (dy * n_row)}
+
+    # Legend: collect legend items.
+    leg_pos_x_l, leg_pos_y_l, color_l = [], [], []
+    for i in range(len(df)):
+        group = df[col_grp][i]
+        i_col = (group - 1) % n_col_max
+        i_row = n_row - math.ceil((group + 1) / n_col_max)
+        leg_pos_x_l.append(x_min + (dx * i_col))
+        leg_pos_y_l.append(y_min + (dy * i_row))
+        color_l.append("black" if n_cluster == 1 else colors.to_hex(cmap((group - 1) / (n_cluster - 1))))
+    df[col_leg_x] = leg_pos_x_l
+    df[col_leg_y] = leg_pos_y_l
+    df[col_color] = color_l
 
     # Generate plot.
     if cntx.lib.code == c.lib_mat:
-        plot = gen_cluster_plot_mat(df, var_1, var_2, title, x_label, y_label, cmap)
+        plot = gen_cluster_plot_mat(df, var_1, var_2, title, axis_labels, leg_pos)
     else:
-        plot = gen_cluster_plot_hv(df, var_1, var_2, title, x_label, y_label, cmap)
+        plot = gen_cluster_plot_hv(df, var_1, var_2, title, axis_labels, leg_pos)
 
     return plot
 
@@ -1850,9 +1884,8 @@ def gen_cluster_plot_hv(
     var_1: vi.VarIdx,
     var_2: vi.VarIdx,
     title: str,
-    x_label: str,
-    y_label: str,
-    cmap: Union[colors.Colormap, str]
+    axis_labels: dict,
+    leg_pos: Optional[dict]
 ) -> any:
 
     """
@@ -1869,12 +1902,10 @@ def gen_cluster_plot_hv(
         Second variable.
     title: str
         Title.
-    x_label: str
-        X-label.
-    y_label: str
-        Y-label.
-    cmap: Union[colors.Colormap, str]
-        Color map.
+    axis_labels: dict
+        Axis labels {"x", "y"}
+    leg_pos: Optional[dict],
+        Legend position {"x", "y"}
 
     Returns
     -------
@@ -1883,10 +1914,20 @@ def gen_cluster_plot_hv(
     --------------------------------------------------------------------------------------------------------------------
     """
 
+    # Legend type (1=standard, 2=text).
+    leg_type = 2
+
+    # Font size.
+    fs_labels = 10
+
     # Column names.
-    col_sim = "Simulation"
-    col_rcp = "RCP"
-    col_grp = "Groupe"
+    col_sim       = "Simulation"
+    col_rcp       = "RCP"
+    col_grp       = "Groupe"
+    col_leg_x     = "leg_x"
+    col_leg_y     = "leg_y"
+    col_leg_title = "leg_title"
+    col_color     = "color"
 
     # Number of clusters.
     n_cluster = len(df[col_grp].unique())
@@ -1898,29 +1939,62 @@ def gen_cluster_plot_hv(
     # Rename columns.
     df.rename(columns={var_1.code: var_1.desc, var_2.code: var_2.desc}, inplace=True)
 
-    # Add point layers.
+    # Create scatter plots and labels.
     plot = None
+    labels = None
     for i in range(n_cluster):
 
         # Select the rows corresponding to the current cluster.
-        df_i = df[df[col_grp] == i + 1]
+        df_i = df[df[col_grp] == i + 1].copy()
 
         # Color.
-        color = cmap(i / (n_cluster - 1))
+        color = df_i[col_color].values[0]
 
-        # Add point layer.
-        # label=(col_grp + " " + str(i + 1))
-        plot_i = df_i.hvplot.scatter(x=var_1.desc, y=var_2.desc, color=color,
-                                     hover_cols=[col_sim, col_rcp, col_grp, var_1.desc, var_2.desc])
+        # Create points.
+        hover_cols = [col_sim, col_rcp, col_grp, var_1.desc, var_2.desc]
+        if leg_type == 1:
+            label = (col_grp + " " + str(i + 1))
+            plot_i = df_i.hvplot.scatter(x=var_1.desc, y=var_2.desc, color=color, label=label,
+                                         hover_cols=hover_cols)
+        else:
+            plot_i = df_i.hvplot.scatter(x=var_1.desc, y=var_2.desc, color=color,
+                                         hover_cols=hover_cols)
         plot = plot_i if plot is None else plot * plot_i
+
+        # Create legend items.
+        if leg_type == 2:
+            for j in range(2):
+                df_grp = None
+                color_j = "black" if j == 0 else color
+                if (i == 0) and (j == 0):
+                    df_grp = pd.DataFrame([[i + 1, float(leg_pos["x"]), float(leg_pos["y"]), "Groupe:"]],
+                                          columns=[col_grp, col_leg_x, col_leg_y, col_leg_title])
+                    df_grp.set_index(col_grp, inplace=True)
+                elif j == 1:
+                    df_grp = df_i[[col_grp, col_leg_x, col_leg_y]]
+                    df_grp.set_index(col_grp, inplace=True)
+                    df_grp = df_grp[0:1]
+                    df_grp[col_leg_title] = str(i + 1)
+                if df_grp is not None:
+                    label = hv.Labels(data=df_grp, x=col_leg_x, y=col_leg_y, text=col_leg_title).\
+                        opts(text_color=color_j, text_align="left", text_font_size=str(fs_labels) + "pt")
+                    labels = label if labels is None else labels * label
+
+    # Add labels
+    if labels is not None:
+        plot = plot * labels
 
     # Title.
     plot = plot.opts(hv.opts.Overlay(title=title))
 
     # Adjust size and add legend.
-    # legend_position="top_left", legend_opts={"click_policy": "hide", "orientation": "horizontal"}
-    plot = plot.opts(frame_height=300, frame_width=645, border_line_alpha=0.0, background_fill_alpha=0.0,
-                     xlabel=x_label, ylabel=y_label)
+    if leg_type == 1:
+        plot = plot.opts(frame_height=300, frame_width=645, border_line_alpha=0.0, background_fill_alpha=0.0,
+                         xlabel=axis_labels["x"], ylabel=axis_labels["y"], legend_position="top_left",
+                         legend_opts={"click_policy": "hide", "orientation": "horizontal"})
+    else:
+        plot = plot.opts(frame_height=300, frame_width=645, border_line_alpha=0.0, background_fill_alpha=0.0,
+                         xlabel=axis_labels["x"], ylabel=axis_labels["y"])
 
     return plot
 
@@ -1930,9 +2004,8 @@ def gen_cluster_plot_mat(
     var_1: vi.VarIdx,
     var_2: vi.VarIdx,
     title: str,
-    x_label: str,
-    y_label: str,
-    cmap: Union[colors.Colormap, str]
+    axis_labels: dict,
+    leg_pos: Optional[dict]
 ) -> plt.Figure:
 
     """
@@ -1949,12 +2022,10 @@ def gen_cluster_plot_mat(
         Second variable.
     title: str
         Title.
-    x_label: str
-        X-label.
-    y_label: str
-        Y-label.
-    cmap: Union[colors.Colormap, str]
-        Color map.
+    axis_labels: dict
+        Axis labels {"x", "y"}
+    leg_pos: Optional[dict],
+        Legend position {"x", "y"}
 
     Returns
     -------
@@ -1963,8 +2034,14 @@ def gen_cluster_plot_mat(
     --------------------------------------------------------------------------------------------------------------------
     """
 
+    # Legend type (1=standard, 2=text).
+    leg_type = 2
+
     # Column names.
-    col_grp = "Groupe"
+    col_grp   = "Groupe"
+    col_leg_x = "leg_x"
+    col_leg_y = "leg_y"
+    col_color = "color"
 
     # Number of clusters.
     n_cluster = len(df[col_grp].unique())
@@ -1972,37 +2049,50 @@ def gen_cluster_plot_mat(
     # Font size.
     fs        = 9 if cntx.code == c.platform_streamlit else 10
     fs_title  = fs + 1
-    # fs_labels = fs
+    fs_labels = fs
 
     # Initialize figure and axes.
     if c.platform_streamlit in cntx.code:
         fig = plt.figure(figsize=(9, 4.4), dpi=cntx.dpi)
     else:
-        fig = plt.figure(figsize=(10.6, 4.8), dpi=cntx.dpi)
-        plt.subplots_adjust(top=0.89, bottom=0.13, left=0.09, right=0.98, hspace=0.0, wspace=0.0)
+        dpi = cntx.dpi if c.platform_jupyter in cntx.code else None
+        fig = plt.figure(figsize=(10.6, 4.8), dpi=dpi)
+        plt.subplots_adjust(top=0.91, bottom=0.11, left=0.06, right=0.98, hspace=0.0, wspace=0.0)
     specs = gridspec.GridSpec(ncols=1, nrows=1, figure=fig)
     ax = fig.add_subplot(specs[:])
 
     # Format.
-    ax.set_xlabel(x_label)
-    ax.set_ylabel(y_label)
+    ax.set_xlabel(axis_labels["x"])
+    ax.set_ylabel(axis_labels["y"])
 
     # Create scatter plot (matplotlib).
     leg_labels = []
     leg_lines = []
+    ax.text(leg_pos["x"], leg_pos["y"], "Groupes:", color="black")
     for i in range(n_cluster):
-        color = "black" if n_cluster == 1 else cmap(i / (n_cluster - 1))
-        ax.scatter(x=df[df[col_grp] == i + 1][var_1.code], y=df[df[col_grp] == i + 1][var_2.code], color=color)
-        leg_labels.append(col_grp + " " + str(i + 1))
-        leg_lines.append(Line2D([0], [0], color=color, lw=2))
+
+        # Color.
+        color = df[df[col_grp] == i + 1][col_color].unique()[0]
+
+        # Add points.
+        ax.scatter(x=df[df[col_grp] == i + 1][var_1.code], y=df[df[col_grp] == i + 1][var_2.code], s=15, color=color)
+
+        # Add legend items.
+        if leg_type == 1:
+            leg_labels.append(col_grp + " " + str(i + 1))
+            leg_lines.append(Line2D([0], [0], color=color, lw=2))
+        else:
+            leg_x = df[df[col_grp] == i + 1][col_leg_x].unique()[0]
+            leg_y = df[df[col_grp] == i + 1][col_leg_y].unique()[0]
+            ax.text(leg_x, leg_y, str(i + 1), color=color)
     plt.legend()
 
     # Title.
     plt.title(title, loc="left", fontweight="bold", fontsize=fs_title)
 
     # Legend.
-    # ax.legend(leg_lines, leg_labels, loc="upper left", ncol=5, mode="expland", frameon=False,
-    #           fontsize=fs_labels)
+    if leg_type == 1:
+        ax.legend(leg_lines, leg_labels, loc="upper left", ncol=5, mode="expland", frameon=False, fontsize=fs_labels)
 
     plt.close(fig)
 
