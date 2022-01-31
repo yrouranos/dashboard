@@ -1967,7 +1967,7 @@ def gen_cluster_plot_hv(
                 df_grp = None
                 color_j = "black" if j == 0 else color
                 if (i == 0) and (j == 0):
-                    df_grp = pd.DataFrame([[i + 1, float(leg_pos["x"]), float(leg_pos["y"]), "Groupe:"]],
+                    df_grp = pd.DataFrame([[i + 1, float(leg_pos["x"]), float(leg_pos["y"]), "Groupes:"]],
                                           columns=[col_grp, col_leg_x, col_leg_y, col_leg_title])
                     df_grp.set_index(col_grp, inplace=True)
                 elif j == 1:
