@@ -1862,7 +1862,7 @@ def gen_cluster_plot(
     for i in range(len(df)):
         group = df[col_grp][i]
         i_col = (group - 1) % n_col_max
-        i_row = n_row - math.ceil((group + 1) / n_col_max)
+        i_row = n_row - math.ceil(group / n_col_max)
         leg_pos_x_l.append(x_min + (dx * i_col))
         leg_pos_y_l.append(y_min + (dy * i_row))
         color_l.append("black" if n_cluster == 1 else colors.to_hex(cmap((group - 1) / (n_cluster - 1))))
