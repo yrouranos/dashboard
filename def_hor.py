@@ -13,6 +13,7 @@
 import glob
 import os
 import pandas as pd
+import re
 from typing import Union, List
 
 # Dashboard libraries.
@@ -32,16 +33,120 @@ class Hor(def_object.Obj):
     
     def __init__(
         self,
-        code: str
+        code: Union[str, int, float, List[Union[str, int, float]]]
     ):
 
         """
         ----------------------------------------
         Constructor.
+
+        Parameters
+        ----------
+        code: Union[str, int, float, List[Union[str, int, float]]]
+            Code. Ex: "1981*2010" or ["1981", "2010"] or [1981, 2010] or [1981.0, 2010.0] => "1981-2010"
+                      "1981" or 1981 or 1981.0 or ["1981"] or [1981] or [1981.0]          => "1981-1981"
         ----------------------------------------
         """
 
+        if isinstance(code, str):
+            tokens = re.sub("[^0-9]", "-", code).split("-")
+            code = []
+            for i in range(len(tokens)):
+                token = tokens[i]
+                if token.isnumeric():
+                    code.append(str(int(token)))
+                    if len(code) >= 2:
+                        break
+
+        if isinstance(code, int) or isinstance(code, float):
+            code = [str(int(code))] * 2
+
+        if isinstance(code, List):
+            code_1 = "" if len(code) < 1 else code[0]
+            code_2 = "" if len(code) < 2 else code[1]
+            code = [code_1, code_2]
+            for i in range(len(code)):
+                try:
+                    code[i] = str(int(code[i]))
+                except ValueError:
+                    code[i] = ""
+            if (code[0] != "") or (code[1] != ""):
+                if code[0] == "":
+                    code[0] = code[1]
+                if code[1] == "":
+                    code[1] = code[0]
+                code = code[0] + "-" + code[1]
+            else:
+                code = ""
+        else:
+            code = ""
+
         super(Hor, self).__init__(code=code, desc=code)
+
+    @property
+    def year_l(
+        self
+    ) -> List[int]:
+
+        """
+        ----------------------------------------
+        Get years.
+
+        Returns
+        -------
+        List[int]
+            Years.
+        ----------------------------------------
+        """
+
+        year_l = []
+
+        tokens = self.code.split("-")
+        for i in range(2):
+            if len(tokens) >= i + 1:
+                token = tokens[i]
+                if token.isnumeric():
+                    year_l.append(int(token))
+                else:
+                    year_l.append(-1)
+
+        return year_l
+
+    @property
+    def year_1(
+        self
+    ) -> int:
+
+        """
+        ----------------------------------------
+        Get first year.
+
+        Returns
+        -------
+        int
+            First year.
+        ----------------------------------------
+        """
+
+        return self.year_l[0]
+
+    @property
+    def year_2(
+            self
+    ) -> int:
+
+        """
+        ----------------------------------------
+        Get second year.
+
+        Returns
+        -------
+        int
+            Second year.
+        ----------------------------------------
+        """
+
+        return self.year_l[1]
 
 
 class Hors(def_object.Objs):
@@ -163,9 +268,10 @@ class Hors(def_object.Objs):
             items = [item]
 
         else:
-            code_l = item
-            if isinstance(item, str):
+            if not isinstance(item, List):
                 code_l = [item]
+            else:
+                code_l = item
             for i in range(len(code_l)):
                 items.append(Hor(code_l[i]))
         

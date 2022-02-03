@@ -28,6 +28,26 @@ from def_varidx import VarIdx, VarIdxs
 from def_view import View, Views
 
 
+def oo_structure():
+
+    """
+    --------------------------------------------------------------------------------------------------------------------
+    Test object-oriented structure
+    --------------------------------------------------------------------------------------------------------------------
+    """
+
+    # Class: Hor.
+    hor_code_l = ["1981", 1981, 1981.0, ["1981"], [1981], [1981.0],
+                  "1981-2010", ["1981", "2010"], [1981, 2010], [1981.0, 2010.0]]
+    for hor_code in hor_code_l:
+        hor = Hor(hor_code)
+        print("Period " + hor.code + ": " + str(hor.year_1) + " to " + str(hor.year_2))
+
+    # Class: Hors.
+    hors = Hors(hor_code_l)
+    print(hors.code_l)
+
+
 def gen_ts(
     project_code: str,
     view_code: str
@@ -272,10 +292,13 @@ def run(
     --------------------------------------------------------------------------------------------------------------------
     """
 
+    # Object-oriented structure.
+    oo_structure()
+
+    # Visual elements.
     cntx.code = c.platform_streamlit
     cntx.project = Project(project_code)
     cntx.views = Views()
-
     gen_cluster(project_code)
     gen_ts(project_code, c.view_ts)
     gen_ts(project_code, c.view_ts_bias)
