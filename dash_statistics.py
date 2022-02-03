@@ -17,9 +17,9 @@ from typing import List, Optional
 
 # Dashboard libraries.
 import dash_utils as du
-import def_sim
 from def_constant import const as c
 from def_context import cntx
+from def_sim import Sim
 
 
 def calc_clusters(
@@ -162,7 +162,7 @@ def calc_clusters(
     df_format.sort_values(by=col_grp, inplace=True)
     df_format.columns = [col_sim, col_rcp, col_grp] + var_code_l
     for i in range(len(df_format)):
-        sim = def_sim.Sim(df_format[col_sim][i])
+        sim = Sim(df_format[col_sim][i])
         df_format[col_sim][i] = sim.rcm + "_" + sim.gcm
         df_format[col_rcp][i] = sim.rcp.desc
 

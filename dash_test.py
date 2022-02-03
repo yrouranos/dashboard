@@ -15,17 +15,17 @@ import pandas as pd
 # Dashboard libraries.
 import dash_plot
 import dash_utils as du
-import def_delta
-import def_hor
-import def_lib
-import def_project
-import def_rcp
-import def_sim
-import def_stat
-import def_varidx as vi
-import def_view
 from def_constant import const as c
 from def_context import cntx
+from def_delta import Delta
+from def_hor import Hor, Hors
+from def_lib import Lib, Libs
+from def_project import Project, Projects
+from def_rcp import RCP, RCPs
+from def_sim import Sim, Sims
+from def_stat import Stat, Stats
+from def_varidx import VarIdx, VarIdxs
+from def_view import View, Views
 
 
 def gen_ts(
@@ -46,27 +46,27 @@ def gen_ts(
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    cntx.view = def_view.View(view_code)
-    cntx.libs = def_lib.Libs(cntx.view.code)
+    cntx.view = View(view_code)
+    cntx.libs = Libs(cntx.view.code)
 
     for lib in cntx.libs.code_l:
-        cntx.lib = def_lib.Lib(lib)
+        cntx.lib = Lib(lib)
 
         for delta in ["False", "True"]:
-            cntx.delta = def_delta.Delta(delta)
+            cntx.delta = Delta(delta)
 
-            cntx.varidxs = vi.VarIdxs("*")
+            cntx.varidxs = VarIdxs("*")
             for varidx in cntx.varidxs.code_l:
 
-                cntx.varidx = vi.VarIdx(varidx)
-                cntx.rcps = def_rcp.RCPs("*")
-                cntx.rcp = def_rcp.RCP("")
-                cntx.sims = def_sim.Sims("*")
-                cntx.sim = def_sim.Sim("")
+                cntx.varidx = VarIdx(varidx)
+                cntx.rcps = RCPs("*")
+                cntx.rcp = RCP("")
+                cntx.sims = Sims("*")
+                cntx.sim = Sim("")
 
                 cntx.project.load_quantiles()
-                cntx.projects = def_project.Projects("*")
-                cntx.project = def_project.Project(project_code)
+                cntx.projects = Projects("*")
+                cntx.project = Project(project_code)
 
                 for mode in [dash_plot.mode_rcp, dash_plot.mode_sim]:
 
@@ -90,29 +90,29 @@ def gen_tbl(
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    cntx.view = def_view.View(c.view_tbl)
+    cntx.view = View(c.view_tbl)
 
-    cntx.libs = def_lib.Libs(cntx.view.code)
+    cntx.libs = Libs(cntx.view.code)
     for lib in cntx.libs.code_l:
 
-        cntx.lib = def_lib.Lib(lib)
+        cntx.lib = Lib(lib)
 
         for delta in ["False", "True"]:
-            cntx.delta = def_delta.Delta(delta)
+            cntx.delta = Delta(delta)
 
-            cntx.varidxs = vi.VarIdxs("*")
+            cntx.varidxs = VarIdxs("*")
             for varidx in cntx.varidxs.code_l:
 
-                cntx.varidx = vi.VarIdx(varidx)
+                cntx.varidx = VarIdx(varidx)
                 cntx.project.load_quantiles()
 
-                cntx.hors = def_hor.Hors("*")
+                cntx.hors = Hors("*")
                 for hor in cntx.hors.code_l:
 
-                    cntx.hor = def_hor.Hor(hor)
-                    cntx.rcps = def_rcp.RCPs("*")
-                    cntx.projects = def_project.Projects("*")
-                    cntx.project = def_project.Project(project_code)
+                    cntx.hor = Hor(hor)
+                    cntx.rcps = RCPs("*")
+                    cntx.projects = Projects("*")
+                    cntx.project = Project(project_code)
 
                     dash_plot.gen_tbl()
                     du.ref_val()
@@ -133,38 +133,38 @@ def gen_map(
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    cntx.view = def_view.View(c.view_map)
+    cntx.view = View(c.view_map)
 
-    cntx.libs = def_lib.Libs(cntx.view.code)
+    cntx.libs = Libs(cntx.view.code)
     for lib in cntx.libs.code_l:
 
-        cntx.lib = def_lib.Lib(lib)
+        cntx.lib = Lib(lib)
 
         for delta in ["False", "True"]:
-            cntx.delta = def_delta.Delta(delta)
+            cntx.delta = Delta(delta)
 
-            cntx.varidxs = vi.VarIdxs("*")
+            cntx.varidxs = VarIdxs("*")
             for varidx in cntx.varidxs.code_l:
 
-                cntx.varidx = vi.VarIdx(varidx)
+                cntx.varidx = VarIdx(varidx)
                 cntx.project.load_quantiles()
 
-                cntx.hors = def_hor.Hors("*")
+                cntx.hors = Hors("*")
                 for hor in cntx.hors.code_l:
 
-                    cntx.hor = def_hor.Hor(hor)
+                    cntx.hor = Hor(hor)
 
-                    cntx.rcps = def_rcp.RCPs("*")
+                    cntx.rcps = RCPs("*")
                     for rcp in cntx.rcps.code_l:
 
-                        cntx.rcp = def_rcp.RCP(rcp)
-                        cntx.projects = def_project.Projects("*")
-                        cntx.project = def_project.Project(project_code)
+                        cntx.rcp = RCP(rcp)
+                        cntx.projects = Projects("*")
+                        cntx.project = Project(project_code)
 
-                        cntx.stats = def_stat.Stats("*")
+                        cntx.stats = Stats("*")
                         for stat in cntx.stats.code_l:
 
-                            cntx.stat = def_stat.Stat(stat)
+                            cntx.stat = Stat(stat)
 
                             df = pd.DataFrame(du.load_data())
                             z_range = du.calc_range()
@@ -186,35 +186,35 @@ def gen_cycle(
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    cntx.view = def_view.View(c.view_cycle)
-    cntx.libs = def_lib.Libs(cntx.view.code)
-    cntx.delta = def_delta.Delta("False")
+    cntx.view = View(c.view_cycle)
+    cntx.libs = Libs(cntx.view.code)
+    cntx.delta = Delta("False")
 
     for lib in cntx.libs.code_l:
 
-        cntx.lib = def_lib.Lib(lib)
+        cntx.lib = Lib(lib)
 
-        cntx.varidxs = vi.VarIdxs("*")
+        cntx.varidxs = VarIdxs("*")
         for varidx in cntx.varidxs.code_l:
 
-            cntx.varidx = vi.VarIdx(varidx)
+            cntx.varidx = VarIdx(varidx)
 
-            cntx.hors = def_hor.Hors("*")
+            cntx.hors = Hors("*")
             for hor in cntx.hors.code_l:
 
-                cntx.hor = def_hor.Hor(hor)
+                cntx.hor = Hor(hor)
 
-                cntx.rcps = def_rcp.RCPs("*")
+                cntx.rcps = RCPs("*")
                 for rcp in cntx.rcps.code_l:
 
-                    cntx.rcp = def_rcp.RCP(rcp)
+                    cntx.rcp = RCP(rcp)
 
-                    cntx.sims = def_sim.Sims("*")
+                    cntx.sims = Sims("*")
                     for sim in cntx.sims.code_l:
-                        cntx.sim = def_sim.Sim(sim)
+                        cntx.sim = Sim(sim)
 
-                        cntx.projects = def_project.Projects("*")
-                        cntx.project = def_project.Project(project_code)
+                        cntx.projects = Projects("*")
+                        cntx.project = Project(project_code)
 
                         df_ms = pd.DataFrame(du.load_data("MS"))
                         dash_plot.gen_cycle_ms(df_ms)
@@ -238,19 +238,19 @@ def gen_cluster(
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    cntx.view = def_view.View(c.view_cluster)
-    cntx.libs = def_lib.Libs(cntx.view.code)
+    cntx.view = View(c.view_cluster)
+    cntx.libs = Libs(cntx.view.code)
 
     for lib in cntx.libs.code_l:
 
-        cntx.lib = def_lib.Lib(lib)
+        cntx.lib = Lib(lib)
 
-        cntx.delta = def_delta.Delta("False")
+        cntx.delta = Delta("False")
 
-        cntx.varidxs = vi.VarIdxs("*")
+        cntx.varidxs = VarIdxs("*")
 
-        cntx.projects = def_project.Projects("*")
-        cntx.project = def_project.Project(project_code)
+        cntx.projects = Projects("*")
+        cntx.project = Project(project_code)
 
         n_cluster = 5
         dash_plot.gen_cluster_tbl(n_cluster)
@@ -273,8 +273,8 @@ def run(
     """
 
     cntx.code = c.platform_streamlit
-    cntx.project = def_project.Project(project_code)
-    cntx.views = def_view.Views()
+    cntx.project = Project(project_code)
+    cntx.views = Views()
 
     gen_cluster(project_code)
     gen_ts(project_code, c.view_ts)

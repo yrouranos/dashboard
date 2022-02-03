@@ -19,17 +19,19 @@ from PIL import Image
 # Dashboard libraries.
 import dash_plot
 import dash_utils as du
-import def_delta
-import def_hor
-import def_lib
-import def_project
 import def_rcp
 import def_sim
-import def_stat
-import def_varidx as vi
-import def_view
 from def_constant import const as c
 from def_context import cntx
+from def_delta import Delta, Deltas
+from def_hor import Hor, Hors
+from def_lib import Lib, Libs
+from def_project import Project, Projects
+from def_rcp import RCP, RCPs
+from def_sim import Sim, Sims
+from def_stat import Stat, Stats
+from def_varidx import VarIdx, VarIdxs
+from def_view import View, Views
 
 
 def refresh():
@@ -110,31 +112,31 @@ def refresh():
 
     # Initialize context.
     cntx.code = c.platform_streamlit
-    cntx.views = def_view.Views()
-    cntx.libs = def_lib.Libs()
-    cntx.deltas = def_delta.Deltas(["False", "True"])
-    cntx.delta = def_delta.Delta("False")
-    cntx.varidxs = vi.VarIdxs()
-    cntx.hors = def_hor.Hors()
-    cntx.rcps = def_rcp.RCPs()
+    cntx.views = Views()
+    cntx.libs = Libs()
+    cntx.deltas = Deltas(["False", "True"])
+    cntx.delta = Delta("False")
+    cntx.varidxs = VarIdxs()
+    cntx.hors = Hors()
+    cntx.rcps = RCPs()
 
     # Logo.
     st.sidebar.image(Image.open(cntx.p_logo), width=150)
 
     # Projects.
-    cntx.projects = def_project.Projects("*")
+    cntx.projects = Projects("*")
     project_f = st.sidebar.selectbox("Choisir le projet", options=cntx.projects.desc_l)
-    cntx.project = def_project.Project(project_f)
+    cntx.project = Project(project_f)
     cntx.load()
 
     # Views.
-    cntx.views = def_view.Views("*")
+    cntx.views = Views("*")
     view_f = st.sidebar.radio("Choisir la vue", cntx.views.desc_l)
     view_code = cntx.views.code_from_desc(view_f) if cntx.views is not None else ""
-    cntx.view = def_view.View(view_code)
+    cntx.view = View(view_code)
 
     # Plotting libraries.
-    cntx.libs = def_lib.Libs("*")
+    cntx.libs = Libs("*")
     if cntx.opt_lib:
         lib_f = st.sidebar.radio("Choisir la librairie visuelle", options=cntx.libs.desc_l)
         lib_code = cntx.libs.code_from_desc(lib_f) if cntx.libs is not None else ""
@@ -142,25 +144,25 @@ def refresh():
         lib_code = c.lib_hv
         if cntx.view.code == c.view_tbl:
             lib_code = c.lib_ply
-    cntx.lib = def_lib.Lib(lib_code)
+    cntx.lib = Lib(lib_code)
 
     # Deltas.
-    cntx.deltas = def_delta.Deltas("*")
+    cntx.deltas = Deltas("*")
     if cntx.view.code in [c.view_ts, c.view_ts_bias, c.view_tbl, c.view_map]:
         st.sidebar.markdown("<style>.sel_title {font-size:14.5px}</style>", unsafe_allow_html=True)
         title = "Afficher les anomalies par rapport à la période " + str(cntx.per_ref[0]) + "-" + str(cntx.per_ref[1])
         st.sidebar.markdown("<p class='sel_title'>" + title + "</p>", unsafe_allow_html=True)
         delta_f = st.sidebar.checkbox("", value=False)
-        cntx.delta = def_delta.Delta(str(delta_f))
+        cntx.delta = Delta(str(delta_f))
     else:
-        cntx.delta = def_delta.Delta("False")
+        cntx.delta = Delta("False")
 
     # Variables and indices.
-    cntx.varidxs = vi.VarIdxs("*")
+    cntx.varidxs = VarIdxs("*")
     if cntx.view.code in [c.view_ts, c.view_ts_bias, c.view_tbl, c.view_map, c.view_cycle]:
         vi_f = st.selectbox("Variable ou indice", options=cntx.varidxs.desc_l)
         vi_code = cntx.varidxs.code_from_desc(vi_f) if cntx.varidxs is not None else ""
-        cntx.varidx = vi.VarIdx(vi_code)
+        cntx.varidx = VarIdx(vi_code)
     else:
         st.write("Variable(s)")
         opts = []
@@ -171,17 +173,17 @@ def refresh():
         for i in range(len(opts)):
             if opts[i]:
                 var_l.append(cntx.varidxs.items[i].code)
-        cntx.varidxs = vi.VarIdxs(var_l)
+        cntx.varidxs = VarIdxs(var_l)
     cntx.project.load_quantiles()
 
     # Horizons.
     if cntx.view.code in [c.view_tbl, c.view_map, c.view_cycle]:
-        cntx.hors = def_hor.Hors("*")
+        cntx.hors = Hors("*")
         hor_f = st.selectbox("Horizon", options=cntx.hors.code_l)
-        cntx.hor = def_hor.Hor(hor_f)
+        cntx.hor = Hor(hor_f)
 
     # Emission scenarios.
-    cntx.rcps = def_rcp.RCPs("*")
+    cntx.rcps = RCPs("*")
     if cntx.view.code in [c.view_ts, c.view_ts_bias, c.view_map, c.view_cycle, c.view_cluster]:
         rcp_l = cntx.rcps.desc_l
         if cntx.view.code in [c.view_ts, c.view_ts_bias, c.view_cluster]:
@@ -192,7 +194,7 @@ def refresh():
         else:
             rcp_f = st.selectbox("Scénario d'émissions", options=rcp_l)
             rcp_code = cntx.rcps.code_from_desc(rcp_f) if cntx.rcps is not None else ""
-        cntx.rcp = def_rcp.RCP(rcp_code)
+        cntx.rcp = RCP(rcp_code)
 
     # Number of clusters.
     n_cluster = 0
@@ -205,29 +207,29 @@ def refresh():
 
     # Statistics.
     if cntx.view.code == c.view_map:
-        cntx.stats = def_stat.Stats("*")
+        cntx.stats = Stats("*")
         if cntx.rcp.code == c.ref:
-            cntx.stat = def_stat.Stat(c.stat_mean)
+            cntx.stat = Stat(c.stat_mean)
         else:
             stat_f = st.selectbox("Statistique", options=cntx.stats.desc_l)
             stat_code = cntx.stats.code_from_desc(stat_f) if cntx.stats is not None else ""
-            cntx.stat = def_stat.Stat(stat_code)
+            cntx.stat = Stat(stat_code)
 
     # Simulations.
-    cntx.sims = def_sim.Sims("*")
+    cntx.sims = Sims("*")
     if cntx.view.code in [c.view_ts, c.view_ts_bias, c.view_cycle]:
         sim_l = cntx.sims.desc_l
         if cntx.view.code in [c.view_ts, c.view_ts_bias]:
             sim_l = [dict(def_sim.code_desc())[c.simxx]] + sim_l
         if cntx.rcp.code == c.ref:
-            cntx.sim = def_sim.Sim(c.ref)
+            cntx.sim = Sim(c.ref)
         else:
             sim_f = st.selectbox("Simulation", options=sim_l)
             if dict(def_sim.code_desc())[c.simxx] == sim_f:
                 sim_code = c.simxx
             else:
                 sim_code = cntx.sims.code_from_desc(sim_f) if cntx.sims is not None else ""
-            cntx.sim = def_sim.Sim(sim_code)
+            cntx.sim = Sim(sim_code)
 
     # GUI components.
     if cntx.view.code in [c.view_ts, c.view_ts_bias]:

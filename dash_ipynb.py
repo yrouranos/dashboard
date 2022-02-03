@@ -19,17 +19,21 @@ from typing import List
 # Dashboard libraries.
 import dash_plot
 import dash_utils as du
-import def_delta
-import def_hor
 import def_lib
-import def_project
 import def_rcp
 import def_sim
-import def_stat
-import def_varidx as vi
 import def_view
 from def_constant import const as c
 from def_context import cntx
+from def_delta import Delta, Deltas
+from def_hor import Hor, Hors
+from def_lib import Lib, Libs
+from def_project import Project, Projects
+from def_rcp import RCP, RCPs
+from def_sim import Sim, Sims
+from def_stat import Stat, Stats
+from def_varidx import VarIdx, VarIdxs
+from def_view import View, Views
 
 warnings.filterwarnings("ignore")
 
@@ -118,7 +122,7 @@ def update_f(
             project_f[1].options = option_l
         if option_l_updated:
             project_f[1].value = project_f[1].options[0]
-        cntx.project = def_project.Project(str(f_code("project")))
+        cntx.project = Project(str(f_code("project")))
 
     elif f_name == "view":
         if len(view_f) == 0:
@@ -130,7 +134,7 @@ def update_f(
             view_f[1].options = option_l
         if option_l_updated:
             view_f[1].value = view_f[1].options[0]
-        cntx.view = def_view.View(str(f_code("view")))
+        cntx.view = View(str(f_code("view")))
 
     elif f_name == "lib":
         if len(lib_f) == 0:
@@ -142,14 +146,14 @@ def update_f(
             lib_f[1].options = option_l
         if option_l_updated:
             lib_f[1].value = lib_f[1].options[0]
-        cntx.lib = def_lib.Lib(str(f_code("lib")))
+        cntx.lib = Lib(str(f_code("lib")))
 
     elif f_name == "delta":
         if len(delta_f) == 0:
             delta_f = pn.Column(pn.pane.Markdown("<b>Afficher les anomalies</b>"),
                                 pnw.Checkbox(value=False))
             delta_f[1].param.watch(delta_updated, ["value"], onlychanged=True)
-        cntx.delta = def_delta.Delta(str(f_code("delta")))
+        cntx.delta = Delta(str(f_code("delta")))
 
     elif f_name == "varidx":
         if len(varidx_f) == 0:
@@ -161,7 +165,7 @@ def update_f(
             varidx_f[1].options = option_l
         if option_l_updated:
             varidx_f[1].value = varidx_f[1].options[0]
-        cntx.varidx = vi.VarIdx(str(f_code("varidx")))
+        cntx.varidx = VarIdx(str(f_code("varidx")))
 
     elif f_name == "hor":
         if len(hor_f) == 0:
@@ -173,7 +177,7 @@ def update_f(
             hor_f[1].options = option_l
         if option_l_updated:
             hor_f[1].value = hor_f[1].options[0]
-        cntx.hor = def_hor.Hor(str(f_code("hor")))
+        cntx.hor = Hor(str(f_code("hor")))
 
     elif f_name == "rcp":
         if len(rcp_f) == 0:
@@ -185,7 +189,7 @@ def update_f(
             rcp_f[1].options = option_l
         if option_l_updated:
             rcp_f[1].value = rcp_f[1].options[0]
-        cntx.rcp = def_rcp.RCP(str(f_code("rcp")))
+        cntx.rcp = RCP(str(f_code("rcp")))
 
     elif f_name == "stat":
         if len(stat_f) == 0:
@@ -197,7 +201,7 @@ def update_f(
             stat_f[1].options = option_l
         if option_l_updated:
             stat_f[1].value = stat_f[1].options[0]
-        cntx.stat = def_stat.Stat(str(f_code("stat")))
+        cntx.stat = Stat(str(f_code("stat")))
 
     elif f_name == "sim":
         if len(sim_f) == 0:
@@ -209,7 +213,7 @@ def update_f(
             sim_f[1].options = option_l
         if option_l_updated:
             sim_f[1].value = sim_f[1].options[0]
-        cntx.sim = def_sim.Sim(str(f_code("sim")))
+        cntx.sim = Sim(str(f_code("sim")))
 
 
 def update_sidebar():
@@ -381,7 +385,7 @@ def update_project():
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    cntx.projects = def_project.Projects("*")
+    cntx.projects = Projects("*")
     update_f("project", cntx.projects.desc_l)
 
 
@@ -393,7 +397,7 @@ def update_view():
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    cntx.views = def_view.Views("*")
+    cntx.views = Views("*")
     update_f("view", cntx.views.desc_l)
 
 
@@ -405,7 +409,7 @@ def update_lib():
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    cntx.libs = def_lib.Libs("*")
+    cntx.libs = Libs("*")
     update_f("lib", cntx.libs.desc_l)
 
 
@@ -428,7 +432,7 @@ def update_varidx():
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    cntx.varidxs = vi.VarIdxs("*")
+    cntx.varidxs = VarIdxs("*")
     update_f("varidx", cntx.varidxs.desc_l)
 
 
@@ -441,7 +445,7 @@ def update_hor():
     """
 
     if cntx.view.code in [c.view_tbl, c.view_map, c.view_cycle]:
-        cntx.hors = def_hor.Hors("*")
+        cntx.hors = Hors("*")
         update_f("hor", cntx.hors.desc_l)
 
 
@@ -453,7 +457,7 @@ def update_rcp():
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    cntx.rcps = def_rcp.RCPs("*")
+    cntx.rcps = RCPs("*")
     rcp_l = cntx.rcps.desc_l
     if cntx.view.code in [c.view_ts, c.view_ts_bias]:
         rcp_l = [dict(def_rcp.code_props())[c.rcpxx][0]] + rcp_l
@@ -470,7 +474,7 @@ def update_stat():
     """
 
     if cntx.view.code == c.view_map:
-        cntx.stats = def_stat.Stats("*")
+        cntx.stats = Stats("*")
         update_f("stat", cntx.stats.desc_l)
 
 
@@ -483,7 +487,7 @@ def update_sim():
     """
 
     if cntx.view.code in [c.view_ts, c.view_ts_bias, c.view_cycle]:
-        cntx.sims = def_sim.Sims("*")
+        cntx.sims = Sims("*")
         sim_l = cntx.sims.desc_l
         if cntx.view.code in [c.view_ts, c.view_ts_bias]:
             sim_l = [dict(def_sim.code_desc())[c.simxx]] + sim_l
@@ -493,7 +497,7 @@ def update_sim():
             sim_code = c.simxx
         else:
             sim_code = f_code("sim")
-        cntx.sim = def_sim.Sim(sim_code)
+        cntx.sim = Sim(sim_code)
 
 
 def project_updated(event=None):
@@ -504,7 +508,7 @@ def project_updated(event=None):
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    cntx.project = def_project.Project(str(f_code("project")))
+    cntx.project = Project(str(f_code("project")))
     cntx.load()
 
     update_view()
@@ -519,7 +523,7 @@ def view_updated(event=None):
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    cntx.view = def_view.View(str(f_code("view")))
+    cntx.view = View(str(f_code("view")))
 
     update_lib()
     lib_updated(event_cascade)
@@ -538,7 +542,7 @@ def lib_updated(event=None):
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    cntx.lib = def_lib.Lib(str(f_code("lib")))
+    cntx.lib = Lib(str(f_code("lib")))
 
     if event != event_cascade:
         update_dash()
@@ -552,7 +556,7 @@ def delta_updated(event=None):
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    cntx.delta = def_delta.Delta(str(f_code("delta")))
+    cntx.delta = Delta(str(f_code("delta")))
 
     if cntx.view.code in [c.view_ts, c.view_ts_bias, c.view_tbl, c.view_map]:
         update_varidx()
@@ -570,7 +574,7 @@ def varidx_updated(event=None):
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    cntx.varidx = vi.VarIdx(str(f_code("varidx")))
+    cntx.varidx = VarIdx(str(f_code("varidx")))
     cntx.project.load_quantiles()
 
     if cntx.view.code in [c.view_tbl, c.view_map, c.view_cycle]:
@@ -589,7 +593,7 @@ def hor_updated(event=None):
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    cntx.hor = def_hor.Hor(str(f_code("hor")))
+    cntx.hor = Hor(str(f_code("hor")))
 
     if cntx.view.code in [c.view_tbl, c.view_map, c.view_cycle]:
         if cntx.view.code in [c.view_map, c.view_cycle]:
@@ -612,7 +616,7 @@ def rcp_updated(event=None):
         rcp_code = c.rcpxx
     else:
         rcp_code = f_code("rcp")
-    cntx.rcp = def_rcp.RCP(rcp_code)
+    cntx.rcp = RCP(rcp_code)
 
     if cntx.view.code in [c.view_map]:
         update_stat()
@@ -630,7 +634,7 @@ def stat_updated(event=None):
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    cntx.stat = def_stat.Stat(str(f_code("stat")))
+    cntx.stat = Stat(str(f_code("stat")))
 
     update_dash()
 
@@ -643,7 +647,7 @@ def sim_updated(event=None):
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    cntx.sim = def_sim.Sim(str(f_code("sim")))
+    cntx.sim = Sim(str(f_code("sim")))
 
     update_dash()
 
@@ -652,13 +656,13 @@ def main():
 
     # Initialize context.
     cntx.code    = c.platform_jupyter
-    cntx.views   = def_view.Views()
-    cntx.libs    = def_lib.Libs()
-    cntx.deltas  = def_delta.Deltas(["False", "True"])
-    cntx.delta   = def_delta.Delta("False")
-    cntx.varidxs = vi.VarIdxs()
-    cntx.hors    = def_hor.Hors()
-    cntx.rcps    = def_rcp.RCPs()
+    cntx.views   = Views()
+    cntx.libs    = Libs()
+    cntx.deltas  = Deltas(["False", "True"])
+    cntx.delta   = Delta("False")
+    cntx.varidxs = VarIdxs()
+    cntx.hors    = Hors()
+    cntx.rcps    = RCPs()
 
     # Initialize GUI.
     update_project()

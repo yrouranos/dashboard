@@ -17,9 +17,9 @@ from typing import List, Union
 
 # Dashboard libraries.
 import def_object
-import def_rcp
 from def_constant import const as c
 from def_context import cntx
+from def_rcp import RCP
 
 
 def code_desc(
@@ -138,7 +138,7 @@ class Sim(def_object.Obj):
     @property
     def rcp(
         self
-    ) -> Union[def_rcp.RCP, None]:
+    ) -> Union[RCP, None]:
 
         """
         ----------------------------------------
@@ -154,11 +154,11 @@ class Sim(def_object.Obj):
         rcp = None
 
         if self.code == c.ref:
-            rcp = def_rcp.RCP(c.ref)
+            rcp = RCP(c.ref)
         else:
             tokens = self.code.split("_")
             if len(tokens) >= 4:
-                rcp = def_rcp.RCP(tokens[3])
+                rcp = RCP(tokens[3])
 
         return rcp
 

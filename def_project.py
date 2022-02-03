@@ -18,7 +18,6 @@ from typing import List, Union, Optional
 # Dashboard libraries.
 import dash_utils as du
 import def_object
-import def_stat
 from def_constant import const as c
 from def_context import cntx
 

@@ -89,6 +89,49 @@ class Context(def_object.Obj):
     # Path of .geogjson file defining region boundaries.
     _p_bounds = "boundaries.geojson"
 
+    """
+    Color maps apply to categories of variables and indices.
+    +----------------------------+------------+------------+
+    | Variable, category         |   Variable |      Index |
+    +----------------------------+------------+------------+
+    | temperature, high values   | temp_var_1 | temp_idx_1 |
+    | temperature, low values    |          - | temp_idx_2 |
+    +----------------------------+------------+------------+
+    | precipitation, high values | prec_var_1 | prec_idx_1 |
+    | precipitation, low values  |          - | prec_idx_2 |
+    | precipitation, dates       |          - | prec_idx_3 |
+    +----------------------------+------------+------------+
+    | evaporation, high values   | evap_var_1 | evap_idx_1 |
+    | evaporation, low values    |          - | evap_idx_2 |
+    | evaporation, dates         |          - | evap_idx_3 |
+    +----------------------------+------------+------------+
+    | wind                       | wind_var_1 | wind_idx_1 |
+    +----------------------------+------------+------------+
+
+    Notes:
+    - The 1st scheme is for absolute values.
+    - The 2nd scheme is divergent and his made to represent delta values when both negative and positive values are
+      present.
+      It combines the 3rd and 4th schemes.
+    - The 3rd scheme is for negative-only delta values.
+    - The 4th scheme is for positive-only delta values.
+    """
+
+    opt_map_col_temp_var   = ["viridis", "RdBu_r", "Blues_r", "Reds"]
+    opt_map_col_temp_idx_1 = opt_map_col_temp_var
+    opt_map_col_temp_idx_2 = ["plasma_r", "RdBu", "Reds_r", "Blues"]
+    opt_map_col_prec_var   = ["Blues", "BrWhGr", "Browns_r", "Greens"]
+    opt_map_col_prec_idx_1 = opt_map_col_prec_var
+    opt_map_col_prec_idx_2 = ["Oranges", "GrWhBr", "Greens_r", "Browns"]
+    opt_map_col_prec_idx_3 = ["viridis", "RdBu_r", "Blues_r", "Reds"]
+    opt_map_col_evap_var   = ["Browns", "GrWhBr", "Blues_r", "Greens_r"]
+    opt_map_col_evap_idx_1 = opt_map_col_evap_var
+    opt_map_col_evap_idx_2 = ["Greens", "BrWhGr", "Oranges_r", "Browns_r"]
+    opt_map_col_evap_idx_3 = ["Blues", "RdBu", "viridis_r", "Reds_r"]
+    opt_map_col_wind_var   = ["None", "RdBu_r", "Blues_r", "Reds"]
+    opt_map_col_wind_idx_1 = ["Reds", "RdBu_r", "Blues_r", "Reds"]
+    opt_map_col_default    = ["viridis", "RdBu_r", "Blues_r", "Reds"]
+
     def __init__(
         self,
         code: str
@@ -165,39 +208,6 @@ class Context(def_object.Obj):
         # Background color of sidebar.
         self.col_sb_fill = "WhiteSmoke"
 
-        """
-        Color maps apply to categories of variables and indices.
-        +----------------------------+------------+------------+
-        | Variable, category         |   Variable |      Index |
-        +----------------------------+------------+------------+
-        | temperature, high values   | temp_var_1 | temp_idx_1 |
-        | temperature, low values    |          - | temp_idx_2 |
-        | precipitation, high values | prec_var_1 | prec_idx_1 |
-        | precipitation, low values  |          - | prec_idx_2 |
-        | precipitation, dates       |          - | prec_idx_3 |
-        | wind                       | wind_var_1 | wind_idx_1 |
-        +----------------------------+------------+------------+
-        
-        Notes:
-        - The 1st scheme is for absolute values.
-        - The 2nd scheme is divergent and his made to represent delta values when both negative and positive values are
-          present.
-          It combines the 3rd and 4th schemes.
-        - The 3rd scheme is for negative-only delta values.
-        - The 4th scheme is for positive-only delta values.
-        """
-
-        self.opt_map_col_temp_var   = ["viridis",   "RdBu_r",  "Blues_r",   "Reds"]  # Temperature variables.
-        self.opt_map_col_temp_idx_1 = self.opt_map_col_temp_var                      # Temperature indices (high).
-        self.opt_map_col_temp_idx_2 = ["plasma_r",    "RdBu",   "Reds_r",  "Blues"]  # Temperature indices (low).
-        self.opt_map_col_prec_var   = ["Blues",     "BrWhGr", "Browns_r", "Greens"]  # Precipitation variables.
-        self.opt_map_col_prec_idx_1 = self.opt_map_col_prec_var                      # Precipitation indices (high).
-        self.opt_map_col_prec_idx_2 = ["Oranges", "BrWhGr_r", "Greens_r", "Browns"]  # Precipitation indices (low).
-        self.opt_map_col_prec_idx_3 = ["viridis",   "RdBu_r",  "Blues_r",   "Reds"]  # Precipitation indices (other).
-        self.opt_map_col_wind_var   = ["None",      "RdBu_r",  "Blues_r",   "Reds"]  # Wind variables.
-        self.opt_map_col_wind_idx_1 = ["Reds",      "RdBu_r",  "Blues_r",   "Reds"]  # Wind indices.
-        self.opt_map_col_default    = ["viridis",   "RdBu_r",  "Blues_r",   "Reds"]  # Other variables and indices.
-
         # Discrete vs. continuous colors scales (maps).
         self.opt_map_discrete = True
 
@@ -256,8 +266,8 @@ class Context(def_object.Obj):
                                 self.idx_params.append(idx_params[i])
 
                     elif key == "opt_map_locations":
-                        self.opt_map_locations = pd.DataFrame(str_to_arr_2d(value, float),
-                                                              columns=["longitude", "latitude", "desc"])
+                        self.opt_map_locations =\
+                            pd.DataFrame(str_to_arr_2d(value, float), columns=["longitude", "latitude", "desc"])
 
                     elif key == "opt_lib":
                         self.opt_lib = ast.literal_eval(value)

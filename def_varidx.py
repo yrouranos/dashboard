@@ -145,7 +145,11 @@ class VarIdx(def_object.Obj):
         ----------------------------------------
         """
 
-        desc = "" if code == "" else dict(code_props())[code][0]
+        vi_name = extract_vi_name(code)
+        if (code == "") or (vi_name not in dict(code_props()).keys()):
+            desc = ""
+        else:
+            desc = dict(code_props())[vi_name][0]
         super(VarIdx, self).__init__(code=code, desc=desc)
 
     @property
@@ -173,7 +177,7 @@ class VarIdx(def_object.Obj):
         return self.code
 
     @property
-    def title(
+    def desc(
         self,
     ) -> str:
 
@@ -188,23 +192,23 @@ class VarIdx(def_object.Obj):
         ----------------------------------------
         """
 
-        title = dict(code_props())[self.code][0]
+        desc = dict(code_props())[self.name][0]
 
         # Assign first parameter.
-        if self.code in [c.i_tng, c.i_tx_days_above, c.i_tn_days_below, c.i_tropical_nights, c.i_wsdi, c.i_cdd,
+        if self.name in [c.i_tng, c.i_tx_days_above, c.i_tn_days_below, c.i_tropical_nights, c.i_wsdi, c.i_cdd,
                          c.i_cwd, c.i_dry_days, c.i_wet_days, c.i_prcptot, c.i_rnnmm, c.i_dry_spell_total_length,
                          c.i_wg_days_above, c.i_wx_days_above]:
-            title.replace("<A>", str(self.params[0]))
+            desc = desc.replace("<A>", str(self.params[0]))
 
         # Assign 2nd parameter.
-        if self.code in [c.i_wsdi, c.i_prcptot, c.i_dry_spell_total_length, c.i_wx_days_above]:
-            title.replace("<B>", str(self.params[1]))
+        if self.name in [c.i_wsdi, c.i_prcptot, c.i_dry_spell_total_length, c.i_wx_days_above]:
+            desc = desc.replace("<B>", str(self.params[1]))
 
         # Assign 3rd parameter.
-        if self.code in [c.i_wx_days_above]:
-            title.replace("<C>", str(self.params[2]))
+        if self.name in [c.i_wx_days_above]:
+            desc = desc.replace("<C>", str(self.params[2]))
 
-        return title
+        return desc
 
     @property
     def label(
@@ -222,12 +226,13 @@ class VarIdx(def_object.Obj):
         ----------------------------------------
         """
 
-        desc = dict(code_props())[self.code][1]
-        unit = str(self.unit)
-        if (unit not in ["", "1"]) and (unit not in desc):
-            unit = " (" + unit + ")"
+        label = dict(code_props())[extract_vi_name(self.code)][1]
 
-        return desc + unit
+        unit = str(self.unit)
+        if (unit not in ["", "1"]) and (unit not in label):
+            label += " (" + unit + ")"
+
+        return label
 
     @property
     def unit(
@@ -245,7 +250,7 @@ class VarIdx(def_object.Obj):
         ----------------------------------------
         """
 
-        return dict(code_props())[self.code][2]
+        return dict(code_props())[extract_vi_name(self.code)][2]
 
     @property
     def precision(
@@ -263,8 +268,9 @@ class VarIdx(def_object.Obj):
         ----------------------------------------
         """
 
-        return dict(code_props())[self.code][3]
-    
+        return dict(code_props())[extract_vi_name(self.code)][3]
+
+    @property
     def is_var(
         self
     ) -> bool:
@@ -276,6 +282,19 @@ class VarIdx(def_object.Obj):
         """
 
         return self.ens in [c.ens_cordex, c.ens_era5, c.ens_era5_land, c.ens_merra2, c.ens_enacts]
+
+    @property
+    def is_group(
+            self
+    ) -> bool:
+
+        """
+        ----------------------------------------
+        Determine if the instance is a group of indices.
+        ----------------------------------------
+        """
+
+        return group(self.code) == self.code
 
     @property
     def ens(
@@ -576,15 +595,69 @@ class VarIdxs(def_object.Objs):
         ----------------------------------------
         """
 
-        desc_l = super(VarIdxs, self).desc_l
-        desc_l.sort()
+        desc_l = []
+
+        for item in self._items:
+            desc_l.append(item.desc)
 
         return desc_l
 
+    @property
+    def name_l(
+        self
+    ) -> List[str]:
+
+        """
+        ----------------------------------------
+        Get a list of names.
+
+        Returns
+        -------
+        List[str]
+            Names.
+        ----------------------------------------
+        """
+
+        name_l = []
+
+        for item in self._items:
+            name_l.append(item.name)
+
+        return name_l
+
+
+def extract_vi_name(
+    vi_code: str
+) -> str:
+
+    """
+    --------------------------------------------------------------------------------------------------------------------
+    Extract name.
+
+    Parameters
+    ----------
+    vi_code: str
+        Variable or index code.
+
+    Returns
+    -------
+    str
+        Variable or index name.
+    --------------------------------------------------------------------------------------------------------------------
+    """
+
+    pos = vi_code.rfind("_")
+    if pos >= 0:
+        tokens = vi_code.split("_")
+        if tokens[len(tokens) - 1].isdigit():
+            return vi_code[0:pos]
+
+    return vi_code
+
 
 def group(
-    idx_item: str = ""
-):
+    vi_code: str = ""
+) -> str:
 
     """
     --------------------------------------------------------------------------------------------------------------------
@@ -592,20 +665,21 @@ def group(
 
     Parameters
     ----------
-    idx_item : str, optional
+    vi_code : str, optional
+        Variable or index code.
+
+    Returns
+    -------
+    str
         Group name.
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    grp = idx_item
-
     for key in list(c.i_groups.keys()):
+        if vi_code in c.i_groups[key]:
+            return key
 
-        if idx_item in c.i_groups[key][1]:
-            grp = c.i_groups[key][0] + idx_item.replace(idx_item, "")
-            break
-
-    return grp
+    return ""
 
 
 def explode_idx_l(
