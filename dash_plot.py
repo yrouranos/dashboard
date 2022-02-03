@@ -1505,7 +1505,7 @@ def gen_cycle_ms_mat(
     height = 5.45 if cntx.code == c.platform_streamlit else 5.15
     dpi = None if cntx.code == c.platform_script else cntx.dpi
     fig = plt.figure(figsize=(9.95, height), dpi=dpi)
-    plt.subplots_adjust(top=0.99, bottom=0.10, left=0.06, right=0.99, hspace=0.10, wspace=0.10)
+    plt.subplots_adjust(top=0.99, bottom=0.10, left=0.07, right=0.99, hspace=0.10, wspace=0.10)
     specs = gridspec.GridSpec(ncols=1, nrows=1, figure=fig)
     ax = fig.add_subplot(specs[:])
     bp = ax.boxplot(data, showfliers=False)
@@ -1642,7 +1642,7 @@ def gen_cycle_d_mat(
     height = 5.45 if cntx.code == c.platform_streamlit else 5.15
     dpi = None if cntx.code == c.platform_script else cntx.dpi
     fig, ax = plt.subplots(figsize=(9.95, height), dpi=dpi)
-    plt.subplots_adjust(top=0.99, bottom=0.10, left=0.06, right=0.99, hspace=0.10, wspace=0.10)
+    plt.subplots_adjust(top=0.99, bottom=0.10, left=0.07, right=0.99, hspace=0.10, wspace=0.10)
 
     # Draw areas.
     ref_color = def_rcp.RCP(c.ref).color
