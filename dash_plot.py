@@ -1153,6 +1153,7 @@ def get_hex_l(
         "GyYlRd": [hex_gy, hex_yl, hex_rd],
         "RdYlGy": [hex_rd, hex_yl, hex_gy],
         "YlGy": [hex_yl, hex_gy],
+        "GyYl": [hex_gy, hex_yl],
         "YlRd": [hex_yl, hex_rd],
         "RdYl": [hex_rd, hex_yl],
         "GyWhRd": [hex_gy, hex_wh, hex_rd]}
