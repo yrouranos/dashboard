@@ -11,7 +11,7 @@
 
 # External libraries.
 import os
-from typing import List, Union
+from typing import List, Optional, Union
 
 # Dashbaord libraries.
 import def_object
@@ -34,19 +34,20 @@ def code_desc(
     """
 
     project_code = cntx.project.code if cntx.project is not None else ""
-    q_str_low = "10"
-    q_str_high = "90"
+    q_low_str  = "10"
+    q_high_str = "90"
     if project_code != "":
-        q_str_low  = cntx.project.quantiles_as_str[0]
-        q_str_high = cntx.project.quantiles_as_str[len(cntx.project.quantiles_as_str) - 1]
+        q_low_str  = cntx.project.quantiles_as_str[0]
+        q_high_str = cntx.project.quantiles_as_str[len(cntx.project.quantiles_as_str) - 1]
 
     return {
         c.stat_min:    "Minimum",
-        c.stat_q_low:  q_str_low + "e percentile",
+        c.stat_q_low:  q_low_str + "e percentile",
         c.stat_median: "Médiane",
-        c.stat_q_high: q_str_high + "e percentile",
+        c.stat_q_high: q_high_str + "e percentile",
         c.stat_max:    "Maximum",
-        c.stat_mean:   "Moyenne"
+        c.stat_mean:   "Moyenne",
+        c.stat_sum:    "Somme"
     }
 
 
@@ -60,19 +61,68 @@ class Stat(
     --------------------------------------------------------------------------------------------------------------------
     """
 
+    # Quantile (value between 0 and 1).
+    _quantile = -1.0
+
     def __init__(
         self,
-        code: str
+        code: str,
+        quantile: Optional[float] = -1.0
     ):
 
         """
         ----------------------------------------
         Constructor.
+
+        Parameters
+        ----------
+        code: str
+            Code. See options in 'code_desc()'.
+        quantile: Optional[float]
+            Quantile (value between 0 and 1).
         ----------------------------------------
         """
 
         desc = "" if code == "" else dict(code_desc())[code]
         super(Stat, self).__init__(code=code, desc=desc)
+        self.quantile = quantile
+
+    @property
+    def quantile(
+        self
+    ) -> float:
+
+        """
+        ----------------------------------------
+        Get quantile.
+
+        Returns
+        -------
+        float
+            Quantile (value between 0 and 1).
+        ----------------------------------------
+        """
+
+        return self._quantile
+
+    @quantile.setter
+    def quantile(
+        self,
+        quantile: float
+    ):
+
+        """
+        ----------------------------------------
+        Set quantile.
+
+        Parameters
+        ----------
+        quantile: float
+            Quantile (value between 0 and 1).
+        ----------------------------------------
+        """
+
+        self._quantile = quantile
 
 
 class Stats(def_object.Objs):
