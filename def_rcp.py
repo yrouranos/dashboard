@@ -140,11 +140,13 @@ class RCPs(def_object.Objs):
         """
 
         # Codes.
-        view_code  = cntx.view.code if cntx.view is not None else ""
-        vi_code    = cntx.varidx.code if cntx.varidx is not None else ""
+        view_code = cntx.view.code if cntx.view is not None else ""
+        vi_code   = cntx.varidx.code if cntx.varidx is not None else ""
+        vi_name   = cntx.varidx.name if cntx.varidx is not None else ""
         if view_code == c.view_cluster:
             view_code = c.view_ts
             vi_code = cntx.varidxs.items[0].code
+            vi_name = cntx.varidxs.items[0].name
         hor_code   = cntx.hor.code if cntx.hor is not None else ""
         delta_code = cntx.delta.code if cntx.delta is not None else False
 
@@ -162,9 +164,10 @@ class RCPs(def_object.Objs):
         # The items are extracted from column names ('ts' or 'ts_bias' view).
         # ~/<project_code>/<view_code>/<vi_code>/*.csv
         elif view_code in [c.view_ts, c.view_ts_bias]:
-            p = cntx.d_project + "<view_code>/<vi_code>/<vi_code>_<mode>_<delta>.csv"
+            p = cntx.d_project + "<view_code>/<vi_code>/<vi_name>_<mode>_<delta>.csv"
             p = p.replace("<view_code>", view_code)
             p = p.replace("<vi_code>", vi_code)
+            p = p.replace("<vi_name>", vi_name)
             p = p.replace("<mode>", "rcp")
             p = p.replace("_<delta>", "_delta" if delta_code == "True" else "")
             df = pd.read_csv(p)

@@ -969,13 +969,13 @@ def gen_map_mat(
     plt.title(title, loc="left", fontweight="bold", fontsize=fs_title)
 
     # Convert to DataArray.
-    df = pd.DataFrame(df, columns=["longitude", "latitude", cntx.varidx.code])
+    df = pd.DataFrame(df, columns=["longitude", "latitude", cntx.varidx.name])
     df = df.sort_values(by=["latitude", "longitude"])
     lat = list(set(df["latitude"]))
     lat.sort()
     lon = list(set(df["longitude"]))
     lon.sort()
-    arr = np.reshape(list(df[cntx.varidx.code]), (len(lat), len(lon)))
+    arr = np.reshape(list(df[cntx.varidx.name]), (len(lat), len(lon)))
     da = xr.DataArray(data=arr, dims=["latitude", "longitude"], coords=[("latitude", lat), ("longitude", lon)])
 
     # Generate mesh.

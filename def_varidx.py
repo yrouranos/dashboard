@@ -349,7 +349,7 @@ class VarIdx(def_object.Obj):
 
         # If no parameters are set, use those in the configuration file.
         if len(params) == 0:
-            params = cntx.idx_params_from_code(self.code)
+            params = cntx.idx_params_from_code(self.name)
 
         return params
 

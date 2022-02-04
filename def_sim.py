@@ -234,6 +234,7 @@ class Sims(def_object.Objs):
         if view_code == c.view_cluster:
             view_code = c.view_ts
         vi_code    = cntx.varidx.code if cntx.varidx is not None else ""
+        vi_name    = cntx.varidx.name if cntx.varidx is not None else ""
         hor_code   = cntx.hor.code if cntx.hor is not None else ""
         rcp_code   = cntx.rcp.code if cntx.rcp is not None else ""
         delta_code = cntx.delta.code if cntx.delta is not None else False
@@ -263,9 +264,10 @@ class Sims(def_object.Objs):
         # The items are extracted from columns.
         # ~/<project_code>/<view_code>/<vi_code>/<vi_code>_sim_*.csv
         elif view_code in [c.view_ts, c.view_ts_bias]:
-            p = cntx.d_project + "<view_code>/<vi_code>/<vi_code>_sim_<delta>.csv"
+            p = cntx.d_project + "<view_code>/<vi_code>/<vi_name>_sim_<delta>.csv"
             p = p.replace("<view_code>", view_code)
             p = p.replace("<vi_code>", vi_code)
+            p = p.replace("<vi_name>", vi_name)
             p = p.replace("_<delta>", "_delta" if delta_code == "True" else "")
             df = pd.read_csv(p)
             df.drop(["year", c.ref], axis=1, inplace=True)

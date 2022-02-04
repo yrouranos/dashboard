@@ -120,6 +120,7 @@ def load_data(
         view_code = c.view_ts
     delta_code = cntx.delta.code if cntx.delta is not None else False
     vi_code    = cntx.varidx.code if cntx.varidx is not None else ""
+    vi_name    = cntx.varidx.name if cntx.varidx is not None else ""
     vi_precision = cntx.varidx.precision if cntx.varidx is not None else 0
     hor_code   = cntx.hor.code if cntx.hor is not None else ""
     rcp_code   = cntx.rcp.code if cntx.rcp is not None else ""
@@ -132,10 +133,11 @@ def load_data(
         p = p.replace("<vi_code>", vi_code)
 
     elif view_code in [c.view_ts, c.view_ts_bias]:
-        p = cntx.d_project + "<view_code>/<vi_code>/<vi_code>_<mode>_<delta>.csv"
+        p = cntx.d_project + "<view_code>/<vi_code>/<vi_name>_<mode>_<delta>.csv"
         p = p.replace("_<mode>", "_" + mode)
         p = p.replace("<view_code>", view_code)
         p = p.replace("<vi_code>", vi_code)
+        p = p.replace("<vi_name>", vi_name)
         p = p.replace("_<delta>", "" if delta_code == "False" else "_delta")
 
     elif view_code == c.view_map:
@@ -173,7 +175,7 @@ def load_data(
     elif view_code == c.view_tbl:
         df["val"] = df["val"].round(decimals=n_dec)
     else:
-        df[vi_code] = df[vi_code].round(decimals=n_dec)
+        df[vi_name] = df[vi_name].round(decimals=n_dec)
 
     return df
 
@@ -239,8 +241,9 @@ def calc_range(
     min_val, max_val = np.nan, np.nan
 
     # Codes.
-    view_code = cntx.view.code if cntx.view is not None else ""
-    vi_code = cntx.varidx.code if cntx.varidx is not None else ""
+    view_code  = cntx.view.code if cntx.view is not None else ""
+    vi_code    = cntx.varidx.code if cntx.varidx is not None else ""
+    vi_name    = cntx.varidx.name if cntx.varidx is not None else ""
     delta_code = cntx.delta.code if cntx.delta is not None else False
     project_q_low = cntx.project.quantiles_as_str[0] if cntx.project is not None else ""
     project_q_high = cntx.project.quantiles_as_str[1] if cntx.project is not None else ""
@@ -248,15 +251,17 @@ def calc_range(
     if view_code == c.view_map:
         
         # Reference file.
-        p_ref = cntx.d_project + "<view>/<vi_code>/*/<vi_code>_ref*_mean.csv"
+        p_ref = cntx.d_project + "<view>/<vi_code>/*/<vi_name>_ref*_mean.csv"
         p_ref = p_ref.replace("<view>", view_code)
         p_ref = p_ref.replace("<vi_code>", vi_code)
+        p_ref = p_ref.replace("<vi_name>", vi_name)
         p_ref = glob.glob(p_ref)
 
         # RCP files.
-        p_rcp = cntx.d_project + "<view>/<vi_code>/*/<vi_code>_rcp*_q<q>_<delta>.csv"
+        p_rcp = cntx.d_project + "<view>/<vi_code>/*/<vi_name>_rcp*_q<q>_<delta>.csv"
         p_rcp = p_rcp.replace("<view>", view_code)
         p_rcp = p_rcp.replace("<vi_code>", vi_code)
+        p_rcp = p_rcp.replace("<vi_name>", vi_name)
         p_rcp = p_rcp.replace("_<delta>", "" if delta_code == "False" else "_delta")
         p_rcp_q_low = glob.glob(p_rcp.replace("<q>", project_q_low))
         p_rcp_q_high = glob.glob(p_rcp.replace("<q>", project_q_high))
@@ -268,8 +273,8 @@ def calc_range(
         for p in p_l:
             if os.path.exists(p):
                 df = pd.read_csv(p)
-                min_vals = list(df[vi_code]) + [min_val]
-                max_vals = list(df[vi_code]) + [max_val]
+                min_vals = list(df[vi_name]) + [min_val]
+                max_vals = list(df[vi_name]) + [max_val]
                 min_val = np.nanmin(min_vals)
                 max_val = np.nanmax(max_vals)
 

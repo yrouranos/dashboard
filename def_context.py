@@ -91,22 +91,21 @@ class Context(def_object.Obj):
 
     """
     Color maps apply to categories of variables and indices.
-    +----------------------------+------------+------------+
-    | Variable, category         |   Variable |      Index |
-    +----------------------------+------------+------------+
-    | temperature, high values   | temp_var_1 | temp_idx_1 |
-    | temperature, low values    |          - | temp_idx_2 |
-    +----------------------------+------------+------------+
-    | precipitation, high values | prec_var_1 | prec_idx_1 |
-    | precipitation, low values  |          - | prec_idx_2 |
-    | precipitation, dates       |          - | prec_idx_3 |
-    +----------------------------+------------+------------+
-    | evaporation, high values   | evap_var_1 | evap_idx_1 |
-    | evaporation, low values    |          - | evap_idx_2 |
-    | evaporation, dates         |          - | evap_idx_3 |
-    +----------------------------+------------+------------+
-    | wind                       | wind_var_1 | wind_idx_1 |
-    +----------------------------+------------+------------+
+    
+    Variable, category         |   Variable |      Index
+    ---------------------------+------------+-----------
+    temperature, high values   | temp_var_1 | temp_idx_1
+    temperature, low values    |          - | temp_idx_2
+    ---------------------------+------------+-----------
+    precipitation, high values | prec_var_1 | prec_idx_1
+    precipitation, low values  |          - | prec_idx_2
+    precipitation, dates       |          - | prec_idx_3
+    ---------------------------+------------+-----------
+    evaporation, high values   | evap_var_1 | evap_idx_1
+    evaporation, low values    |          - | evap_idx_2
+    evaporation, dates         |          - | evap_idx_3
+    ---------------------------+------------+-----------
+    wind                       | wind_var_1 | wind_idx_1
 
     Notes:
     - The 1st scheme is for absolute values.
