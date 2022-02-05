@@ -165,15 +165,17 @@ def refresh():
         cntx.varidx = VarIdx(vi_code)
     else:
         st.write("Variable(s)")
-        opts = []
+        vi_f = []
+        vi_code_l = []
         for varidx in cntx.varidxs.items:
             if varidx.is_var:
-                opts.append(st.checkbox(varidx.desc, value=True))
-        var_l = []
-        for i in range(len(opts)):
-            if opts[i]:
-                var_l.append(cntx.varidxs.items[i].code)
-        cntx.varidxs = VarIdxs(var_l)
+                vi_f.append(st.checkbox(varidx.desc, value=True))
+                vi_code_l.append(varidx.code)
+        vi_code_sel_l = []
+        for i in range(len(vi_f)):
+            if vi_f[i]:
+                vi_code_sel_l.append(vi_code_l[i])
+        cntx.varidxs = VarIdxs(vi_code_sel_l)
     cntx.project.load_quantiles()
 
     # Horizons.

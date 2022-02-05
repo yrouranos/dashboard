@@ -41,13 +41,14 @@ def code_desc(
         q_high_str = cntx.project.quantiles_as_str[len(cntx.project.quantiles_as_str) - 1]
 
     return {
-        c.stat_min:    "Minimum",
-        c.stat_q_low:  q_low_str + "e percentile",
-        c.stat_median: "Médiane",
-        c.stat_q_high: q_high_str + "e percentile",
-        c.stat_max:    "Maximum",
-        c.stat_mean:   "Moyenne",
-        c.stat_sum:    "Somme"
+        c.stat_min:      "Minimum",
+        c.stat_q_low:    q_low_str + "e percentile",
+        c.stat_median:   "Médiane",
+        c.stat_q_high:   q_high_str + "e percentile",
+        c.stat_max:      "Maximum",
+        c.stat_mean:     "Moyenne",
+        c.stat_sum:      "Somme",
+        c.stat_quantile: "Quantile"
     }
 
 
