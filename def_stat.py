@@ -148,7 +148,9 @@ class Stats(def_object.Objs):
         super(Stats, self).__init__()
 
         if len(args) == 1:
-            if args[0] == "*":
+            if isinstance(args[0], Stat):
+                self.items = [args[0]]
+            elif args[0] == "*":
                 self.load()
             else:
                 self.add(args[0])
@@ -233,3 +235,25 @@ class Stats(def_object.Objs):
                 items.append(Stat(code_l[i]))
 
         return super(Stats, self).add(items, inplace)
+
+    @property
+    def quantiles(
+        self
+    ) -> List[float]:
+
+        """
+        ----------------------------------------
+        Get quantiles.
+
+        Returns
+        -------
+        List[float]
+            Quantiles (values between 0 and 1).
+        ----------------------------------------
+        """
+
+        quantile_l = []
+        for stat in self.items:
+            quantile_l.append(stat.quantile)
+
+        return quantile_l

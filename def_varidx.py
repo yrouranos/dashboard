@@ -284,6 +284,25 @@ class VarIdx(def_object.Obj):
         return self.ens in [c.ens_cordex, c.ens_era5, c.ens_era5_land, c.ens_merra2, c.ens_enacts]
 
     @property
+    def is_summable(
+        self
+    ) -> bool:
+
+        """
+        ----------------------------------------
+        Determine if the variable is summable.
+
+        An summable variable can have its values summed up at a given frequency (ex: precipitation).
+        ----------------------------------------
+        """
+
+        summable_variables = [c.v_pr, c.v_evspsbl, c.v_evspsblpot,
+                              c.v_era5_tp, c.v_era5_e, c.v_era5_pev,
+                              c.v_enacts_rr, c.v_enacts_pet]
+
+        return self.name in summable_variables
+
+    @property
     def is_group(
             self
     ) -> bool:
@@ -462,14 +481,14 @@ class VarIdx(def_object.Obj):
 
                 # Variable -> Index.
                 if a_is_var and not b_is_var:
-                    p = cntx.d_idx(stn, vi_code_b)
+                    p = cntx.d_idx(vi_code_b)
 
                 # Index -> Variable.
                 else:
                     if rcp == c.ref:
                         p = cntx.d_stn(vi_code_b)
                     else:
-                        p = cntx.d_scen(stn, c.cat_qqmap, vi_code_b)
+                        p = cntx.d_scen(c.cat_qqmap, vi_code_b)
                 # Both.
                 if rcp == c.ref:
                     p += varidx_b.name + "_" + c.ref + c.f_ext_nc
