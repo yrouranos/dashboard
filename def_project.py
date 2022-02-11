@@ -114,8 +114,8 @@ class Project(def_object.Obj):
         # ~/<project_code>/tbl/<vi_code>.csv
         if view_code == c.view_tbl:
             df = pd.DataFrame(du.load_data())
-            df = df[(df[c.stat_centile] > 0.01) & (df[c.stat_centile] < 0.99) &
-                    (df[c.stat_centile] != 0.5)][c.stat_centile]
+            df = df[(df[c.stat_centile] > 0) & (df[c.stat_centile] < 100) &
+                    (df[c.stat_centile] != 50)][c.stat_centile]
             centile_l = [min(df), max(df)]
 
         # The items are extracted from file names.
