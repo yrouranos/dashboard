@@ -184,20 +184,23 @@ class Context(def_object.Obj):
 
         # Configuration file -------------------
 
-        # Reference period.
-        self.per_ref = []
-
         # Codes.
         self.idx_codes = []
 
         # Parameters.
         self.idx_params = []
 
-        # Map locations (pd.DataFrame).
-        self.opt_map_locations = None
-
         # Enable/disable the selection of a plotting library.
         self.opt_lib = False
+
+        # Reference period.
+        self.per_ref = []
+        
+        # Centiles for which a time series is required.
+        self.opt_ts_centiles = [10, 90]
+
+        # Map locations (pd.DataFrame).
+        self.opt_map_locations = None
 
         # Centiles required to produce a cluster scatter plot (if a single variable is selected).
         self.opt_cluster_centiles = [10, 50, 90]
@@ -250,10 +253,7 @@ class Context(def_object.Obj):
                     # Extract value.
                     value = config[section][key]
 
-                    if key == "per_ref":
-                        self.per_ref = str_to_arr_1d(value, int)
-
-                    elif key == "idx_codes":
+                    if key == "idx_codes":
                         self.idx_codes = str_to_arr_1d(value, str)
 
                     elif key == "idx_params":
@@ -267,12 +267,21 @@ class Context(def_object.Obj):
                             else:
                                 self.idx_params.append(idx_params[i])
 
+                    elif key == "opt_lib":
+                        self.opt_lib = ast.literal_eval(value)
+
+                    elif key == "per_ref":
+                        self.per_ref = str_to_arr_1d(value, int)
+
+                    elif key == "opt_ts_centiles":
+                        opt_ts_centiles = str_to_arr_1d(value, float)
+                        if str(opt_ts_centiles).replace("['']", "") == "":
+                            self.opt_ts_centiles = opt_ts_centiles
+                            self.opt_ts_centiles.sort()
+
                     elif key == "opt_map_locations":
                         self.opt_map_locations =\
                             pd.DataFrame(str_to_arr_2d(value, float), columns=["longitude", "latitude", "desc"])
-
-                    elif key == "opt_lib":
-                        self.opt_lib = ast.literal_eval(value)
 
                     elif key == "opt_cluster_centiles":
                         opt_cluster_centiles = str_to_arr_1d(value, float)
