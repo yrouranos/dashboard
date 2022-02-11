@@ -66,12 +66,12 @@ class Stat(
     """
 
     # Centile (value between 0 and 100).
-    _centile = -1.0
+    _centile = -1
 
     def __init__(
         self,
         code: str,
-        centile: Optional[float] = -1.0
+        centile: Optional[float] = -1
     ):
 
         """
@@ -87,7 +87,11 @@ class Stat(
         ----------------------------------------
         """
 
-        desc = "" if code == "" else dict(code_desc())[code]
+        # Try to extract centile from code.
+        if ("c" in code) and (centile == -1):
+            centile = int(code.replace("c", ""))
+
+        desc = "" if code == "" else dict(code_desc(centile))[code]
         super(Stat, self).__init__(code=code, desc=desc)
         self.centile = centile
 
