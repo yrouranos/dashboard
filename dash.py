@@ -135,9 +135,6 @@ def refresh():
     view_code = cntx.views.code_from_desc(view_f) if cntx.views is not None else ""
     cntx.view = View(view_code)
 
-    # TODO: remove
-    # cntx.view = View(c.view_map)
-
     # Plotting libraries.
     cntx.libs = Libs("*")
     if cntx.opt_lib:
@@ -159,9 +156,6 @@ def refresh():
         cntx.delta = Delta(str(delta_f))
     else:
         cntx.delta = Delta("False")
-
-    # TODO: remove
-    # cntx.delta = Delta("True")
 
     # Variables and indices.
     cntx.varidxs = VarIdxs("*")
@@ -189,9 +183,6 @@ def refresh():
         cntx.hors = Hors("*")
         hor_f = st.selectbox("Horizon", options=cntx.hors.code_l)
         cntx.hor = Hor(hor_f)
-
-    # TODO: remove
-    # cntx.hor = Hor("2021-2050")
 
     # Emission scenarios.
     cntx.rcps = RCPs("*")
