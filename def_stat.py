@@ -91,8 +91,7 @@ class Stat(
         if ("c" in code) and (c.stat_centile not in code) and (centile < 0):
             centile = round(int(code.replace("c", "")))
 
-        desc = "" if code == "" else dict(code_desc(centile))[c.stat_centile if "c" in code else code]
-        super(Stat, self).__init__(code=code, desc=desc)
+        super(Stat, self).__init__(code=code)
         self.centile = centile
 
     @property
@@ -111,7 +110,7 @@ class Stat(
         ----------------------------------------
         """
 
-        return dict(code_desc(self.centile))[self.code]
+        return dict(code_desc(self.centile))[c.stat_centile if "c" in self.code else self.code]
 
     @property
     def is_centile(
