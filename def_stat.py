@@ -42,9 +42,9 @@ def code_desc(
 
     return {
         c.stat_min:           "Minimum",
-        c.stat_centile_lower: str(centile_lower) + "e centile",
+        c.stat_centile_lower: str(int(centile_lower)) + "e centile",
         c.stat_median:        "Médiane",
-        c.stat_centile_upper: str(centile_upper) + "e centile",
+        c.stat_centile_upper: str(int(centile_upper)) + "e centile",
         c.stat_max:           "Maximum",
         c.stat_mean:          "Moyenne",
         c.stat_std:           "Écart type",
@@ -234,7 +234,6 @@ class Stats(def_object.Objs):
 
                 # A centile.
                 elif (not is_ref) or (is_ref and (code == c.stat_mean)):
-                    # code_l.append(c.stat_centile)
                     code_l.append(code)
                     centile_l.append(int(code.replace("c", "")))
 
