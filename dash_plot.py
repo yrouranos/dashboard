@@ -689,7 +689,7 @@ def gen_tbl(
         else:
             for i in range(len(df_res)):
                 try:
-                    df_res[rcp.code] = str("{:." + str(n_dec) + "f}").format(float(df_res[rcp.code][i]))
+                    df_res[rcp.code][i] = str("{:." + str(n_dec) + "f}").format(float(df_res[rcp.code][i]))
                 except ValueError:
                     pass
 
@@ -727,7 +727,7 @@ def gen_tbl(
         fig.update_layout(
             font=dict(size=15),
             width=700,
-            height=180,
+            height=190,
             margin=go.layout.Margin(l=0, r=0, b=0, t=50),
             title_text=title,
             title_x=0,
