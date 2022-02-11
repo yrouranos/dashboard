@@ -727,7 +727,7 @@ def gen_tbl(
         fig.update_layout(
             font=dict(size=15),
             width=700,
-            height=190,
+            height=210,
             margin=go.layout.Margin(l=0, r=0, b=0, t=50),
             title_text=title,
             title_x=0,
