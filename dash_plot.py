@@ -143,21 +143,21 @@ def gen_ts(
     # Combine RCPs.
     if (cntx.view.code == c.view_ts_bias) and (cntx.rcp.code in ["", c.rcpxx]) and (mode == mode_rcp):
 
-        for stat in ["moy", c.stat_min, c.stat_max]:
+        for stat_code in ["lower", "middle", "upper"]:
 
             # Identify the columns associated with the current statistic.
             columns = []
             for column in df_subset.columns:
-                if stat in column:
+                if stat_code in column:
                     columns.append(column)
 
             # Calculate overall values.
-            if stat == "moy":
-                df_subset[c.rcpxx + "_" + stat] = df_subset[columns].mean(axis=1)
-            elif stat == c.stat_min:
-                df_subset[c.rcpxx + "_" + stat] = df_subset[columns].min(axis=1)
-            elif stat == c.stat_max:
-                df_subset[c.rcpxx + "_" + stat] = df_subset[columns].max(axis=1)
+            if stat_code == "lower":
+                df_subset[c.rcpxx + "_" + stat_code] = df_subset[columns].min(axis=1)
+            elif stat_code == "middle":
+                df_subset[c.rcpxx + "_" + stat_code] = df_subset[columns].mean(axis=1)
+            elif stat_code == "upper":
+                df_subset[c.rcpxx + "_" + stat_code] = df_subset[columns].max(axis=1)
 
             # Delete columns.
             df_subset.drop(columns, axis=1, inplace=True)
