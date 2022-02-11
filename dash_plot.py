@@ -872,8 +872,7 @@ def gen_map_hv(
         df_curve = pd.DataFrame(du.load_geojson(cntx.p_bounds, "pandas"))
         x_lim = (min(df_curve["longitude"]), max(df_curve["longitude"]))
         y_lim = (min(df_curve["latitude"]), max(df_curve["latitude"]))
-        bounds = df_curve.hvplot.line(x=c.dim_longitude, y=c.dim_latitude, color="black", alpha=0.7,
-                                      xlim=x_lim, ylim=y_lim)
+        bounds = df_curve.hvplot.line(x="longitude", y="latitude", color="black", alpha=0.7, xlim=x_lim, ylim=y_lim)
 
     # Create locations.
     points = None
