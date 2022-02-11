@@ -88,12 +88,30 @@ class Stat(
         """
 
         # Try to extract centile from code.
-        if ("c" in code) and (centile == -1):
+        if ("c" in code) and (c.stat_centile not in code) and (centile < 0):
             centile = int(code.replace("c", ""))
 
         desc = "" if code == "" else dict(code_desc(centile))[code]
         super(Stat, self).__init__(code=code, desc=desc)
         self.centile = centile
+
+    @property
+    def is_centile(
+        self
+    ):
+
+        """
+        ----------------------------------------
+        Determine whether this statistic is a centile.
+
+        Returns
+        -------
+        float
+            True if this statistic is a centile.
+        ----------------------------------------
+        """
+
+        return ("c" in self.code) or (self.centile >= 0)
 
     @property
     def centile(
