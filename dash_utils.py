@@ -93,7 +93,7 @@ def load_data(
         |   |
         |   +-- <vi_code>.csv
         |       ex: pr.csv
-        |       columns: stn, var, rcp, hor, stat, q, val
+        |       columns: stn, var, rcp, hor, stat, centile, val
         |            ex: era5_land, pr, rcp45, 2021-2050, mean, -1, 486.53
         +-- map
             |
@@ -103,8 +103,8 @@ def load_data(
             |       |
             |       +-- <vi_name>_<rcp_code>_<hor_code.start>_<hor_code.end>_<stat_code>.csv
             |           ex: pr_rcp45_2021_2050_mean.csv
-            |           ex: pr_rcp45_2021_2050_q10.csv
-            |           ex: pr_rcp45_2021_2050_q90_delta.csv
+            |           ex: pr_rcp45_2021_2050_c010.csv
+            |           ex: pr_rcp45_2021_2050_c090_delta.csv
             |           columns: longitude,latitude,pr
             |                ex: -17.30,14.8,226.06
             |
@@ -245,8 +245,8 @@ def calc_range(
     vi_code    = cntx.varidx.code if cntx.varidx is not None else ""
     vi_name    = cntx.varidx.name if cntx.varidx is not None else ""
     delta_code = cntx.delta.code if cntx.delta is not None else False
-    project_q_low = cntx.project.quantiles_as_str[0] if cntx.project is not None else ""
-    project_q_high = cntx.project.quantiles_as_str[1] if cntx.project is not None else ""
+    centile_lower = cntx.project.stats.centile_as_str_l[0] if cntx.project is not None else ""
+    centile_upper = cntx.project.stats.centile_as_str_l[1] if cntx.project is not None else ""
 
     if view_code == c.view_map:
         
@@ -258,14 +258,14 @@ def calc_range(
         p_ref = glob.glob(p_ref)
 
         # RCP files.
-        p_rcp = cntx.d_project + "<view>/<vi_code>/*/<vi_name>_rcp*_q<q>_<delta>.csv"
+        p_rcp = cntx.d_project + "<view>/<vi_code>/*/<vi_name>_rcp*_c<centile>_<delta>.csv"
         p_rcp = p_rcp.replace("<view>", view_code)
         p_rcp = p_rcp.replace("<vi_code>", vi_code)
         p_rcp = p_rcp.replace("<vi_name>", vi_name)
         p_rcp = p_rcp.replace("_<delta>", "" if delta_code == "False" else "_delta")
-        p_rcp_q_low = glob.glob(p_rcp.replace("<q>", project_q_low))
-        p_rcp_q_high = glob.glob(p_rcp.replace("<q>", project_q_high))
-        p_l = p_rcp_q_low + p_rcp_q_high
+        p_rcp_centile_lower = glob.glob(p_rcp.replace("<centile>", centile_lower))
+        p_rcp_centile_upper = glob.glob(p_rcp.replace("<centile>", centile_upper))
+        p_l = p_rcp_centile_lower + p_rcp_centile_upper
         if delta_code == "False":
             p_l = p_ref + p_l
 

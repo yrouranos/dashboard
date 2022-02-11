@@ -176,7 +176,7 @@ def refresh():
             if vi_f[i]:
                 vi_code_sel_l.append(vi_code_l[i])
         cntx.varidxs = VarIdxs(vi_code_sel_l)
-    cntx.project.load_quantiles()
+    cntx.project.load_stats()
 
     # Horizons.
     if cntx.view.code in [c.view_tbl, c.view_map, c.view_cycle]:

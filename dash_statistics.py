@@ -46,23 +46,23 @@ def calc_clusters(
 
     # Column names.
     col_year = "year"
-    col_sim = "Simulation"
-    col_rcp = "RCP"
-    col_grp = "Groupe"
+    col_sim  = "Simulation"
+    col_rcp  = "RCP"
+    col_grp  = "Groupe"
 
     # Tells whether to normalize values or not (between 0 and 1).
     normalize = True
 
-    # Tells whether to take all years as attributes. The opposite is to take a few quantiles representing these years.
+    # Tells whether to take all years as attributes. The opposite is to take a few centiles representing these years.
     use_years = False
 
-    # Quantiles to consider (in addition of the median).
-    use_quantiles = (not use_years) or (cntx.varidxs.count == 1)
-    q_l     = cntx.project.quantiles
-    q_str_l = np.char.add("q", cntx.project.quantiles_as_str)
+    # Centiles to consider (in addition of the median).
+    use_centiles = (not use_years) or (cntx.varidxs.count == 1)
+    centile_l     = cntx.project.stats.centile_l
+    centile_str_l = cntx.project.stats.centile_as_str_l
 
-    # Column that will hold the representative value (mean or middle quantile).
-    column_rep = q_str_l[int((len(q_str_l) - 1) / 2)] if use_quantiles else c.stat_mean
+    # Column that will hold the representative value (mean or middle centile).
+    column_rep = centile_str_l[int((len(centile_str_l) - 1) / 2)] if use_centiles else c.stat_mean
 
     # Identify the simulations that shared between variables.
     sim_l = du.get_shared_sims(p_l)
@@ -113,19 +113,19 @@ def calc_clusters(
         df.sort_values(by=col_sim, inplace=True)
         df.drop(columns=[col_sim], inplace=True)
 
-        # Set quantiles as attributes.
+        # Set centiles as attributes.
         n_columns = len(columns)
         if not use_years:
-            if use_quantiles:
-                for _i in range(0, len(q_l)):
-                    df[q_str_l[_i]] =\
-                        df.iloc[:, 0:n_columns].quantile(q=q_l[_i], axis=1, numeric_only=False, interpolation="linear")
-                df = df[q_str_l]
+            if use_centiles:
+                for _i in range(0, len(centile_l)):
+                    df[centile_str_l[_i]] = df.iloc[:, 0:n_columns].\
+                        quantile(float(centile_l[_i]) / 100.0, axis=1, numeric_only=False, interpolation="linear")
+                df = df[centile_str_l]
             else:
                 df[c.stat_mean] = df.iloc[:, 0:n_columns].mean(axis=1)
                 df = df[c.stat_mean]
 
-        # Update the dataframe holding absolute values (use middle quantile.
+        # Update the dataframe holding absolute values (use middle centile.
         df_abs[cntx.varidx.code] = df[column_rep]
         if len(df_abs.columns) == 1:
             df_abs.index = df.index

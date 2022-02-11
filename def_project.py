@@ -20,6 +20,7 @@ import dash_utils as du
 import def_object
 from def_constant import const as c
 from def_context import cntx
+from def_stat import Stat, Stats
 
 
 class Project(def_object.Obj):
@@ -29,6 +30,9 @@ class Project(def_object.Obj):
     Class defining the object Project.
     --------------------------------------------------------------------------------------------------------------------
     """
+
+    # Statistics (to hold centiles).
+    _stats = None
 
     def __init__(
         self,
@@ -46,53 +50,56 @@ class Project(def_object.Obj):
         cntx.load()
 
         if (cntx is not None) and (cntx.view is not None):
-            self.load_quantiles()
+            self.load_stats()
         elif code != "":
-            self.quantiles = [-1, -1]
+            self._stats = Stats()
+            for _ in range(2):
+                self._stats.add(Stat(c.stat_centile, -1))
 
     @property
-    def quantiles(
+    def stats(
         self
-    ):
+    ) -> Stats:
 
         """
         ----------------------------------------
-        Get quantiles (low and high).
+        Get statistics.
 
         Returns
         -------
-        List[float]
-            Quantiles.
+        Stats
+            Statistics.
         ----------------------------------------
         """
 
-        return self._quantiles
+        return self._stats
 
-    @quantiles.setter
-    def quantiles(
+    @stats.setter
+    def stats(
         self,
-        quantiles: Optional[List[float]]
+        stats: Stats
     ):
 
         """
         ----------------------------------------
-        Get quantiles (low and high).
+        Set statistics.
 
         Parameters
         ----------
-        quantiles: List[float]
-            Quantiles.
+        stats: Stats
+            Statistics.
+        ----------------------------------------
         """
 
-        self._quantiles = quantiles
+        self._stats = stats
 
-    def load_quantiles(
+    def load_stats(
         self
     ):
 
         """
         ----------------------------------------
-        Get quantiles (low and high).
+        Get centiles (lower and upper).
         ----------------------------------------
         """
 
@@ -101,62 +108,43 @@ class Project(def_object.Obj):
         view_code = cntx.view.code if cntx.view is not None else ""
         vi_code = cntx.varidx.code if cntx.varidx is not None else ""
 
-        quantiles = []
+        centile_l = []
 
-        # The items are extracted from the 'q' column of data files.
+        # The items are extracted from the 'centile' column of data files.
         # ~/<project_code>/tbl/<vi_code>.csv
         if view_code == c.view_tbl:
             df = pd.DataFrame(du.load_data())
-            df = df[(df["q"] > 0.01) & (df["q"] < 0.99) & (df["q"] != 0.5)]["q"]
-            quantiles = [min(df), max(df)]
+            df = df[(df[c.stat_centile] > 0.01) & (df[c.stat_centile] < 0.99) &
+                    (df[c.stat_centile] != 0.5)][c.stat_centile]
+            centile_l = [min(df), max(df)]
 
         # The items are extracted from file names.
-        # ~/<project_code>/map/<vi_code>/*/*_q*.csv
+        # ~/<project_code>/map/<vi_code>/*/*_c*.csv
         elif view_code == c.view_map:
             p = cntx.d_data + "<project_code>/<view_code>/<vi_code>"
             p = p.replace("<project_code>", project_code)
             p = p.replace("<view_code>", view_code)
             p = p.replace("<vi_code>", vi_code)
-            p_l = glob.glob(p + "/*/*_q*.csv")
+            p_l = glob.glob(p + "/*/*_c*.csv")
             for p_i in p_l:
-                tokens = p_i.replace(".csv", "").replace("_delta", "").split("_q")
-                q = float(tokens[len(tokens) - 1])/100
-                if q not in quantiles:
-                    quantiles.append(q)
-            if len(quantiles) > 0:
-                quantiles.sort()
+                tokens = p_i.replace(".csv", "").replace("_delta", "").split("_c")
+                centile = float(tokens[len(tokens) - 1])
+                if centile not in centile_l:
+                    centile_l.append(centile)
+            if len(centile_l) > 0:
+                centile_l.sort()
 
         # The items are hardcoded (there must be an even number of cells).
         elif view_code == c.view_cluster:
-            quantiles = [0.1, 0.5, 0.9]
+            centile_l = cntx.opt_cluster_centiles
 
         # The items are hardcoded.
         elif view_code in [c.view_ts, c.view_ts_bias]:
-            quantiles = [0.0, 1.0]
+            centile_l = cntx.opt_ts_centiles
 
-        self._quantiles = quantiles
-
-    @property
-    def quantiles_as_str(
-        self
-    ) -> List[str]:
-
-        """
-        ----------------------------------------
-        Get quantiles as string (low and high).
-
-        Returns
-        -------
-        List[str]
-            Formatted quantiles.
-        ----------------------------------------
-        """
-
-        q_str_l = []
-        for i in range(len(self.quantiles)):
-            q_str_l.append(str(math.ceil(self.quantiles[i] * 100)))
-
-        return q_str_l
+        self._stats = Stats()
+        for s in range(2):
+            self._stats.add(Stat(c.stat_centile, centile_l[s]))
 
 
 class Projects(def_object.Objs):

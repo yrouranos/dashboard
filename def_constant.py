@@ -33,13 +33,15 @@ class Constant:
     rcpxx                    = "rcpxx"
 
     # Statistics.
-    stat_min                 = "min"
-    stat_q_low               = "q10"
-    stat_median              = "median"
-    stat_q_high              = "q90"
-    stat_max                 = "max"
     stat_mean                = "mean"
+    stat_std                 = "std"
+    stat_min                 = "min"
+    stat_max                 = "max"
+    stat_median              = "median"
     stat_sum                 = "sum"
+    stat_centile             = "centile"
+    stat_centile_lower       = "c10"
+    stat_centile_upper       = "c90"
     stat_quantile            = "quantile"
 
     # Simulations.

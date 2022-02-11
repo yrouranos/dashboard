@@ -199,6 +199,9 @@ class Context(def_object.Obj):
         # Enable/disable the selection of a plotting library.
         self.opt_lib = False
 
+        # Centiles required to produce a cluster scatter plot (if a single variable is selected).
+        self.opt_cluster_centiles = [10, 50, 90]
+
         # Map ----------------------------------
 
         # Resolution.
@@ -270,6 +273,12 @@ class Context(def_object.Obj):
 
                     elif key == "opt_lib":
                         self.opt_lib = ast.literal_eval(value)
+
+                    elif key == "opt_cluster_centiles":
+                        opt_cluster_centiles = str_to_arr_1d(value, float)
+                        if str(opt_cluster_centiles).replace("['']", "") == "":
+                            self.opt_cluster_centiles = opt_cluster_centiles
+                            self.opt_cluster_centiles.sort()
 
     def idx_params_from_code(
         self,

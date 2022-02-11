@@ -13,7 +13,7 @@
 import os
 from typing import List, Optional, Union
 
-# Dashbaord libraries.
+# Dashboard libraries.
 import def_object
 from def_constant import const as c
 from def_context import cntx
@@ -34,21 +34,23 @@ def code_desc(
     """
 
     project_code = cntx.project.code if cntx.project is not None else ""
-    q_low_str  = "10"
-    q_high_str = "90"
+    centile_lower_str = "10"
+    centile_upper_str = "90"
     if project_code != "":
-        q_low_str  = cntx.project.quantiles_as_str[0]
-        q_high_str = cntx.project.quantiles_as_str[len(cntx.project.quantiles_as_str) - 1]
+        centile_lower_str = cntx.project.stats.centile_as_str_l[0]
+        centile_upper_str = cntx.project.stats.centile_as_str_l[len(cntx.project.stats.centile_as_str_l) - 1]
 
     return {
-        c.stat_min:      "Minimum",
-        c.stat_q_low:    q_low_str + "e percentile",
-        c.stat_median:   "Médiane",
-        c.stat_q_high:   q_high_str + "e percentile",
-        c.stat_max:      "Maximum",
-        c.stat_mean:     "Moyenne",
-        c.stat_sum:      "Somme",
-        c.stat_quantile: "Quantile"
+        c.stat_min:           "Minimum",
+        c.stat_centile_lower: centile_lower_str + "e centile",
+        c.stat_median:        "Médiane",
+        c.stat_centile_upper: centile_upper_str + "e centile",
+        c.stat_max:           "Maximum",
+        c.stat_mean:          "Moyenne",
+        c.stat_std:           "Écart type",
+        c.stat_sum:           "Somme",
+        c.stat_quantile:      "Quantile",
+        c.stat_centile:       "Centile"
     }
 
 
@@ -62,13 +64,13 @@ class Stat(
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    # Quantile (value between 0 and 1).
-    _quantile = -1.0
+    # Centile (value between 0 and 100).
+    _centile = -1.0
 
     def __init__(
         self,
         code: str,
-        quantile: Optional[float] = -1.0
+        centile: Optional[float] = -1.0
     ):
 
         """
@@ -79,51 +81,73 @@ class Stat(
         ----------
         code: str
             Code. See options in 'code_desc()'.
-        quantile: Optional[float]
-            Quantile (value between 0 and 1).
+        centile: Optional[float]
+            Centile (value between 0 and 100).
         ----------------------------------------
         """
 
         desc = "" if code == "" else dict(code_desc())[code]
         super(Stat, self).__init__(code=code, desc=desc)
-        self.quantile = quantile
+        self.centile = centile
 
     @property
-    def quantile(
+    def centile(
         self
     ) -> float:
 
         """
         ----------------------------------------
-        Get quantile.
+        Get centile.
 
         Returns
         -------
         float
-            Quantile (value between 0 and 1).
+            Centile (value between 0 and 100).
         ----------------------------------------
         """
 
-        return self._quantile
+        return self._centile
 
-    @quantile.setter
-    def quantile(
+    @centile.setter
+    def centile(
         self,
-        quantile: float
+        centile: float
     ):
 
         """
         ----------------------------------------
-        Set quantile.
+        Set centile.
 
         Parameters
         ----------
-        quantile: float
-            Quantile (value between 0 and 1).
+        centile: float
+            Centile (value between 0 and 100).
         ----------------------------------------
         """
 
-        self._quantile = quantile
+        self._centile = centile
+
+    @property
+    def centile_as_str(
+        self
+    ) -> str:
+
+        """
+        ----------------------------------------
+        Format centile.
+
+        Returns
+        -------
+        str
+            Formatted centile (between "c001" and "c100").
+        ----------------------------------------
+        """
+
+        centile_as_str = "c" + str(int(self.centile)).rjust(3, "0")
+        if "-" in centile_as_str:
+            centile_as_str = ""
+
+        return centile_as_str
 
 
 class Stats(def_object.Objs):
@@ -237,23 +261,45 @@ class Stats(def_object.Objs):
         return super(Stats, self).add(items, inplace)
 
     @property
-    def quantiles(
+    def centile_l(
         self
     ) -> List[float]:
 
         """
         ----------------------------------------
-        Get quantiles.
+        Get centiles.
 
         Returns
         -------
         List[float]
-            Quantiles (values between 0 and 1).
+            Centiles (values between 0 and 100).
         ----------------------------------------
         """
 
-        quantile_l = []
+        centile_l = []
         for stat in self.items:
-            quantile_l.append(stat.quantile)
+            centile_l.append(stat.centile)
 
-        return quantile_l
+        return centile_l
+
+    @property
+    def centile_as_str_l(
+        self
+    ) -> List[str]:
+
+        """
+        ----------------------------------------
+        Format centiles.
+
+        Returns
+        -------
+        List[str]
+            Formatted centiles (between "c001" and "c100").
+        ----------------------------------------
+        """
+
+        centile_as_str_l = []
+        for stat in self.items:
+            centile_as_str_l.append(stat.centile_as_str)
+
+        return centile_as_str_l
