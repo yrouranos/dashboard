@@ -136,7 +136,7 @@ def refresh():
     cntx.view = View(view_code)
 
     # TODO: remove
-    # cntx.view = View(c.view_tbl)
+    cntx.view = View(c.view_map)
 
     # Plotting libraries.
     cntx.libs = Libs("*")
@@ -186,6 +186,9 @@ def refresh():
         cntx.hors = Hors("*")
         hor_f = st.selectbox("Horizon", options=cntx.hors.code_l)
         cntx.hor = Hor(hor_f)
+
+    # TODO: remove
+    # cntx.hor = Hor("2021-2050")
 
     # Emission scenarios.
     cntx.rcps = RCPs("*")

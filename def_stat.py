@@ -10,6 +10,7 @@
 # ----------------------------------------------------------------------------------------------------------------------
 
 # External libraries.
+import glob
 import os
 from typing import List, Optional, Union
 
@@ -189,6 +190,7 @@ class Stats(def_object.Objs):
         """
 
         code_l = []
+        centile_l = []
 
         # Determine if this is the reference data.
         is_ref = False
@@ -206,25 +208,44 @@ class Stats(def_object.Objs):
         # The items are extracted from file names.
         # ~/<project_code>/map/<vi_code>/<hor_code>/*.csv"
         if view_code == c.view_map:
-            p = cntx.d_project + "<view_code>/<vi_code>/<hor_code>/<vi_name>_<rcp_code>_<hor_code_>_<stat>_<delta>.csv"
+            p = cntx.d_project + "<view_code>/<vi_code>/<hor_code>/<vi_name>_<rcp_code>_<hor_code_>_*.csv"
             p = p.replace("<view_code>", view_code)
             p = p.replace("<vi_code>", vi_code)
             p = p.replace("<vi_name>", vi_name)
             p = p.replace("<rcp_code>", rcp_code)
             p = p.replace("<hor_code_>", "" if cntx.hor is None else hor_code.replace("-", "_"))
             p = p.replace("<hor_code>", hor_code)
-            p = p.replace("_<delta>", "" if delta_code == "False" else "_delta")
 
             # Add each code for which a file exists.
-            for code in [c.stat_mean, c.stat_centile_lower, c.stat_centile_upper]:
-                if os.path.exists(p.replace("<stat>", code)) and ((not is_ref) or (is_ref and (code == c.stat_mean))):
+            for p_i in list(glob.glob(p)):
+
+                # Skip if looking for files with absolute values.
+                if ("delta" in p_i) and (delta_code == "False"):
+                    continue
+
+                # Extract statistic code.
+                tokens = p_i.replace(c.f_ext_csv, "").split("_")
+                code = tokens[len(tokens) - 1]
+
+                # Any statistic, except a centile.
+                if "c" not in code:
                     code_l.append(code)
+                    centile_l.append(-1)
+
+                # A centile.
+                elif (os.path.exists(p.replace("<stat>", code))) and\
+                     ((not is_ref) or (is_ref and (code == c.stat_mean))):
+                    code_l.append(c.stat_centile)
+                    centile_l.append(int(code.replace("c", "")))
 
             # Only keep the mean if the reference period was selected.
-            if hor_code == cntx.per_ref_str:
-                code_l = [c.stat_mean] if (c.stat_mean in code_l) else []
+            if (hor_code == cntx.per_ref_str) and (c.stat_mean in code_l):
+                code_l = [c.stat_mean]
+                centile_l = [-1]
 
-        self.add(code_l)
+        # Add statistics.
+        for i in range(len(code_l)):
+            self.add(Stat(code_l[i], centile_l[i]))
 
     def add(
         self,
