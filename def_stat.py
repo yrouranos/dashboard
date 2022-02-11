@@ -87,12 +87,14 @@ class Stat(
         ----------------------------------------
         """
 
-        # Try to extract centile from code.
+        # Try to extract centile from code, then assign them to the instance.
         if ("c" in code) and (c.stat_centile not in code) and (centile < 0):
             centile = round(int(code.replace("c", "")))
 
-        super(Stat, self).__init__(code=code)
+        self.code = code
         self.centile = centile
+
+        super(Stat, self).__init__(code=code, desc=self.desc)
 
     @property
     def desc(
