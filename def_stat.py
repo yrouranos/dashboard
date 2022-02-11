@@ -346,6 +346,29 @@ class Stats(def_object.Objs):
         return super(Stats, self).add(items, inplace)
 
     @property
+    def desc_l(
+        self
+    ) -> List[str]:
+
+        """
+        ----------------------------------------
+        Get a list of descriptions.
+
+        Returns
+        -------
+        List[str]
+            Descriptions.
+        ----------------------------------------
+        """
+
+        desc_l = []
+
+        for item in self._items:
+            desc_l.append(item.desc)
+
+        return desc_l
+
+    @property
     def centile_l(
         self
     ) -> List[float]:

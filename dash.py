@@ -135,8 +135,8 @@ def refresh():
     view_code = cntx.views.code_from_desc(view_f) if cntx.views is not None else ""
     cntx.view = View(view_code)
 
-    # TODO.Debug:
-    # cntx.view = View(c.view_tbl)
+    # TODO.Debug view.
+    # cntx.view = View(c.view_map)
 
     # Plotting libraries.
     cntx.libs = Libs("*")
@@ -159,6 +159,9 @@ def refresh():
         cntx.delta = Delta(str(delta_f))
     else:
         cntx.delta = Delta("False")
+
+    # TODO.Debug delta.
+    # cntx.delta = Delta("True")
 
     # Variables and indices.
     cntx.varidxs = VarIdxs("*")
