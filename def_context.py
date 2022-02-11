@@ -196,6 +196,9 @@ class Context(def_object.Obj):
         # Reference period.
         self.per_ref = []
 
+        # Centiles required to generate a statistical table.
+        self.opt_stat_centiles = [0, 1, 10, 50, 90, 99, 100]
+
         # Centiles for which a time series is required.
         self.opt_ts_centiles = [10, 90]
 
@@ -272,6 +275,12 @@ class Context(def_object.Obj):
 
                     elif key == "per_ref":
                         self.per_ref = str_to_arr_1d(value, int)
+
+                    elif key == "opt_stat_centiles":
+                        opt_stat_centiles = str_to_arr_1d(value, float)
+                        if str(opt_stat_centiles).replace("['']", "") != "":
+                            self.opt_stat_centiles = opt_stat_centiles
+                            self.opt_stat_centiles.sort()
 
                     elif key == "opt_ts_centiles":
                         opt_ts_centiles = str_to_arr_1d(value, float)
