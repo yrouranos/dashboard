@@ -195,7 +195,7 @@ class Context(def_object.Obj):
 
         # Reference period.
         self.per_ref = []
-        
+
         # Centiles for which a time series is required.
         self.opt_ts_centiles = [10, 90]
 

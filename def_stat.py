@@ -33,12 +33,11 @@ def code_desc(
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    project_code = cntx.project.code if cntx.project is not None else ""
-    centile_lower_str = "10"
-    centile_upper_str = "90"
-    if project_code != "":
-        centile_lower_str = cntx.project.stats.centile_as_str_l[0]
-        centile_upper_str = cntx.project.stats.centile_as_str_l[len(cntx.project.stats.centile_as_str_l) - 1]
+    centile_lower_str, centile_upper_str = "10", "90"
+    if cntx.project.stat is not None:
+        if len(cntx.project.stats.centile_l) >= 2:
+            centile_lower_str = cntx.project.stats.centile_as_str_l[0]
+            centile_upper_str = cntx.project.stats.centile_as_str_l[len(cntx.project.stats.centile_as_str_l) - 1]
 
     return {
         c.stat_min:           "Minimum",
