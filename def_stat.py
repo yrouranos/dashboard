@@ -33,17 +33,17 @@ def code_desc(
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    centile_lower_str, centile_upper_str = "10", "90"
+    centile_lower, centile_upper = 10, 90
     if (cntx.project is not None) and (cntx.project.stats is not None):
         if len(cntx.project.stats.centile_l) >= 2:
-            centile_lower_str = cntx.project.stats.centile_as_str_l[0]
-            centile_upper_str = cntx.project.stats.centile_as_str_l[len(cntx.project.stats.centile_as_str_l) - 1]
+            centile_lower = cntx.project.stats.centile_l[0]
+            centile_upper = cntx.project.stats.centile_l[len(cntx.project.stats.centile_l) - 1]
 
     return {
         c.stat_min:           "Minimum",
-        c.stat_centile_lower: centile_lower_str + "e centile",
+        c.stat_centile_lower: str(centile_lower) + "e centile",
         c.stat_median:        "Médiane",
-        c.stat_centile_upper: centile_upper_str + "e centile",
+        c.stat_centile_upper: str(centile_upper) + "e centile",
         c.stat_max:           "Maximum",
         c.stat_mean:          "Moyenne",
         c.stat_std:           "Écart type",

@@ -642,14 +642,14 @@ def gen_tbl(
 
     # List of statistics (in a column).
     stat_l, stat_desc_l = [], []
-    for code in list(dict(def_stat.code_desc()).keys()):
-        if code in [c.stat_min, c.stat_max, c.stat_mean]:
+    for code in [c.stat_min, c.stat_centile_lower, c.stat_median, c.stat_centile_upper, c.stat_max, c.stat_mean]:
+        if code in [c.stat_mean, c.stat_min, c.stat_max]:
             stat_l.append([code, -1])
-        elif code == cntx.project.stats.centile_as_str_l[0]:
+        elif code == c.stat_centile_lower:
             stat_l.append([c.stat_centile, cntx.project.stats.centile_l[0]])
-        elif code == cntx.project.stats.centile_as_str_l[1]:
+        elif code == c.stat_centile_upper:
             stat_l.append([c.stat_centile, cntx.project.stats.centile_l[1]])
-        else:
+        elif code == c.stat_median:
             stat_l.append([c.stat_centile, 50])
         stat_desc_l.append(def_stat.code_desc()[code])
 

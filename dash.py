@@ -126,11 +126,7 @@ def refresh():
     # Projects.
     cntx.projects = Projects("*")
     project_f = st.sidebar.selectbox("Choisir le projet", options=cntx.projects.desc_l)
-
-
-    # TODO.remove
     cntx.project = Project(project_f)
-    #cntx.project = Project("sn")
     cntx.load()
 
     # Views.
@@ -139,8 +135,8 @@ def refresh():
     view_code = cntx.views.code_from_desc(view_f) if cntx.views is not None else ""
     cntx.view = View(view_code)
 
-    # TODO.remove
-    #cntx.view = View(c.view_ts_bias)
+    # TODO: remove
+    # cntx.view = View(c.view_tbl)
 
     # Plotting libraries.
     cntx.libs = Libs("*")
