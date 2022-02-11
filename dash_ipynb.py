@@ -575,7 +575,7 @@ def varidx_updated(event=None):
     """
 
     cntx.varidx = VarIdx(str(f_code("varidx")))
-    cntx.project.load_stats()
+    cntx.stats = Stats("*")
 
     if cntx.view.code in [c.view_tbl, c.view_map, c.view_cycle]:
         update_hor()

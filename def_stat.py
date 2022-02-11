@@ -11,21 +11,28 @@
 
 # External libraries.
 import glob
-import os
+import pandas as pd
 from typing import List, Optional, Union
 
 # Dashboard libraries.
+import dash_utils as du
 import def_object
 from def_constant import const as c
 from def_context import cntx
 
 
 def code_desc(
+    centile: Optional[int] = -1
 ) -> dict:
 
     """
     --------------------------------------------------------------------------------------------------------------------
     Get a dictionary of codes and descriptions.
+
+    Parameters
+    ----------
+    centile: Optional[int]
+        Centile.
 
     Returns
     -------
@@ -34,17 +41,11 @@ def code_desc(
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    centile_lower, centile_upper = 10, 90
-    if (cntx.project is not None) and (cntx.project.stats is not None):
-        if len(cntx.project.stats.centile_l) >= 2:
-            centile_lower = cntx.project.stats.centile_l[0]
-            centile_upper = cntx.project.stats.centile_l[len(cntx.project.stats.centile_l) - 1]
-
     return {
         c.stat_min:           "Minimum",
-        c.stat_centile_lower: str(int(centile_lower)) + "e centile",
+        c.stat_centile_lower: str(int(centile)) + "e centile",
         c.stat_median:        "Médiane",
-        c.stat_centile_upper: str(int(centile_upper)) + "e centile",
+        c.stat_centile_upper: str(int(centile)) + "e centile",
         c.stat_max:           "Maximum",
         c.stat_mean:          "Moyenne",
         c.stat_std:           "Écart type",
@@ -205,9 +206,25 @@ class Stats(def_object.Objs):
         hor_code   = cntx.hor.code if cntx.hor is not None else ""
         delta_code = cntx.delta.code if cntx.delta is not None else False
 
+        # The items are extracted from the configuration file.
+        if view_code in [c.view_ts, c.view_ts_bias]:
+            centile_l = cntx.opt_ts_centiles
+            for i in range(len(centile_l)):
+                code_l.append("c" + str(int(centile_l[i])).rjust(3, "0"))
+
+        # The items are extracted from the 'centile' column of data files.
+        # ~/<project_code>/tbl/<vi_code>.csv
+        if view_code == c.view_tbl:
+            df = pd.DataFrame(du.load_data())
+            df = df[(df[c.stat_centile] > 0) & (df[c.stat_centile] < 100) &
+                    (df[c.stat_centile] != 50)][c.stat_centile]
+            centile_l = [min(df), max(df)]
+            for i in range(len(centile_l)):
+                code_l.append("c" + str(int(centile_l[i])).rjust(3, "0"))
+
         # The items are extracted from file names.
         # ~/<project_code>/map/<vi_code>/<hor_code>/*.csv"
-        if view_code == c.view_map:
+        elif view_code == c.view_map:
             p = cntx.d_project + "<view_code>/<vi_code>/<hor_code>/<vi_name>_<rcp_code>_<hor_code_>_*.csv"
             p = p.replace("<view_code>", view_code)
             p = p.replace("<vi_code>", vi_code)
@@ -243,6 +260,12 @@ class Stats(def_object.Objs):
             if (hor_code == cntx.per_ref_str) and (c.stat_mean in code_l):
                 code_l = [c.stat_mean]
                 centile_l = [-1]
+
+        # The items are extracted from the configuration file.
+        elif view_code == c.view_cluster:
+            centile_l = cntx.opt_cluster_centiles
+            for i in range(len(centile_l)):
+                code_l.append("c" + str(int(centile_l[i])).rjust(3, "0"))
 
         # Add statistics.
         for i in range(len(code_l)):

@@ -245,8 +245,9 @@ def calc_range(
     vi_code    = cntx.varidx.code if cntx.varidx is not None else ""
     vi_name    = cntx.varidx.name if cntx.varidx is not None else ""
     delta_code = cntx.delta.code if cntx.delta is not None else False
-    centile_lower = cntx.project.stats.centile_as_str_l[0] if cntx.project is not None else ""
-    centile_upper = cntx.project.stats.centile_as_str_l[1] if cntx.project is not None else ""
+    centile_lower = cntx.stats.centile_as_str_l[0] if cntx.project is not None else ""
+    centile_upper =\
+        cntx.stats.centile_as_str_l[len(cntx.stats.centile_as_str_l) - 1] if cntx.project is not None else ""
 
     if view_code == c.view_map:
         

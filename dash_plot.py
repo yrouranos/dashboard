@@ -43,6 +43,7 @@ from def_constant import const as c
 from def_context import cntx
 from def_rcp import RCP, RCPs
 from def_sim import Sim
+from def_stat import Stat, Stats
 from def_varidx import VarIdx
 
 alt.renderers.enable("default")
@@ -643,15 +644,16 @@ def gen_tbl(
     # List of statistics (in a column).
     stat_l, stat_desc_l = [], []
     for code in [c.stat_min, c.stat_centile_lower, c.stat_median, c.stat_centile_upper, c.stat_max, c.stat_mean]:
+        centile = int(code.replace("c", "")) if "c" in code else -1
         if code in [c.stat_mean, c.stat_min, c.stat_max]:
             stat_l.append([code, -1])
         elif code == c.stat_centile_lower:
-            stat_l.append([c.stat_centile, cntx.project.stats.centile_l[0]])
-        elif code == c.stat_centile_upper:
-            stat_l.append([c.stat_centile, cntx.project.stats.centile_l[1]])
+            stat_l.append([c.stat_centile, cntx.opt_stat_centiles[0]])
         elif code == c.stat_median:
             stat_l.append([c.stat_centile, 50])
-        stat_desc_l.append(def_stat.code_desc()[code])
+        elif code == c.stat_centile_upper:
+            stat_l.append([c.stat_centile, cntx.opt_stat_centiles[len(cntx.opt_stat_centiles) - 1]])
+        stat_desc_l.append(def_stat.code_desc(centile)[code])
 
     # Initialize resulting dataframe.
     df_res = pd.DataFrame()

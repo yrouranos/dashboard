@@ -58,8 +58,8 @@ def calc_clusters(
 
     # Centiles to consider (in addition of the median).
     use_centiles = (not use_years) or (cntx.varidxs.count == 1)
-    centile_l     = cntx.project.stats.centile_l
-    centile_str_l = cntx.project.stats.centile_as_str_l
+    centile_l     = cntx.stats.centile_l
+    centile_str_l = cntx.stats.centile_as_str_l
 
     # Column that will hold the representative value (mean or middle centile).
     column_rep = centile_str_l[int((len(centile_str_l) - 1) / 2)] if use_centiles else c.stat_mean

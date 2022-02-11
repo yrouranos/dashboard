@@ -176,7 +176,6 @@ def refresh():
             if vi_f[i]:
                 vi_code_sel_l.append(vi_code_l[i])
         cntx.varidxs = VarIdxs(vi_code_sel_l)
-    cntx.project.load_stats()
 
     # Horizons.
     if cntx.view.code in [c.view_tbl, c.view_map, c.view_cycle]:
@@ -208,8 +207,8 @@ def refresh():
                                     max_value=n_cluster_max, value=n_cluster_suggested)
 
     # Statistics.
+    cntx.stats = Stats("*")
     if cntx.view.code == c.view_map:
-        cntx.stats = Stats("*")
         if cntx.rcp.code == c.ref:
             cntx.stat = Stat(c.stat_mean)
         else:

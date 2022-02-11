@@ -69,6 +69,10 @@ def gen_ts(
     cntx.view = View(view_code)
     cntx.libs = Libs(cntx.view.code)
 
+    cntx.stats = Stats()
+    cntx.stats.add(Stat(c.stat_centile, cntx.opt_ts_centiles[0]))
+    cntx.stats.add(Stat(c.stat_centile, cntx.opt_ts_centiles[1]))
+
     for lib in cntx.libs.code_l:
         cntx.lib = Lib(lib)
 
@@ -84,7 +88,6 @@ def gen_ts(
                 cntx.sims = Sims("*")
                 cntx.sim = Sim("")
 
-                cntx.project.load_stats()
                 cntx.projects = Projects("*")
                 cntx.project = Project(project_code)
 
@@ -124,7 +127,6 @@ def gen_tbl(
             for varidx in cntx.varidxs.code_l:
 
                 cntx.varidx = VarIdx(varidx)
-                cntx.project.load_stats()
 
                 cntx.hors = Hors("*")
                 for hor in cntx.hors.code_l:
@@ -167,7 +169,6 @@ def gen_map(
             for varidx in cntx.varidxs.code_l:
 
                 cntx.varidx = VarIdx(varidx)
-                cntx.project.load_stats()
 
                 cntx.hors = Hors("*")
                 for hor in cntx.hors.code_l:
@@ -260,6 +261,10 @@ def gen_cluster(
 
     cntx.view = View(c.view_cluster)
     cntx.libs = Libs(cntx.view.code)
+
+    cntx.stats = Stats()
+    cntx.stats.add(Stat(c.stat_centile, cntx.opt_cluster_centiles[0]))
+    cntx.stats.add(Stat(c.stat_centile, cntx.opt_cluster_centiles[1]))
 
     for lib in cntx.libs.code_l:
 

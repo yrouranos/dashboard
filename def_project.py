@@ -10,9 +10,6 @@
 # ----------------------------------------------------------------------------------------------------------------------
 
 # External libraries.
-import glob
-import math
-import pandas as pd
 from typing import List, Union, Optional
 
 # Dashboard libraries.
@@ -31,9 +28,6 @@ class Project(def_object.Obj):
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    # Statistics (to hold centiles).
-    _stats = None
-
     def __init__(
         self,
         code: str = ""
@@ -49,104 +43,10 @@ class Project(def_object.Obj):
 
         cntx.load()
 
-        if (cntx is not None) and (cntx.view is not None):
-            self.load_stats()
-        elif code != "":
+        if code != "":
             self._stats = Stats()
             for _ in range(2):
                 self._stats.add(Stat(c.stat_centile, -1))
-
-    @property
-    def stats(
-        self
-    ) -> Stats:
-
-        """
-        ----------------------------------------
-        Get statistics.
-
-        Returns
-        -------
-        Stats
-            Statistics.
-        ----------------------------------------
-        """
-
-        return self._stats
-
-    @stats.setter
-    def stats(
-        self,
-        stats: Stats
-    ):
-
-        """
-        ----------------------------------------
-        Set statistics.
-
-        Parameters
-        ----------
-        stats: Stats
-            Statistics.
-        ----------------------------------------
-        """
-
-        self._stats = stats
-
-    def load_stats(
-        self
-    ):
-
-        """
-        ----------------------------------------
-        Get centiles (lower and upper).
-        ----------------------------------------
-        """
-
-        # Codes.
-        project_code = cntx.project.code if cntx.project is not None else ""
-        view_code = cntx.view.code if cntx.view is not None else ""
-        vi_code = cntx.varidx.code if cntx.varidx is not None else ""
-
-        centile_l = []
-
-        # The items are extracted from the 'centile' column of data files.
-        # ~/<project_code>/tbl/<vi_code>.csv
-        if view_code == c.view_tbl:
-            df = pd.DataFrame(du.load_data())
-            df = df[(df[c.stat_centile] > 0) & (df[c.stat_centile] < 100) &
-                    (df[c.stat_centile] != 50)][c.stat_centile]
-            centile_l = [min(df), max(df)]
-
-        # The items are extracted from file names.
-        # ~/<project_code>/map/<vi_code>/*/*_c*.csv
-        elif view_code == c.view_map:
-            p = cntx.d_data + "<project_code>/<view_code>/<vi_code>"
-            p = p.replace("<project_code>", project_code)
-            p = p.replace("<view_code>", view_code)
-            p = p.replace("<vi_code>", vi_code)
-            p_l = glob.glob(p + "/*/*_c*.csv")
-            for p_i in p_l:
-                tokens = p_i.replace(".csv", "").replace("_delta", "").split("_c")
-                centile = float(tokens[len(tokens) - 1])
-                if centile not in centile_l:
-                    centile_l.append(centile)
-            if len(centile_l) > 0:
-                centile_l.sort()
-
-        # The items are extracted from the configuration file.
-        elif view_code == c.view_cluster:
-            centile_l = cntx.opt_cluster_centiles
-        elif view_code in [c.view_ts, c.view_ts_bias]:
-            centile_l = cntx.opt_ts_centiles
-
-        # Dummy values are assigned, but they are not required in this view.
-        else:
-            centile_l = [0, 100]
-
-        self._stats = Stats()
-        for s in range(2):
-            self._stats.add(Stat(c.stat_centile, centile_l[s]))
 
 
 class Projects(def_object.Objs):
