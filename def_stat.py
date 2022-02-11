@@ -224,7 +224,7 @@ class Stats(def_object.Objs):
                     continue
 
                 # Extract statistic code.
-                tokens = p_i.replace(c.f_ext_csv, "").replace("delta", "").split("_")
+                tokens = p_i.replace(c.f_ext_csv, "").replace("_delta", "").split("_")
                 code = tokens[len(tokens) - 1]
 
                 # Any statistic, except a centile.
