@@ -43,9 +43,9 @@ def code_desc(
 
     return {
         c.stat_min:           "Minimum",
-        c.stat_centile_lower: str(int(centile)) + "e centile",
+        c.stat_centile_lower: str(centile) + "e centile",
         c.stat_median:        "Médiane",
-        c.stat_centile_upper: str(int(centile)) + "e centile",
+        c.stat_centile_upper: str(centile) + "e centile",
         c.stat_max:           "Maximum",
         c.stat_mean:          "Moyenne",
         c.stat_std:           "Écart type",
@@ -66,7 +66,7 @@ class Stat(
     """
 
     # Centile (value between 0 and 100).
-    _centile = -1
+    _centile: int = -1
 
     def __init__(
         self,
@@ -89,11 +89,29 @@ class Stat(
 
         # Try to extract centile from code.
         if ("c" in code) and (c.stat_centile not in code) and (centile < 0):
-            centile = int(code.replace("c", ""))
+            centile = round(int(code.replace("c", "")))
 
         desc = "" if code == "" else dict(code_desc(centile))[c.stat_centile if "c" in code else code]
         super(Stat, self).__init__(code=code, desc=desc)
         self.centile = centile
+
+    @property
+    def desc(
+        self
+    ) -> str:
+
+        """
+        ----------------------------------------
+        Get description.
+
+        Returns
+        -------
+        str
+            Description.
+        ----------------------------------------
+        """
+
+        return dict(code_desc(self.centile))[self.code]
 
     @property
     def is_centile(
@@ -106,7 +124,7 @@ class Stat(
 
         Returns
         -------
-        float
+        int
             True if this statistic is a centile.
         ----------------------------------------
         """
@@ -116,7 +134,7 @@ class Stat(
     @property
     def centile(
         self
-    ) -> float:
+    ) -> int:
 
         """
         ----------------------------------------
@@ -124,7 +142,7 @@ class Stat(
 
         Returns
         -------
-        float
+        int
             Centile (value between 0 and 100).
         ----------------------------------------
         """
@@ -134,7 +152,7 @@ class Stat(
     @centile.setter
     def centile(
         self,
-        centile: float
+        centile: int
     ):
 
         """
@@ -143,7 +161,7 @@ class Stat(
 
         Parameters
         ----------
-        centile: float
+        centile: int
             Centile (value between 0 and 100).
         ----------------------------------------
         """
@@ -232,7 +250,7 @@ class Stats(def_object.Objs):
         if view_code in [c.view_ts, c.view_ts_bias]:
             centile_l = cntx.opt_ts_centiles
             for i in range(len(centile_l)):
-                code_l.append("c" + str(int(centile_l[i])).rjust(3, "0"))
+                code_l.append("c" + str(centile_l[i]).rjust(3, "0"))
 
         # The items are extracted from the 'centile' column of data files.
         # ~/<project_code>/tbl/<vi_code>.csv
@@ -242,7 +260,7 @@ class Stats(def_object.Objs):
                     (df[c.stat_centile] != 50)][c.stat_centile]
             centile_l = [min(df), max(df)]
             for i in range(len(centile_l)):
-                code_l.append("c" + str(int(centile_l[i])).rjust(3, "0"))
+                code_l.append("c" + str(centile_l[i]).rjust(3, "0"))
 
         # The items are extracted from file names.
         # ~/<project_code>/map/<vi_code>/<hor_code>/*.csv"
@@ -287,7 +305,7 @@ class Stats(def_object.Objs):
         elif view_code == c.view_cluster:
             centile_l = cntx.opt_cluster_centiles
             for i in range(len(centile_l)):
-                code_l.append("c" + str(int(centile_l[i])).rjust(3, "0"))
+                code_l.append("c" + str(centile_l[i]).rjust(3, "0"))
 
         # Add statistics.
         for i in range(len(code_l)):

@@ -61,7 +61,7 @@ def calc_clusters(
     centile_l     = cntx.stats.centile_l
     centile_str_l = cntx.stats.centile_as_str_l
 
-    # Column that will hold the representative value (mean or middle centile).
+    # Column that will hold the representative value (middle centile).
     column_rep = centile_str_l[int((len(centile_str_l) - 1) / 2)] if use_centiles else c.stat_mean
 
     # Identify the simulations that shared between variables.

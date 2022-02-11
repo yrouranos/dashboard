@@ -277,13 +277,13 @@ class Context(def_object.Obj):
                         self.per_ref = str_to_arr_1d(value, int)
 
                     elif key == "opt_stat_centiles":
-                        opt_stat_centiles = str_to_arr_1d(value, float)
+                        opt_stat_centiles = str_to_arr_1d(value, int)
                         if str(opt_stat_centiles).replace("['']", "") != "":
                             self.opt_stat_centiles = opt_stat_centiles
                             self.opt_stat_centiles.sort()
 
                     elif key == "opt_ts_centiles":
-                        opt_ts_centiles = str_to_arr_1d(value, float)
+                        opt_ts_centiles = str_to_arr_1d(value, int)
                         if str(opt_ts_centiles).replace("['']", "") == "":
                             self.opt_ts_centiles = opt_ts_centiles
                             self.opt_ts_centiles.sort()
@@ -293,7 +293,7 @@ class Context(def_object.Obj):
                             pd.DataFrame(str_to_arr_2d(value, float), columns=["longitude", "latitude", "desc"])
 
                     elif key == "opt_cluster_centiles":
-                        opt_cluster_centiles = str_to_arr_1d(value, float)
+                        opt_cluster_centiles = str_to_arr_1d(value, int)
                         if str(opt_cluster_centiles).replace("['']", "") == "":
                             self.opt_cluster_centiles = opt_cluster_centiles
                             self.opt_cluster_centiles.sort()

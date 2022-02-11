@@ -40,8 +40,8 @@ class Constant:
     stat_median              = "median"
     stat_sum                 = "sum"
     stat_centile             = "centile"
-    stat_centile_lower       = "c010"
-    stat_centile_upper       = "c090"
+    stat_centile_lower       = "centile_lower"
+    stat_centile_upper       = "centile_upper"
     stat_quantile            = "quantile"
 
     # Simulations.
