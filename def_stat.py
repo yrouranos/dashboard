@@ -233,8 +233,7 @@ class Stats(def_object.Objs):
                     centile_l.append(-1)
 
                 # A centile.
-                elif (os.path.exists(p.replace("<stat>", code))) and\
-                     ((not is_ref) or (is_ref and (code == c.stat_mean))):
+                elif (not is_ref) or (is_ref and (code == c.stat_mean)):
                     code_l.append(c.stat_centile)
                     centile_l.append(int(code.replace("c", "")))
 
