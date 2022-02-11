@@ -216,7 +216,7 @@ class Stats(def_object.Objs):
             p = p.replace("_<delta>", "" if delta_code == "False" else "_delta")
 
             # Add each code for which a file exists.
-            for code in list(dict(code_desc()).keys()):
+            for code in [c.stat_mean, c.stat_centile_lower, c.stat_centile_upper]:
                 if os.path.exists(p.replace("<stat>", code)) and ((not is_ref) or (is_ref and (code == c.stat_mean))):
                     code_l.append(code)
 
