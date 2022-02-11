@@ -229,13 +229,15 @@ class Stats(def_object.Objs):
 
                 # Any statistic, except a centile.
                 if "c" not in code:
-                    code_l.append(code)
-                    centile_l.append(-1)
+                    if code not in code_l:
+                        code_l.append(code)
+                        centile_l.append(-1)
 
                 # A centile.
                 elif (not is_ref) or (is_ref and (code == c.stat_mean)):
-                    code_l.append(code)
-                    centile_l.append(int(code.replace("c", "")))
+                    if code not in code_l:
+                        code_l.append(code)
+                        centile_l.append(int(code.replace("c", "")))
 
             # Only keep the mean if the reference period was selected.
             if (hor_code == cntx.per_ref_str) and (c.stat_mean in code_l):
