@@ -234,7 +234,8 @@ class Stats(def_object.Objs):
 
                 # A centile.
                 elif (not is_ref) or (is_ref and (code == c.stat_mean)):
-                    code_l.append(c.stat_centile)
+                    # code_l.append(c.stat_centile)
+                    code_l.append(code)
                     centile_l.append(int(code.replace("c", "")))
 
             # Only keep the mean if the reference period was selected.
