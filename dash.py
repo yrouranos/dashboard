@@ -135,6 +135,9 @@ def refresh():
     view_code = cntx.views.code_from_desc(view_f) if cntx.views is not None else ""
     cntx.view = View(view_code)
 
+    # TODO.Debug:
+    # cntx.view = View(c.view_tbl)
+
     # Plotting libraries.
     cntx.libs = Libs("*")
     if cntx.opt_lib:

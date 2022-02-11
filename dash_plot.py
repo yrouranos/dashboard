@@ -644,7 +644,7 @@ def gen_tbl(
     # List of statistics (in a column).
     stat_l, stat_desc_l = [], []
     for code in [c.stat_min, c.stat_centile_lower, c.stat_median, c.stat_centile_upper, c.stat_max, c.stat_mean]:
-        centile = int(code.replace("c", "")) if "c" in code else -1
+        centile = int(code.replace("c", "")) if ("c" in code) and (c.stat_centile not in code) else -1
         if code in [c.stat_mean, c.stat_min, c.stat_max]:
             stat_l.append([code, -1])
         elif code == c.stat_centile_lower:
