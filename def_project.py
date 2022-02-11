@@ -134,13 +134,15 @@ class Project(def_object.Obj):
             if len(centile_l) > 0:
                 centile_l.sort()
 
-        # The items are hardcoded (there must be an even number of cells).
+        # The items are extracted from the configuration file.
         elif view_code == c.view_cluster:
             centile_l = cntx.opt_cluster_centiles
-
-        # The items are hardcoded.
         elif view_code in [c.view_ts, c.view_ts_bias]:
             centile_l = cntx.opt_ts_centiles
+
+        # Dummy values are assigned, but they are not required in this view.
+        else:
+            centile_l = [0, 100]
 
         self._stats = Stats()
         for s in range(2):
