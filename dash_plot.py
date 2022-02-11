@@ -870,8 +870,8 @@ def gen_map_hv(
     bounds = None
     if (cntx.p_bounds != "") and os.path.exists(cntx.p_bounds):
         df_curve = pd.DataFrame(du.load_geojson(cntx.p_bounds, "pandas"))
-        x_lim = (min(df_curve[c.dim_longitude]), max(df_curve[c.dim_longitude]))
-        y_lim = (min(df_curve[c.dim_latitude]), max(df_curve[c.dim_latitude]))
+        x_lim = (min(df_curve["longitude"]), max(df_curve["longitude"]))
+        y_lim = (min(df_curve["latitude"]), max(df_curve["latitude"]))
         bounds = df_curve.hvplot.line(x=c.dim_longitude, y=c.dim_latitude, color="black", alpha=0.7,
                                       xlim=x_lim, ylim=y_lim)
 
