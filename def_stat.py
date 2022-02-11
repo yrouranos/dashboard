@@ -34,7 +34,7 @@ def code_desc(
     """
 
     centile_lower_str, centile_upper_str = "10", "90"
-    if cntx.project.stats is not None:
+    if (cntx.project is not None) and (cntx.project.stats is not None):
         if len(cntx.project.stats.centile_l) >= 2:
             centile_lower_str = cntx.project.stats.centile_as_str_l[0]
             centile_upper_str = cntx.project.stats.centile_as_str_l[len(cntx.project.stats.centile_as_str_l) - 1]
