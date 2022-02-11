@@ -856,8 +856,7 @@ def gen_map_hv(
     label = ("Δ" if delta_code == "True" else "") + cntx.varidx.label
 
     # Generate mesh.
-    df.rename(columns={cntx.varidx.name: "Valeur", c.dim_longitude: "Longitude", c.dim_latitude: "Latitude"},
-              inplace=True)
+    df.rename(columns={cntx.varidx.name: "Valeur", "longitude": "Longitude", "latitude": "Latitude"}, inplace=True)
     heatmap = df.hvplot.heatmap(x="Longitude", y="Latitude", C="Valeur", aspect="equal").\
         opts(cmap=cmap, clim=(v_range[0], v_range[1]), clabel=label)
 
@@ -881,8 +880,7 @@ def gen_map_hv(
     labels = None
     if (df_loc is not None) and (len(df_loc) > 0):
         df_loc = df_loc.copy()
-        df_loc.rename(columns={c.dim_longitude: "Longitude", c.dim_latitude: "Latitude", "desc": "Emplacement"},
-                      inplace=True)
+        df_loc.rename(columns={"longitude": "Longitude", "latitude": "Latitude", "desc": "Emplacement"}, inplace=True)
         points = df_loc.hvplot.points(x="Longitude", y="Latitude", color="black", hover_cols=["Emplacement"])
         labels = hv.Labels(data=df_loc, x="Longitude", y="Latitude", text="Emplacement").\
             opts(xoffset=0.05, yoffset=0.1, padding=0.2, text_color="black", text_align="left",
