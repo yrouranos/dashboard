@@ -245,9 +245,10 @@ def calc_range(
     vi_code    = cntx.varidx.code if cntx.varidx is not None else ""
     vi_name    = cntx.varidx.name if cntx.varidx is not None else ""
     delta_code = cntx.delta.code if cntx.delta is not None else False
-    centile_lower = cntx.stats.centile_as_str_l[0] if cntx.project is not None else ""
-    centile_upper =\
-        cntx.stats.centile_as_str_l[len(cntx.stats.centile_as_str_l) - 1] if cntx.project is not None else ""
+    centile_as_str_l = cntx.stats.centile_as_str_l
+    centile_as_str_l.remove("")
+    centile_lower_as_str = centile_as_str_l[0] if cntx.project is not None else ""
+    centile_upper_as_str = centile_as_str_l[len(centile_as_str_l) - 1] if cntx.project is not None else ""
 
     if view_code == c.view_map:
         
@@ -264,8 +265,8 @@ def calc_range(
         p_rcp = p_rcp.replace("<vi_code>", vi_code)
         p_rcp = p_rcp.replace("<vi_name>", vi_name)
         p_rcp = p_rcp.replace("_<delta>", "" if delta_code == "False" else "_delta")
-        p_rcp_centile_lower = glob.glob(p_rcp.replace("<centile>", centile_lower))
-        p_rcp_centile_upper = glob.glob(p_rcp.replace("<centile>", centile_upper))
+        p_rcp_centile_lower = glob.glob(p_rcp.replace("<centile>", centile_lower_as_str))
+        p_rcp_centile_upper = glob.glob(p_rcp.replace("<centile>", centile_upper_as_str))
         p_l = p_rcp_centile_lower + p_rcp_centile_upper
         if delta_code == "False":
             p_l = p_ref + p_l
