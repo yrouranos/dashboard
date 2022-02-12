@@ -136,7 +136,7 @@ def refresh():
     cntx.view = View(view_code)
 
     # TODO.Debug view.
-    # cntx.view = View(c.view_cycle)
+    # cntx.view = View(c.view_tbl)
 
     # Plotting libraries.
     cntx.libs = Libs("*")

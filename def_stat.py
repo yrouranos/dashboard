@@ -297,13 +297,9 @@ class Stats(def_object.Objs):
             for i in range(len(centile_l)):
                 code_l.append("c" + str(centile_l[i]).rjust(3, "0"))
 
-        # The items are extracted from the 'centile' column of data files.
-        # ~/<project_code>/tbl/<vi_code>.csv
+        # The items are extracted from the configuration file.
         if view_code == c.view_tbl:
-            df = pd.DataFrame(du.load_data())
-            df = df[(df[c.stat_centile] > 0) & (df[c.stat_centile] < 100) &
-                    (df[c.stat_centile] != 50)][c.stat_centile]
-            centile_l = [min(df), max(df)]
+            centile_l = cntx.opt_stat_centiles
             for i in range(len(centile_l)):
                 code_l.append("c" + str(centile_l[i]).rjust(3, "0"))
 
