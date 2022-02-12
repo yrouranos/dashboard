@@ -247,8 +247,10 @@ def calc_range(
     delta_code = cntx.delta.code if cntx.delta is not None else False
     centile_as_str_l = cntx.stats.centile_as_str_l
     centile_as_str_l.remove("")
-    centile_lower_as_str = centile_as_str_l[0] if cntx.project is not None else ""
-    centile_upper_as_str = centile_as_str_l[len(centile_as_str_l) - 1] if cntx.project is not None else ""
+    centile_lower_as_str, centile_upper_as_str = "", ""
+    if len(centile_as_str_l) >= 1:
+        centile_lower_as_str = centile_as_str_l[0] if cntx.project is not None else ""
+        centile_upper_as_str = centile_as_str_l[len(centile_as_str_l) - 1] if cntx.project is not None else ""
 
     if view_code == c.view_map:
         
