@@ -260,7 +260,7 @@ def calc_range(
         p_ref = glob.glob(p_ref)
 
         # RCP files.
-        p_rcp = cntx.d_project + "<view>/<vi_code>/*/<vi_name>_rcp*_c<centile>_<delta>.csv"
+        p_rcp = cntx.d_project + "<view>/<vi_code>/*/<vi_name>_rcp*_<centile>_<delta>.csv"
         p_rcp = p_rcp.replace("<view>", view_code)
         p_rcp = p_rcp.replace("<vi_code>", vi_code)
         p_rcp = p_rcp.replace("<vi_name>", vi_name)
