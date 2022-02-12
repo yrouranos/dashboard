@@ -42,16 +42,17 @@ def code_desc(
     """
 
     return {
-        c.stat_min:           "Minimum",
-        c.stat_centile_lower: str(centile) + "e centile",
-        c.stat_median:        "Médiane",
-        c.stat_centile_upper: str(centile) + "e centile",
-        c.stat_max:           "Maximum",
-        c.stat_mean:          "Moyenne",
-        c.stat_std:           "Écart type",
-        c.stat_sum:           "Somme",
-        c.stat_quantile:      "Quantile",
-        c.stat_centile:       "Centile"
+        c.stat_mean:           "Moyenne",
+        c.stat_std:            "Écart type",
+        c.stat_min:            "Minimum",
+        c.stat_max:            "Maximum",
+        c.stat_sum:            "Somme",
+        c.stat_median:         "Médiane",
+        c.stat_quantile:       "Quantile",
+        c.stat_centile:        "Centile",
+        c.stat_centile_lower:  str(centile) + "e centile",
+        c.stat_centile_middle: str(centile) + "e centile",
+        c.stat_centile_upper:  str(centile) + "e centile"
     }
 
 
@@ -78,6 +79,13 @@ class Stat(
         ----------------------------------------
         Constructor.
 
+        Examples
+        --------
+        code='mean'
+        code='mean',    centile=-1
+        code='centile', centile=10
+        code='c010',    centile=10
+
         Parameters
         ----------
         code: str
@@ -88,7 +96,7 @@ class Stat(
         """
 
         # Try to extract centile from code, then assign them to the instance.
-        if ("c" in code) and (c.stat_centile not in code) and (centile < 0):
+        if ("c" in code) and (len(code) == 4) and (centile < 0):
             centile = round(int(code.replace("c", "")))
 
         self.code = code
@@ -105,6 +113,12 @@ class Stat(
         ----------------------------------------
         Get description.
 
+        Examples
+        --------
+        code='mean',    centile=-1 => 'Moyenne'
+        code='centile', centile=10 => '10e centile'
+        code='c010',    centile=10 => '10e centile'
+
         Returns
         -------
         str
@@ -112,25 +126,37 @@ class Stat(
         ----------------------------------------
         """
 
-        return dict(code_desc(self.centile))[c.stat_centile if "c" in self.code else self.code]
+        # Determine the actual centile (embedded in 'code' or in 'centile').
+        centile_act = self.centile
+
+        desc = dict(code_desc(centile_act))[c.stat_centile_middle if centile_act >= 0 else self.code]
+
+        return desc
 
     @property
     def is_centile(
         self
-    ):
+    ) -> bool:
 
         """
         ----------------------------------------
         Determine whether this statistic is a centile.
 
+        Examples
+        --------
+        code='mean',    centile=-1 => False
+        code='centile', centile=10 => True
+        code='c010',    centile=10 => True
+
         Returns
         -------
-        int
+        bool
             True if this statistic is a centile.
         ----------------------------------------
         """
 
-        return ("c" in self.code) or (self.centile >= 0)
+        return (self.code in [c.stat_centile, c.stat_centile_lower, c.stat_centile_middle, c.stat_centile_upper]) or\
+               (("c" in self.code) and (len(self.code) == 4)) or (self.centile >= 0)
 
     @property
     def centile(
@@ -141,6 +167,12 @@ class Stat(
         ----------------------------------------
         Get centile.
 
+        Examples
+        --------
+        code='mean',    centile=-1 => -1
+        code='centile', centile=10 => 10
+        code='c010',    centile=10 => 10
+
         Returns
         -------
         int
@@ -148,7 +180,13 @@ class Stat(
         ----------------------------------------
         """
 
-        return self._centile
+        centile_act = -1
+        if self.code in [c.stat_centile, c.stat_centile_lower, c.stat_centile_middle, c.stat_centile_upper]:
+            centile_act = self._centile
+        elif ("c" in self.code) and (len(self.code) == 4):
+            centile_act = int(self.code.replace("c", ""))
+
+        return centile_act
 
     @centile.setter
     def centile(
@@ -176,12 +214,18 @@ class Stat(
 
         """
         ----------------------------------------
-        Format centile.
+        Get centile as a string.
+
+        Examples
+        --------
+        code='mean',    centile=-1 => ''
+        code='centile', centile=10 => c010
+        code='c010',    centile=10 => c010
 
         Returns
         -------
         str
-            Formatted centile (between "c001" and "c100").
+            Centile as a string (between "c001" and "c100").
         ----------------------------------------
         """
 

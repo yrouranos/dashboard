@@ -136,7 +136,7 @@ def refresh():
     cntx.view = View(view_code)
 
     # TODO.Debug view.
-    # cntx.view = View(c.view_map)
+    cntx.view = View(c.view_map)
 
     # Plotting libraries.
     cntx.libs = Libs("*")
@@ -161,7 +161,7 @@ def refresh():
         cntx.delta = Delta("False")
 
     # TODO.Debug delta.
-    # cntx.delta = Delta("True")
+    cntx.delta = Delta("True")
 
     # Variables and indices.
     cntx.varidxs = VarIdxs("*")

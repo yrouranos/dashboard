@@ -37,12 +37,13 @@ class Constant:
     stat_std                 = "std"
     stat_min                 = "min"
     stat_max                 = "max"
-    stat_median              = "median"
     stat_sum                 = "sum"
+    stat_median              = "median"
+    stat_quantile            = "quantile"
     stat_centile             = "centile"
     stat_centile_lower       = "centile_lower"
+    stat_centile_middle      = "centile_middle"
     stat_centile_upper       = "centile_upper"
-    stat_quantile            = "quantile"
 
     # Simulations.
     simxx                    = "simxx"
