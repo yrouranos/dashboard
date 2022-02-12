@@ -189,6 +189,9 @@ def refresh():
         hor_f = st.selectbox("Horizon", options=cntx.hors.code_l)
         cntx.hor = Hor(hor_f)
 
+    # TODO.Debug horizon.
+    # cntx.hor = Hor([1981, 2010])
+
     # Emission scenarios.
     cntx.rcps = RCPs("*")
     if cntx.view.code in [c.view_ts, c.view_ts_bias, c.view_map, c.view_cycle, c.view_cluster]:
