@@ -315,9 +315,7 @@ def ref_val(
 
     # Adjust precision and units.
     if df is not None:
-        if cntx.varidx.precision == 0:
-            val = int(val)
-        val = str(val)
+        val = round_values(val, cntx.varidx.precision)
         unit = cntx.varidx.unit
         if unit != "°C":
             val += " "
@@ -405,7 +403,10 @@ def list_dir(
     return dir_l
 
 
-def round_values(vals: List[float], n_dec: int) -> List[str]:
+def round_values(
+    val_l: Union[float, List[float]],
+    n_dec: int
+) -> Union[str, List[str]]:
 
     """
     --------------------------------------------------------------------------------------------------------------------
@@ -413,24 +414,35 @@ def round_values(vals: List[float], n_dec: int) -> List[str]:
 
     Parameters
     ----------
-    vals: List[float]
-        Values.
+    val_l: Union[float, List[float]]
+        Value or list of values.
     n_dec: int
         Number of decimals.
 
     Returns
     -------
-    List[str]
+    Union[str, List[str]]
         Rounded values.
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    vals_str = []
+    val_str_l = []
 
-    for i in range(len(vals)):
-        if not np.isnan(vals[i]):
-            vals_str.append(str("{:." + str(n_dec) + "f}").format(float(vals[i])))
+    # Transform into a list.
+    if not (isinstance(val_l, List) or isinstance(val_l, pd.Series)):
+        val_rounded_l = [val_l]
+    else:
+        val_rounded_l = val_l
+
+    # Round each value in the list.
+    for i in range(len(val_rounded_l)):
+        if not np.isnan(val_rounded_l[i]):
+            val_str_l.append(str("{:." + str(n_dec) + "f}").format(float(val_rounded_l[i])))
         else:
-            vals_str.append("nan")
+            val_str_l.append("nan")
 
-    return vals_str
+    # Extract value if the input is not a list.
+    if not (isinstance(val_l, List) or isinstance(val_l, pd.Series)):
+        val_str_l = val_str_l[0]
+
+    return val_str_l
