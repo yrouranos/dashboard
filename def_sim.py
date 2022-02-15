@@ -269,11 +269,12 @@ class Sims(def_object.Objs):
             p = p.replace("<vi_code>", vi_code)
             p = p.replace("<vi_name>", vi_name)
             p = p.replace("_<delta>", "_delta" if delta_code == "True" else "")
-            df = pd.read_csv(p)
-            df.drop(["year", c.ref], axis=1, inplace=True)
-            for column in list(df.columns):
-                if (rcp_code in ["", c.rcpxx]) or ((rcp_code not in ["", c.rcpxx]) and (rcp_code in column)):
-                    code_l.append(column)
+            if os.path.exists(p):
+                df = pd.read_csv(p)
+                df.drop(["year", c.ref], axis=1, inplace=True)
+                for column in list(df.columns):
+                    if (rcp_code in ["", c.rcpxx]) or ((rcp_code not in ["", c.rcpxx]) and (rcp_code in column)):
+                        code_l.append(column)
 
         # Sort list and put reference first.
         code_l.sort()

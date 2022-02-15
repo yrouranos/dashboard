@@ -127,6 +127,11 @@ def refresh():
     cntx.projects = Projects("*")
     project_f = st.sidebar.selectbox("Choisir le projet", options=cntx.projects.desc_l)
     cntx.project = Project(project_f)
+
+    # TODO.Debug: project.
+    # cntx.project = Project("sn")
+
+    # Load configuration file.
     cntx.load()
 
     # Views.
@@ -135,8 +140,8 @@ def refresh():
     view_code = cntx.views.code_from_desc(view_f) if cntx.views is not None else ""
     cntx.view = View(view_code)
 
-    # TODO.Debug view.
-    # cntx.view = View(c.view_tbl)
+    # TODO.Debug: view.
+    # cntx.view = View(c.view_cluster)
 
     # Plotting libraries.
     cntx.libs = Libs("*")
@@ -160,7 +165,7 @@ def refresh():
     else:
         cntx.delta = Delta("False")
 
-    # TODO.Debug delta.
+    # TODO.Debug: delta.
     # cntx.delta = Delta("True")
 
     # Variables and indices.
@@ -189,7 +194,7 @@ def refresh():
         hor_f = st.selectbox("Horizon", options=cntx.hors.code_l)
         cntx.hor = Hor(hor_f)
 
-    # TODO.Debug horizon.
+    # TODO.Debug: horizon.
     # cntx.hor = Hor([1981, 2010])
 
     # Emission scenarios.
@@ -259,8 +264,10 @@ def refresh():
             st.write(dash_plot.gen_ts(df_rcp, dash_plot.mode_rcp))
             st.write(dash_plot.gen_ts(df_sim, dash_plot.mode_sim))
         else:
-            st.write(hv.render(dash_plot.gen_ts(df_rcp, dash_plot.mode_rcp)), backend="bokeh")
-            st.write(hv.render(dash_plot.gen_ts(df_sim, dash_plot.mode_sim)), backend="bokeh")
+            if (df_rcp is not None) and len(df_rcp) > 0:
+                st.write(hv.render(dash_plot.gen_ts(df_rcp, dash_plot.mode_rcp)), backend="bokeh")
+            if (df_sim is not None) and len(df_sim) > 0:
+                st.write(hv.render(dash_plot.gen_ts(df_sim, dash_plot.mode_sim)), backend="bokeh")
     elif cntx.view.code == c.view_tbl:
         st.write(dash_plot.gen_tbl())
     elif cntx.view.code == c.view_map:

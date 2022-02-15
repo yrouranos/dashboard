@@ -158,6 +158,8 @@ def load_data(
         p = p.replace("<sim_code>", sim_code)
         if sim_code != "":
             p = p.replace("<rcp_code>", "")
+        elif rcp_code == "":
+            p = p.replace("<rcp_code>", "*")
 
     if (view_code == c.view_map) or (c.view_cycle in view_code):
         p = list(glob.glob(p))[0]

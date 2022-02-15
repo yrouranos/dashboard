@@ -134,7 +134,7 @@ class Constant:
     i_tn_days_below          = "tn_days_below"           # Days per year with a minimum temperature < X.
     i_tropical_nights        = "tropical_nights"         # Tropical nights per year, i.e. with minimum temp. > X.
     i_heat_wave_max_length   = "heat_wave_max_length"    # Maximum heat wave length.
-    i_heat_wave_total_length = "heat_wave_total_len"     # Total heat wave length.
+    i_heat_wave_total_length = "heat_wave_total_length"  # Total heat wave length.
     i_hot_spell_frequency    = "hot_spell_frequency"     # Number of hot spells.
     i_hot_spell_max_length   = "hot_spell_max_length"    # Maximum hot spell length
 

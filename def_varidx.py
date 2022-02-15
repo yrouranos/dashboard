@@ -93,6 +93,7 @@ def code_props(
         c.i_tng:                    ["Nbr mois frais (μ_mois(Tmin) < <A>°C)", "Nbr. mois", "mois", 1],
         c.i_tnx:                    ["Valeur maximale de Tmin", "Température", "°C", 1],
         c.i_txg:                    ["Valeur moyenne de Tmax", "Température", "°C", 1],
+        c.i_txx:                    ["Température maximale", "Température", "°C", 1],
         c.i_tng_months_below:       ["Nombre de mois frais", "Nbr. mois", "", 1],
         c.i_tx_days_above:          ["Nombre de jours chauds (Tmax > <A>°C)", "Nbr. jours", "jours", 0],
         c.i_tn_days_below:          ["Nombre de jours frais (Tmin < <A>°C)", "Nbr. jours", "jours", 0],
@@ -202,11 +203,11 @@ class VarIdx(def_object.Obj):
 
         # Assign 2nd parameter.
         if self.name in [c.i_wsdi, c.i_prcptot, c.i_dry_spell_total_length, c.i_wx_days_above]:
-            desc = desc.replace("<B>", str(self.params[1]))
+            desc = desc.replace("<B>", str(self.params[1]) if len(self.params) >= 2 else "1")
 
         # Assign 3rd parameter.
-        if self.name in [c.i_wx_days_above]:
-            desc = desc.replace("<C>", str(self.params[2]))
+        if self.name in [c.i_wx_days_above, c.i_prcptot]:
+            desc = desc.replace("<C>", str(self.params[2]) if len(self.params) >= 3 else "365")
 
         return desc
 

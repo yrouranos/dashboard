@@ -98,8 +98,9 @@ def gen_ts(
     x_min = math.floor(min(df["year"]) / 10) * 10
     x_max = math.ceil(max(df["year"]) / 10) * 10
 
-    # Extract minimum and maximum y-values.
-    first_col_index = 2 if mode == mode_sim else 1
+    # Extract minimum and maximum y-values (to the right of column 'year').
+    list(df.columns).index("year")
+    first_col_index = (2 if mode == mode_sim else 1) + list(df.columns).index("year")
     y_min = df.iloc[:, first_col_index:].min().min()
     y_max = df.iloc[:, first_col_index:].max().max()
 
