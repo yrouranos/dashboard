@@ -106,7 +106,7 @@ def code_props(
         c.i_cwd:                    ["Nombre de jours pluvieux consécutifs (P ≥ <A> mm)", "Nbr. jours", "jours", 0],
         c.i_dry_days:               ["Nombre de jours secs (P < <A> mm)", "Nbr. jours", "jours", 0],
         c.i_wet_days:               ["Nombre de jours pluvieux (P ≥ <A> mm)", "Nbr. jours", "jours", 0],
-        c.i_prcptot:                ["Cumul de précipitation (entre les jours <A> et <B>)", "Cumul", "mm", 0],
+        c.i_prcptot:                ["Cumul de précipitation", "Cumul", "mm", 0],
         c.i_r10mm:                  ["Nombre de jours avec P ≥ 10 mm", "Nbr. jours", "jours", 0],
         c.i_r20mm:                  ["Nombre de jours avec P ≥ 20 mm", "Nbr. jours", "jours", 0],
         c.i_rnnmm:                  ["Nombre de jours avec P ≥ <A> mm", "Nbr. jours", "jours", 0],
@@ -197,17 +197,29 @@ class VarIdx(def_object.Obj):
 
         # Assign first parameter.
         if self.name in [c.i_tng, c.i_tx_days_above, c.i_tn_days_below, c.i_tropical_nights, c.i_wsdi, c.i_cdd,
-                         c.i_cwd, c.i_dry_days, c.i_wet_days, c.i_prcptot, c.i_rnnmm, c.i_dry_spell_total_length,
+                         c.i_cwd, c.i_dry_days, c.i_wet_days, c.i_rnnmm, c.i_dry_spell_total_length,
                          c.i_wg_days_above, c.i_wx_days_above]:
             desc = desc.replace("<A>", str(self.params[0]))
 
         # Assign 2nd parameter.
-        if self.name in [c.i_wsdi, c.i_prcptot, c.i_dry_spell_total_length, c.i_wx_days_above]:
-            desc = desc.replace("<B>", str(self.params[1]) if len(self.params) >= 2 else "1")
+        if self.name in [c.i_wsdi, c.i_dry_spell_total_length, c.i_wx_days_above]:
+            if self.name == c.i_prcptot:
+                val = str(self.params[1]) if len(self.params) >= 2 else "1"
+            else:
+                val = str(self.params[1])
+            desc = desc.replace("<B>", val)
 
         # Assign 3rd parameter.
         if self.name in [c.i_wx_days_above, c.i_prcptot]:
-            desc = desc.replace("<C>", str(self.params[2]) if len(self.params) >= 3 else "365")
+            if self.name == c.i_prcptot:
+                val = str(self.params[2]) if len(self.params) >= 3 else "365"
+            else:
+                val = str(self.params[2])
+            desc = desc.replace("<C>", val)
+
+        # Assign 2nd and 3rd parameters.
+        if (self.name == c.i_prcptot) and (len(self.params) >= 2):
+            desc = desc.replace("<B>", "(entre les jours " + str(self.params[0]) + " et " + str(self.params[1]) + ")")
 
         return desc
 
@@ -442,7 +454,6 @@ class VarIdx(def_object.Obj):
         self,
         p: str,
         vi_code_b: str,
-        stn: str,
         rcp: str
     ) -> str:
 
@@ -456,8 +467,6 @@ class VarIdx(def_object.Obj):
             Path associated with the current instance.
         vi_code_b: str
             Name of climate variable or index to replace with.
-        stn: str
-            Station name.
         rcp: str
             Emission scenario.
         ----------------------------------------
