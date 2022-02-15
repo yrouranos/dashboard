@@ -41,7 +41,9 @@ class Project(def_object.Obj):
 
         super(Project, self).__init__(code=code, desc=code)
 
-        cntx.load()
+        # Read project-specific configuration file.
+        if cntx.code == c.platform_script:
+            cntx.load()
 
         if code != "":
             self._stats = Stats()
@@ -69,6 +71,9 @@ class Projects(def_object.Objs):
         """
 
         super(Projects, self).__init__()
+
+        # Read global configuration file.
+        # cntx.load()
 
         if code == "*":
             self.load()

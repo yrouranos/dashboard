@@ -19,10 +19,8 @@ from typing import List
 # Dashboard libraries.
 import dash_plot
 import dash_utils as du
-import def_lib
 import def_rcp
 import def_sim
-import def_view
 from def_constant import const as c
 from def_context import cntx
 from def_delta import Delta, Deltas
@@ -273,8 +271,14 @@ def update_tab(
         df_rcp = pd.DataFrame(du.load_data(dash_plot.mode_rcp))
         df_sim = pd.DataFrame(du.load_data(dash_plot.mode_sim))
         space = pn.pane.Markdown("<br><br><br>" if cntx.lib.code == c.lib_alt else "")
-        ts_rcp = dash_plot.gen_ts(df_rcp, dash_plot.mode_rcp)
-        ts_sim = dash_plot.gen_ts(df_sim, dash_plot.mode_sim)
+        if (df_rcp is not None) and len(df_rcp) > 0:
+            ts_rcp = dash_plot.gen_ts(df_rcp, dash_plot.mode_rcp)
+        else:
+            ts_rcp = ""
+        if (df_sim is not None) and len(df_sim) > 0:
+            ts_sim = dash_plot.gen_ts(df_sim, dash_plot.mode_sim)
+        else:
+            ts_sim = ""
         if len(tab_ts) == 0:
             tab_ts = pn.Row(pn.Column(varidx_f,
                                       rcp_f,
@@ -386,6 +390,7 @@ def update_project():
     """
 
     cntx.projects = Projects("*")
+    cntx.load()
     update_f("project", cntx.projects.desc_l)
 
 
@@ -508,7 +513,8 @@ def project_updated(event=None):
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    cntx.project = Project(str(f_code("project")))
+    project_code = cntx.projects.code_from_desc(str(f_code("project")))
+    cntx.project = Project(project_code)
     cntx.load()
 
     update_view()
@@ -673,14 +679,3 @@ def main():
 
 
 main()
-
-# Test: Switch to table view.
-# view_f[1].value = dict(def_view.code_desc())[c.view_tbl]
-
-# Test: Switch library.
-view_f[1].value = dict(def_view.code_desc())[c.view_map]
-lib_f[1].value = dict(def_lib.code_desc())[c.lib_hv]
-lib_f[1].value = dict(def_lib.code_desc())[c.lib_mat]
-lib_updated()
-
-hor_updated(event_cascade)

@@ -125,13 +125,15 @@ def refresh():
 
     # Projects.
     cntx.projects = Projects("*")
+    cntx.load()
     project_f = st.sidebar.selectbox("Choisir le projet", options=cntx.projects.desc_l)
-    cntx.project = Project(project_f)
+    project_code = cntx.projects.code_from_desc(project_f) if cntx.projects is not None else ""
+    cntx.project = Project(project_code)
 
     # TODO.Debug: project.
     # cntx.project = Project("sn")
 
-    # Load configuration file.
+    # Load project-specific configuration file.
     cntx.load()
 
     # Views.

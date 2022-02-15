@@ -224,28 +224,59 @@ class Context(def_object.Obj):
 
     def load(
         self,
-        p_ini: str = "config.ini"
+        fn_ini: str = "config.ini"
     ):
 
         """
         ----------------------------------------
         Load parameters.
 
+        There are two types of configurations files: global to the portal and project-specific.
+
         Parameters
         ----------
-        p_ini : str
-            Path of INI file.
+        fn_ini : str
+            Name of INI file.
         ----------------------------------------
         """
 
-        project_code = self.project.code if self.project is not None else ""
-        p_ini = cntx.d_data + project_code + "/" + p_ini
+        # Load global configuration file.
 
-        if os.path.exists(p_ini):
+        p_ini_global = cntx.d_data + fn_ini
+
+        if os.path.exists(p_ini_global):
 
             # Read file.
             config = configparser.ConfigParser()
-            config.read(p_ini)
+            config.read(p_ini_global)
+
+            # Loop through sections.
+            for section in config.sections():
+
+                # Loop through keys.
+                for key in config[section]:
+
+                    # Extract value.
+                    value = config[section][key]
+
+                    if (key == "projects") and (cntx.projects is not None):
+                        project_l = str_to_arr_2d(value, float)
+                        for i in range(len(cntx.projects.items)):
+                            for j in range(len(project_l)):
+                                if cntx.projects.items[i].code == project_l[j][0]:
+                                    cntx.projects.items[i].desc = project_l[j][1]
+                                    break
+
+        # Load project-specific configuration file.
+
+        project_code = self.project.code if self.project is not None else ""
+        p_ini_project = cntx.d_data + project_code + "/" + fn_ini
+
+        if os.path.exists(p_ini_project):
+
+            # Read file.
+            config = configparser.ConfigParser()
+            config.read(p_ini_project)
 
             # Loop through sections.
             for section in config.sections():
@@ -513,7 +544,7 @@ def str_to_arr_1d(
         vals = str(replace_right(vals.replace("[", "", 1), "]", "", 1)).split(",")
         vals = [True if val == 'True' else False for val in vals]
     else:
-        vals = str(replace_right(vals.replace("[", "", 1), "]", "", 1)).split(",")
+        vals = str(replace_right(vals.replace("[", "", 1), "]", "", 1)).lstrip().rstrip().split(",")
         for i_val in range(len(vals)):
             try:
                 vals[i_val] = int(vals[i_val])

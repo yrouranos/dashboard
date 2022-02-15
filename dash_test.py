@@ -89,6 +89,7 @@ def gen_ts(
                 cntx.sim = Sim("")
 
                 cntx.projects = Projects("*")
+                cntx.load()
                 cntx.project = Project(project_code)
 
                 for mode in [dash_plot.mode_rcp, dash_plot.mode_sim]:
@@ -134,6 +135,7 @@ def gen_tbl(
                     cntx.hor = Hor(hor)
                     cntx.rcps = RCPs("*")
                     cntx.projects = Projects("*")
+                    cntx.load()
                     cntx.project = Project(project_code)
 
                     dash_plot.gen_tbl()
@@ -180,6 +182,7 @@ def gen_map(
 
                         cntx.rcp = RCP(rcp)
                         cntx.projects = Projects("*")
+                        cntx.load()
                         cntx.project = Project(project_code)
 
                         cntx.stats = Stats("*")
@@ -235,6 +238,7 @@ def gen_cycle(
                         cntx.sim = Sim(sim)
 
                         cntx.projects = Projects("*")
+                        cntx.load()
                         cntx.project = Project(project_code)
 
                         df_ms = pd.DataFrame(du.load_data("MS"))
@@ -275,6 +279,7 @@ def gen_cluster(
         cntx.varidxs = VarIdxs("*")
 
         cntx.projects = Projects("*")
+        cntx.load()
         cntx.project = Project(project_code)
 
         n_cluster = 5
