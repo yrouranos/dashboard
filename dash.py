@@ -131,7 +131,7 @@ def refresh():
     cntx.project = Project(project_code)
 
     # TODO.Debug: project.
-    cntx.project = Project("sn")
+    # cntx.project = Project("sn")
 
     # Load project-specific configuration file.
     cntx.load()
@@ -143,7 +143,7 @@ def refresh():
     cntx.view = View(view_code)
 
     # TODO.Debug: view.
-    cntx.view = View(c.view_ts)
+    # cntx.view = View(c.view_ts)
 
     # Plotting libraries.
     cntx.libs = Libs("*")

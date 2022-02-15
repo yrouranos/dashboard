@@ -110,14 +110,12 @@ class Views(def_object.Objs):
         # The items are extracted from directory names. They must be comprised in 'code_desc'.
         # ~/<project_code>/*
         for code in list(dict(code_desc()).keys()):
-
-            # Add the current view.
             if len(list(glob.glob(cntx.d_project + code + "*/"))) > 0:
                 code_l.append(code)
 
-            # Add the 'cluster' view (it's using the same data at the 'ts' view).
-            if (code == c.view_ts) and (len(glob.glob(cntx.d_project + code + "/*/*_sim.csv")) > 0):
-                code_l.append(c.view_cluster)
+        # Add the 'cluster' view (it's using the same data at the 'ts' view).
+        if (c.view_ts in code_l) and (len(glob.glob(cntx.d_project + c.view_ts + "/*/*_sim.csv")) > 0):
+            code_l.append(c.view_cluster)
 
         self.add(code_l)
 
