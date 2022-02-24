@@ -9,7 +9,6 @@ mpl-toolkits.clifford
 numpy
 pandas
 panel
-pathlib
 pillow
 plotly
 sklearn
