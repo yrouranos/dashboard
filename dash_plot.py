@@ -280,7 +280,11 @@ def gen_ts_alt(
 
             # Draw area.
             if (item == "area") and (mode == mode_rcp):
+
+                # Opacity of area.
                 area_alpha = 0.3
+
+                # Draw area.
                 area = alt.Chart(df_rcp).mark_area(opacity=area_alpha, text=rcp_desc).encode(
                     x=alt.X("Année", axis=x_axis),
                     y=alt.Y("Min", axis=y_axis, scale=y_scale),
@@ -293,11 +297,10 @@ def gen_ts_alt(
             elif item == "curve":
 
                 # Line width (see comment in the header of 'gen_ts').
-                if (rcp.is_ref and (cntx.delta.code == "True")) or \
-                   ((not rcp.is_ref) and (mode == mode_sim) and (cntx.sim.code == "")):
-                    line_alpha = 1.0
-                else:
+                if rcp.is_ref or ((mode == mode_rcp) or ((mode == mode_sim) and (cntx.sim.code not in ["", c.simxx]))):
                     line_alpha = 2.0
+                else:
+                    line_alpha = 1.0
 
                 # Columns to plot.
                 columns = []
@@ -435,7 +438,11 @@ def gen_ts_hv(
 
             # Draw area.
             if item == "area":
+
+                # Opacity of area.
                 area_alpha = 0.3
+
+                # Draw area.
                 area = df_rcp.hvplot.area(x="Année", y="Minimum", y2="Maximum", ylim=y_range,
                                           color=color, alpha=area_alpha, line_alpha=0)
                 plot = area if plot is None else plot * area
@@ -444,11 +451,10 @@ def gen_ts_hv(
             elif item == "curve":
 
                 # Line width (see comment in the header of 'gen_ts').
-                if (rcp.is_ref and (cntx.delta.code == "True")) or \
-                   ((not rcp.is_ref) and (mode == mode_sim) and (cntx.sim.code == "")):
-                    line_alpha = 0.3
-                else:
+                if rcp.is_ref or ((mode == mode_rcp) or ((mode == mode_sim) and (cntx.sim.code not in ["", c.simxx]))):
                     line_alpha = 1.0
+                else:
+                    line_alpha = 0.3
 
                 # Columns to plot.
                 columns = []
@@ -585,27 +591,26 @@ def gen_ts_mat(
         if len(df_rcp) == 0:
             continue
 
-        # Opacity of area
-        area_alpha = 0.3
+        # Opacity of area.
+        alpha = 0.3
 
         # Line width (see comment in the header of 'gen_ts').
-        if (rcp.is_ref and (cntx.delta.code == "True")) or \
-           ((not rcp.is_ref) and (mode == mode_sim) and (cntx.sim.code == "")):
-            line_alpha = 0.3
+        if rcp.is_ref or ((mode == mode_rcp) or ((mode == mode_sim) and (cntx.sim.code not in ["", c.simxx]))):
+            line_width = 1.5
         else:
-            line_alpha = 1.0
+            line_width = 1.0
 
         # Draw area and curves.
         if rcp.is_ref:
-            ax.plot(df_year, df_rcp, color=color, alpha=line_alpha)
+            ax.plot(df_year, df_rcp, color=color, linewidth=line_width)
         else:
             if mode == mode_rcp:
-                ax.plot(df_year, df_rcp["Moy"], color=color, alpha=line_alpha)
+                ax.plot(df_year, df_rcp["Moy"], color=color, linewidth=line_width)
                 ax.fill_between(np.array(df_year), df_rcp["Min"], df_rcp["Max"], color=color,
-                                alpha=area_alpha)
+                                alpha=alpha)
             else:
                 for i in range(len(df_rcp.columns)):
-                    ax.plot(df_year, df_rcp[df_rcp.columns[i]], color=color, alpha=line_alpha)
+                    ax.plot(df_year, df_rcp[df_rcp.columns[i]], color=color, linewidth=line_width)
         
         # Collect legend label and line.
         desc = rcp.desc.replace(dict(def_rcp.code_props())[c.rcpxx][0], "Simulation(s)")
@@ -649,12 +654,12 @@ def gen_tbl(
         if code in [c.stat_mean, c.stat_min, c.stat_max]:
             stat_l.append([code, -1])
         elif code == c.stat_centile_lower:
-            centile = cntx.opt_stat_centiles[0]
+            centile = cntx.opt_tbl_centiles[0]
             stat_l.append([c.stat_centile, centile])
         elif code == c.stat_median:
             stat_l.append([c.stat_centile, 50])
         elif code == c.stat_centile_upper:
-            centile = cntx.opt_stat_centiles[len(cntx.opt_stat_centiles) - 1]
+            centile = cntx.opt_tbl_centiles[len(cntx.opt_tbl_centiles) - 1]
             stat_l.append([c.stat_centile, centile])
         stat_desc_l.append(def_stat.code_desc(centile)[code])
 
@@ -860,8 +865,21 @@ def gen_map_hv(
     delta_code = cntx.delta.code if cntx.delta is not None else "False"
     label = ("Δ" if delta_code == "True" else "") + cntx.varidx.label
 
+    # Rename dimensions.
+    df.rename(columns={"val": "Valeur", "longitude": "Longitude", "latitude": "Latitude"}, inplace=True)
+
+    # Replace a 1x1 grid by a 9x9 grid with similar values to prevent a big square from appearing on the map.
+    square = None
+    if len(df) == 1:
+        lon = df["Longitude"]
+        lat = df["Latitude"]
+        val = df["Valeur"]
+        lon = ([lon[0] - 0.05] * 3) + ([lon[0]] * 3) + ([lon[0] + 0.05] * 3)
+        lat = [lat[0] - 0.05, lat[0], lat[0] + 0.05] * 3
+        val = [val[0] + np.random.random_sample() / 1000 for _ in range(9)]
+        df = pd.DataFrame({"Longitude": lon, "Latitude": lat, "Valeur": val}, index=list(range(9)))
+
     # Generate mesh.
-    df.rename(columns={cntx.varidx.name: "Valeur", "longitude": "Longitude", "latitude": "Latitude"}, inplace=True)
     heatmap = df.hvplot.heatmap(x="Longitude", y="Latitude", C="Valeur", aspect="equal").\
         opts(cmap=cmap, clim=(v_range[0], v_range[1]), clabel=label)
 
@@ -885,13 +903,16 @@ def gen_map_hv(
     if (df_loc is not None) and (len(df_loc) > 0):
         df_loc = df_loc.copy()
         df_loc.rename(columns={"longitude": "Longitude", "latitude": "Latitude", "desc": "Emplacement"}, inplace=True)
-        points = df_loc.hvplot.points(x="Longitude", y="Latitude", color="black", hover_cols=["Emplacement"])
+        points = df_loc.hvplot.scatter(x="Longitude", y="Latitude", color="none", line_color="black",
+                                       hover_cols=["Emplacement"])
         labels = hv.Labels(data=df_loc, x="Longitude", y="Latitude", text="Emplacement").\
             opts(xoffset=0.05, yoffset=0.1, padding=0.2, text_color="black", text_align="left",
                  text_font_style="italic", text_font_size=str(fs_annotations) + "pt")
 
     # Combine layers.
     plot = heatmap
+    if square is not None:
+        plot = plot * square
     if bounds is not None:
         plot = plot * bounds
     if points is not None:
@@ -974,15 +995,24 @@ def gen_map_mat(
     plt.title(title, loc="left", fontweight="bold", fontsize=fs_title)
 
     # Convert to DataArray.
-    df = pd.DataFrame(df, columns=[c.dim_longitude, c.dim_latitude, cntx.varidx.name])
-    df = df.sort_values(by=[c.dim_latitude, c.dim_longitude])
-    lat = list(set(df[c.dim_latitude]))
+    df = pd.DataFrame(df, columns=["longitude", "latitude", "val"])
+    df = df.sort_values(by=["latitude", "longitude"])
+    lat = list(set(df["latitude"]))
     lat.sort()
-    lon = list(set(df[c.dim_longitude]))
+    lon = list(set(df["longitude"]))
     lon.sort()
-    arr = np.reshape(list(df[cntx.varidx.name]), (len(lat), len(lon)))
-    da = xr.DataArray(data=arr, dims=[c.dim_latitude, c.dim_longitude],
-                      coords=[(c.dim_latitude, lat), (c.dim_longitude, lon)])
+    val = list(df["val"])
+    single_cell = (len(lon) == 1) and (len(lat) == 1)
+
+    # Replace a 1x1 grid by a 9x9 grid with similar values to enable the colorbar and show something on the map.
+    if single_cell:
+        lat = [lat[0] - 0.05, lat[0], lat[0] + 0.05]
+        lon = [lon[0] - 0.05, lon[0], lon[0] + 0.05]
+        val = [val[0] + np.random.random_sample() / 1000 for _ in range(9)]
+
+    # Assemble DataArray.
+    arr = np.reshape(val, (len(lat), len(lon)))
+    da = xr.DataArray(data=arr, dims=["latitude", "longitude"], coords=[("latitude", lat), ("longitude", lon)])
 
     # Generate mesh.
     cbar_ax = make_axes_locatable(ax).append_axes("right", size="5%", pad=0.05)
@@ -1008,10 +1038,10 @@ def gen_map_mat(
 
     # Draw locations.
     if df_loc is not None:
-        ax.scatter(df_loc[c.dim_longitude], df_loc[c.dim_latitude], c="black", s=10)
+        ax.scatter(df_loc["longitude"], df_loc["latitude"], facecolors="none", edgecolors="black", s=10)
         for i in range(len(df_loc)):
             offset = 0.05
-            ax.text(df_loc[c.dim_longitude][i] + offset, df_loc[c.dim_latitude][i] + offset, df_loc["desc"][i],
+            ax.text(df_loc["longitude"][i] + offset, df_loc["latitude"][i] + offset, df_loc["desc"][i],
                     fontdict=dict(color="black", size=fs_labels, style="italic"))
 
     plt.close(fig)
@@ -1131,6 +1161,7 @@ def get_hex_l(
         "Pinks": [hex_wh, hex_pi],
         "PiPu": [hex_pi, hex_wh, hex_pu],
         "Browns": [hex_wh, hex_br],
+        "Browns_r": [hex_br, hex_wh],
         "YlBr": [hex_yl, hex_br],
         "BrYl": [hex_br, hex_yl],
         "BrYlGr": [hex_br, hex_yl, hex_gr],

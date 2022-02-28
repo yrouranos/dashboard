@@ -299,7 +299,7 @@ class Stats(def_object.Objs):
 
         # The items are extracted from the configuration file.
         if view_code == c.view_tbl:
-            centile_l = cntx.opt_stat_centiles
+            centile_l = cntx.opt_tbl_centiles
             for i in range(len(centile_l)):
                 code_l.append("c" + str(centile_l[i]).rjust(3, "0"))
 

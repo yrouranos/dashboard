@@ -131,7 +131,7 @@ def refresh():
     cntx.project = Project(project_code)
 
     # TODO.Debug: project.
-    # cntx.project = Project("sn")
+    # cntx.project = Project("ci-s")
 
     # Load project-specific configuration file.
     cntx.load()
@@ -143,7 +143,7 @@ def refresh():
     cntx.view = View(view_code)
 
     # TODO.Debug: view.
-    # cntx.view = View(c.view_ts)
+    # cntx.view = View(c.view_tbl)
 
     # Plotting libraries.
     cntx.libs = Libs("*")
@@ -156,9 +156,12 @@ def refresh():
             lib_code = c.lib_ply
     cntx.lib = Lib(lib_code)
 
+    # TODO.Debug: lib.
+    # cntx.lib = Lib(c.lib_hv)
+
     # Deltas.
     cntx.deltas = Deltas("*")
-    if cntx.view.code in [c.view_ts, c.view_ts_bias, c.view_tbl, c.view_map]:
+    if (cntx.view.code in [c.view_ts, c.view_ts_bias, c.view_tbl, c.view_map]) and ("True" in cntx.deltas.code_l):
         st.sidebar.markdown("<style>.sel_title {font-size:14.5px}</style>", unsafe_allow_html=True)
         title = "Afficher les anomalies par rapport à la période " + str(cntx.per_ref[0]) + "-" + str(cntx.per_ref[1])
         st.sidebar.markdown("<p class='sel_title'>" + title + "</p>", unsafe_allow_html=True)
@@ -189,6 +192,9 @@ def refresh():
             if vi_f[i]:
                 vi_code_sel_l.append(vi_code_l[i])
         cntx.varidxs = VarIdxs(vi_code_sel_l)
+
+    # TODO.Debug: Variable.
+    # cntx.varidx = VarIdx(c.v_tasmax)
 
     # Horizons.
     if cntx.view.code in [c.view_tbl, c.view_map, c.view_cycle]:
@@ -261,7 +267,7 @@ def refresh():
             if cntx.delta.code == "False":
                 st.write("Valeurs non ajustées (avant ajustement de biais)")
             else:
-                st.write("Différence entre les valeurs non ajustées et les valeurs ajustées")
+                st.write("Différence entre les valeurs ajustées et les valeurs non ajustées")
         if cntx.lib.code in [c.lib_alt, c.lib_mat]:
             st.write(dash_plot.gen_ts(df_rcp, dash_plot.mode_rcp))
             st.write(dash_plot.gen_ts(df_sim, dash_plot.mode_sim))
@@ -274,22 +280,26 @@ def refresh():
         st.write(dash_plot.gen_tbl())
     elif cntx.view.code == c.view_map:
         df = pd.DataFrame(du.load_data())
-        range_vals = du.calc_range()
+        stats_lower = Stat(c.stat_centile, cntx.opt_map_centiles[0])
+        stats_upper = Stat(c.stat_centile, cntx.opt_map_centiles[len(cntx.opt_map_centiles) - 1])
+        stats = Stats(stats_lower)
+        stats.add(stats_upper)
+        range_vals = du.calc_range(stats.centile_as_str_l)
         if cntx.lib.code == c.lib_mat:
             st.write(dash_plot.gen_map(df, range_vals))
         else:
             st.write(hv.render(dash_plot.gen_map(df, range_vals)), backend="bokeh")
     elif cntx.view.code == c.view_cycle:
         df_ms = pd.DataFrame(du.load_data("MS"))
-        cycle_ms = dash_plot.gen_cycle_ms(df_ms)
-        if cycle_ms is not None:
+        if (df_ms is not None) and (len(df_ms) > 0):
+            cycle_ms = dash_plot.gen_cycle_ms(df_ms)
             if cntx.lib.code == c.lib_mat:
                 st.write(cycle_ms)
             else:
                 st.write(hv.render(cycle_ms), backend="bokeh")
         df_d = pd.DataFrame(du.load_data("D"))
-        cycle_d = dash_plot.gen_cycle_d(df_d)
-        if cycle_d is not None:
+        if (df_d is not None) and (len(df_d) > 0):
+            cycle_d = dash_plot.gen_cycle_d(df_d)
             if cntx.lib.code == c.lib_mat:
                 st.write(cycle_d)
             else:

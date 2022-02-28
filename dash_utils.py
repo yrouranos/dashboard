@@ -91,7 +91,7 @@ def load_data(
         |
         +-- tbl
         |   |
-        |   +-- <vi_code>.csv
+        |   +-- <vi_code>/<vi_name>.csv
         |       ex: pr.csv
         |       columns: stn, var, rcp, hor, stat, centile, val
         |            ex: era5_land, pr, rcp45, 2021-2050, mean, -1, 486.53
@@ -128,9 +128,10 @@ def load_data(
     sim_code   = cntx.sim.code if cntx.sim is not None else ""
 
     if view_code == c.view_tbl:
-        p = cntx.d_project + "<view_code>/<vi_code>.csv"
+        p = cntx.d_project + "<view_code>/<vi_code>/<vi_name>.csv"
         p = p.replace("<view_code>", view_code)
         p = p.replace("<vi_code>", vi_code)
+        p = p.replace("<vi_name>", vi_name)
 
     elif view_code in [c.view_ts, c.view_ts_bias]:
         p = cntx.d_project + "<view_code>/<vi_code>/<vi_name>_<mode>_<delta>.csv"
@@ -162,7 +163,9 @@ def load_data(
             p = p.replace("<rcp_code>", "*")
 
     if (view_code == c.view_map) or (c.view_cycle in view_code):
-        p = list(glob.glob(p))[0]
+        p_l = list(glob.glob(p))
+        if len(p_l) > 0:
+            p = p_l[0]
 
     if not os.path.exists(p):
         return None
@@ -170,14 +173,13 @@ def load_data(
         df = pd.read_csv(p)
 
     # Round values.
-    n_dec = vi_precision
-    if (view_code in [c.view_ts, c.view_ts_bias]) or (c.view_cycle in view_code):
-        for col in df.select_dtypes("float64").columns:
-            df.loc[:, col] = df.copy()[col].round(n_dec).to_numpy()
-    elif view_code == c.view_tbl:
-        df["val"] = df["val"].round(decimals=n_dec)
-    else:
-        df[vi_name] = df[vi_name].round(decimals=n_dec)
+    if df is not None:
+        n_dec = vi_precision
+        if (view_code in [c.view_ts, c.view_ts_bias]) or (c.view_cycle in view_code):
+            for col in df.select_dtypes("float64").columns:
+                df.loc[:, col] = df.copy()[col].round(n_dec).to_numpy()
+        else:
+            df["val"] = df["val"].round(decimals=n_dec)
 
     return df
 
@@ -227,12 +229,18 @@ def load_geojson(
 
 
 def calc_range(
+    centile_as_str_l: List[str]
 ) -> List[float]:
 
     """
     --------------------------------------------------------------------------------------------------------------------
     Extract the minimum and maximum values, considering all the maps for a single variable.
-    
+
+    Parameters
+    ----------
+    centile_as_str_l: List[str]
+        Lower an upper centiles as strings, e.g. ["c010", "c090"].
+
     Returns
     -------
     List[float]
@@ -247,12 +255,6 @@ def calc_range(
     vi_code    = cntx.varidx.code if cntx.varidx is not None else ""
     vi_name    = cntx.varidx.name if cntx.varidx is not None else ""
     delta_code = cntx.delta.code if cntx.delta is not None else False
-    centile_as_str_l = cntx.stats.centile_as_str_l
-    centile_as_str_l.remove("")
-    centile_lower_as_str, centile_upper_as_str = "", ""
-    if len(centile_as_str_l) >= 1:
-        centile_lower_as_str = centile_as_str_l[0] if cntx.project is not None else ""
-        centile_upper_as_str = centile_as_str_l[len(centile_as_str_l) - 1] if cntx.project is not None else ""
 
     if view_code == c.view_map:
         
@@ -262,6 +264,12 @@ def calc_range(
         p_ref = p_ref.replace("<vi_code>", vi_code)
         p_ref = p_ref.replace("<vi_name>", vi_name)
         p_ref = glob.glob(p_ref)
+
+        # Get centiles.
+        centile_lower_as_str, centile_upper_as_str = "", ""
+        if len(centile_as_str_l) >= 1:
+            centile_lower_as_str = centile_as_str_l[0]
+            centile_upper_as_str = centile_as_str_l[len(centile_as_str_l) - 1]
 
         # RCP files.
         p_rcp = cntx.d_project + "<view>/<vi_code>/*/<vi_name>_rcp*_<centile>_<delta>.csv"
@@ -279,8 +287,8 @@ def calc_range(
         for p in p_l:
             if os.path.exists(p):
                 df = pd.read_csv(p)
-                min_vals = list(df[vi_name]) + [min_val]
-                max_vals = list(df[vi_name]) + [max_val]
+                min_vals = list(df["val"]) + [min_val]
+                max_vals = list(df["val"]) + [max_val]
                 min_val = np.nanmin(min_vals)
                 max_val = np.nanmax(max_vals)
 

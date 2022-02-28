@@ -225,22 +225,6 @@ class Hors(def_object.Objs):
 
         code_l.sort()
 
-        # Remove the items that include all years. For instance, if the horizons are 1981-2010, 2021-2050, 2051-2080
-        # and 1981-2080, the last horizon needs to be removed.
-        # if len(code_l) > 0:
-        #     min_yr, max_yr = None, None
-        #     for code in code_l:
-        #         tokens = code.split("-")
-        #         if min_yr is None:
-        #             min_yr = tokens[0]
-        #             max_yr = tokens[1]
-        #         else:
-        #             min_yr = min(min_yr, tokens[0])
-        #             max_yr = max(max_yr, tokens[1])
-        #     range_yr = min_yr + "-" + max_yr
-        #     if range_yr in code_l:
-        #         code_l.remove(range_yr)
-
         self.add(code_l)
             
     def add(

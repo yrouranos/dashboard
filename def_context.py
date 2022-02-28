@@ -190,37 +190,42 @@ class Context(def_object.Obj):
         # Parameters.
         self.idx_params = []
 
-        # Enable/disable the selection of a plotting library.
-        self.opt_lib = False
-
         # Reference period.
         self.per_ref = []
 
-        # Centiles required to generate a statistical table.
-        self.opt_stat_centiles = [0, 1, 10, 50, 90, 99, 100]
-
-        # Centiles for which a time series is required.
-        self.opt_ts_centiles = [10, 90]
-
-        # Map locations (pd.DataFrame).
-        self.opt_map_locations = None
-
-        # Centiles required to produce a cluster scatter plot (if a single variable is selected).
-        self.opt_cluster_centiles = [10, 50, 90]
-
-        # Map ----------------------------------
-
-        # Resolution.
-        self.dpi = 600
+        # Dashboard ----------------------------
 
         # Background color of sidebar.
         self.col_sb_fill = "WhiteSmoke"
 
-        # Discrete vs. continuous colors scales (maps).
-        self.opt_map_discrete = True
+        # Results ------------------------------
+
+        # Enable/disable the selection of a plotting library.
+        self.opt_lib = False
+
+        # Resolution.
+        self.dpi = 600
+
+        # Centiles required to produce a cluster scatter plot (if a single variable is selected).
+        self.opt_cluster_centiles = [10, 50, 90]
 
         # Color scale (cluster plot).
         self.opt_cluster_col = "Dark2"
+
+        # Centiles for which a map is required.
+        self.opt_map_centiles = [10, 90]
+
+        # Discrete vs. continuous colors scales (maps).
+        self.opt_map_discrete = True
+
+        # Map locations (pd.DataFrame).
+        self.opt_map_locations = None
+
+        # Centiles required to generate a statistical table.
+        self.opt_tbl_centiles = [0, 1, 10, 50, 90, 99, 100]
+
+        # Centiles for which a time series is required.
+        self.opt_ts_centiles = [10, 90]
 
     def load(
         self,
@@ -268,8 +273,9 @@ class Context(def_object.Obj):
                                     break
 
         # Load project-specific configuration file.
-
         project_code = self.project.code if self.project is not None else ""
+        if project_code == "":
+            return
         p_ini_project = cntx.d_data + project_code + "/" + fn_ini
 
         if os.path.exists(p_ini_project):
@@ -301,27 +307,33 @@ class Context(def_object.Obj):
                             else:
                                 self.idx_params.append(idx_params[i])
 
-                    elif key == "opt_lib":
-                        self.opt_lib = ast.literal_eval(value)
-
                     elif key == "per_ref":
                         self.per_ref = str_to_arr_1d(value, int)
 
-                    elif key == "opt_stat_centiles":
-                        opt_stat_centiles = str_to_arr_1d(value, int)
-                        if str(opt_stat_centiles).replace("['']", "") != "":
-                            self.opt_stat_centiles = opt_stat_centiles
-                            self.opt_stat_centiles.sort()
+                    elif key == "opt_lib":
+                        self.opt_lib = ast.literal_eval(value)
+
+                    elif key == "opt_map_centiles":
+                        opt_map_centiles = str_to_arr_1d(value, int)
+                        if str(opt_map_centiles).replace("['']", "") == "":
+                            self.opt_map_centiles = opt_map_centiles
+                            self.opt_map_centiles.sort()
+
+                    elif key == "opt_map_locations":
+                        self.opt_map_locations =\
+                            pd.DataFrame(str_to_arr_2d(value, float), columns=["longitude", "latitude", "desc"])
+
+                    elif key == "opt_tbl_centiles":
+                        opt_tbl_centiles = str_to_arr_1d(value, int)
+                        if str(opt_tbl_centiles).replace("['']", "") != "":
+                            self.opt_tbl_centiles = opt_tbl_centiles
+                            self.opt_tbl_centiles.sort()
 
                     elif key == "opt_ts_centiles":
                         opt_ts_centiles = str_to_arr_1d(value, int)
                         if str(opt_ts_centiles).replace("['']", "") == "":
                             self.opt_ts_centiles = opt_ts_centiles
                             self.opt_ts_centiles.sort()
-
-                    elif key == "opt_map_locations":
-                        self.opt_map_locations =\
-                            pd.DataFrame(str_to_arr_2d(value, float), columns=["longitude", "latitude", "desc"])
 
                     elif key == "opt_cluster_centiles":
                         opt_cluster_centiles = str_to_arr_1d(value, int)

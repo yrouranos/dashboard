@@ -153,9 +153,10 @@ class RCPs(def_object.Objs):
         # The items are extracted from the 'rcp' column of data files ('tbl' view).
         # ~/<project_code>/tbl/<vi_code>*.csv
         if view_code == c.view_tbl:
-            p = cntx.d_project + "<view_code>/<vi_code>.csv"
+            p = cntx.d_project + "<view_code>/<vi_code>/<vi_name>.csv"
             p = p.replace("<view_code>", view_code)
             p = p.replace("<vi_code>", vi_code)
+            p = p.replace("<vi_name>", vi_name)
             df = pd.read_csv(p)
             item_l = list(df.columns) if view_code == c.view_ts else df["rcp"]
             if (delta_code == "True") and (c.ref in item_l):

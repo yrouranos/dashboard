@@ -265,7 +265,7 @@ def update_tab(
         if cntx.delta.code == "False":
             ts_note = "Valeurs non ajustées (avant ajustement de biais)"
         else:
-            ts_note = "Différence entre les valeurs non ajustées et les valeurs ajustées"
+            ts_note = "Différence entre les valeurs ajustées et les valeurs non ajustées"
 
     if tab_name in "ts":
         df_rcp = pd.DataFrame(du.load_data(dash_plot.mode_rcp))

@@ -49,7 +49,7 @@ def code_props(
         c.v_sfcwindmax:             ["Vitesse du vent",                  "Vitesse",               "km/h",  0],
         c.v_ps:                     ["Pression barométrique",            "Pression barométrique", "Pa",    0],
         c.v_rsds:                   ["Radiation solaire",                "Radiation solaire",     "Pa",    0],
-        c.v_pr:                     ["Précipitation",                    "Cumul",                 "mm",    0],
+        c.v_pr:                     ["Cumul de précipitation",           "Cumul",                 "mm",    0],
         c.v_evspsbl:                ["Évapotranspiration",               "Cumul",                 "mm",    0],
         c.v_evspsblpot:             ["Évapotranspiration potentielle",   "Cumul",                 "mm",    0],
         c.v_huss:                   ["Humidité spécifique",              "Humidité spécifique",   "",      2],
@@ -83,42 +83,47 @@ def code_props(
         c.v_enacts_pet:             ["Évapotranspiration potentielle",   "Cumul",                 "mm",    0],
 
         # Indices:
-        c.i_etr:                    ["Écart extrême de température",     "Température",           "°C",    1],
-        c.i_tx90p:                  ["Nombre de jours chauds (Tmax > 90e percentile)", "Nbr. jours", "jours", 0],
-        c.i_heat_wave_max_length:   ["Durée maximale des vagues de chaleur", "Durée", "jours", 0],
-        c.i_heat_wave_total_length: ["Durée totale des vagues de chaleur", "Durée", "jours", 0],
-        c.i_hot_spell_frequency:    ["Nombre de périodes chaudes", "Nbr. périodes", "périodes", 0],
-        c.i_hot_spell_max_length:   ["Durée maximale des périodes chaudes", "Durée", "jours", 0],
-        c.i_tgg:                    ["Température moyenne (à partir de Tmin et Tmax)", "Température", "°C", 1],
-        c.i_tng:                    ["Nbr mois frais (μ_mois(Tmin) < <A>°C)", "Nbr. mois", "mois", 1],
+        c.i_etr:                    ["Ecart extrême de température",     "Température",           "°C",    1],
+        c.i_tx90p:                  ["Nombre de jours chauds (Tmax > 90e)", "Nbr. jours", "jours", 0],
+        c.i_heat_wave_max_length:   ["Durée maximale des vagues de chaleur (Tmax ≥ {1}; Tmin ≥ {2}; " +
+                                     "{3} jours consécutifs)", "Durée", "jours", 0],
+        c.i_heat_wave_total_length: ["Durée totale des vagues de chaleur (Tmax ≥ {1}; Tmin ≥ {2}; " +
+                                     "{3} jours consécutifs)", "Durée", "jours", 0],
+        c.i_hot_spell_frequency:    ["Nombre de périodes chaudes (Tmax ≥ {1}; {2} jours consécutifs)",
+                                     "Nbr. périodes", "périodes", 0],
+        c.i_hot_spell_max_length:   ["Durée maximale des périodes chaudes (Tmax ≥ {1}; {2} jours consécutifs)",
+                                     "Durée", "jours", 0],
+        c.i_tgg:                    ["Valeur moyenne (à partir de Tmin et Tmax)", "Température", "°C", 1],
+        c.i_tng:                    ["Température minimale", "Nbr. mois", "", 1],
         c.i_tnx:                    ["Valeur maximale de Tmin", "Température", "°C", 1],
         c.i_txg:                    ["Valeur moyenne de Tmax", "Température", "°C", 1],
         c.i_txx:                    ["Température maximale", "Température", "°C", 1],
-        c.i_tng_months_below:       ["Nombre de mois frais", "Nbr. mois", "", 1],
-        c.i_tx_days_above:          ["Nombre de jours chauds (Tmax > <A>°C)", "Nbr. jours", "jours", 0],
-        c.i_tn_days_below:          ["Nombre de jours frais (Tmin < <A>°C)", "Nbr. jours", "jours", 0],
-        c.i_tropical_nights:        ["Nombre de nuits chaudes (Tmin > <A>°C)", "Nbr. jours", "jours", 0],
-        c.i_wsdi:                   ["Indice de durée des périodes chaudes (Tmax ≥ <A>; <B> jours consécutifs)",
+        c.i_tng_months_below:       ["Nbr mois frais (moyenne(Tmin) < {1}°C)", "Nbr. mois", "mois", 1],
+        c.i_tx_days_above:          ["Nombre de jours chauds (Tmax > {1})", "Nbr. jours", "jours", 0],
+        c.i_tn_days_below:          ["Nombre de jours frais (Tmin < {1})", "Nbr. jours", "jours", 0],
+        c.i_tropical_nights:        ["Nombre de nuits chaudes (Tmin > {1})", "Nbr. jours", "jours", 0],
+        c.i_wsdi:                   ["Indice de durée des périodes chaudes (Tmax ≥ {1}; {2} jours consécutifs)",
                                      "Indice", "", 0],
-        c.i_rx1day:                 ["Cumul de précipitations (1 jour)", "Cumul", "mm", 0],
-        c.i_rx5day:                 ["Cumul de précipitations (5 jours)", "Cumul", "mm", 0],
-        c.i_cdd:                    ["Nombre de jours secs consécutifs (P < <A> mm)", "Nbr. jours", "jours", 0],
-        c.i_cwd:                    ["Nombre de jours pluvieux consécutifs (P ≥ <A> mm)", "Nbr. jours", "jours", 0],
-        c.i_dry_days:               ["Nombre de jours secs (P < <A> mm)", "Nbr. jours", "jours", 0],
-        c.i_wet_days:               ["Nombre de jours pluvieux (P ≥ <A> mm)", "Nbr. jours", "jours", 0],
+        c.i_rx1day:                 ["Cumul de précipitation (1 jour)", "Cumul", "mm", 0],
+        c.i_rx5day:                 ["Cumul de précipitation (5 jours)", "Cumul", "mm", 0],
+        c.i_cdd:                    ["Nombre de jours secs consécutifs (P < {1} mm)", "Nbr. jours", "jours", 0],
+        c.i_cwd:                    ["Nombre de jours pluvieux consécutifs (P ≥ {1} mm)", "Nbr. jours", "jours", 0],
+        c.i_dry_days:               ["Nombre de jours secs (P < {1} mm)", "Nbr. jours", "jours", 0],
+        c.i_wet_days:               ["Nombre de jours pluvieux (P ≥ {1} mm)", "Nbr. jours", "jours", 0],
         c.i_prcptot:                ["Cumul de précipitation", "Cumul", "mm", 0],
         c.i_r10mm:                  ["Nombre de jours avec P ≥ 10 mm", "Nbr. jours", "jours", 0],
         c.i_r20mm:                  ["Nombre de jours avec P ≥ 20 mm", "Nbr. jours", "jours", 0],
-        c.i_rnnmm:                  ["Nombre de jours avec P ≥ <A> mm", "Nbr. jours", "jours", 0],
+        c.i_rnnmm:                  ["Nombre de jours avec P ≥ {1} mm", "Nbr. jours", "jours", 0],
         c.i_sdii:                   ["Intensité moyenne des précipitations", "Intensité", "mm/day", 0],
-        c.i_rain_season_start:      ["Début de la saison de pluie", "Jour", "", 0],
-        c.i_rain_season_end:        ["Fin de la saison de pluie", "Jour", "", 0],
-        c.i_rain_season_length:     ["Durée de la saison de pluie", "Nbr. Jours", "jours", 0],
-        c.i_rain_season_prcptot:    ["Cumul de précipitation pendant la saison de pluie", "Cumul", "mm", 0],
-        c.i_dry_spell_total_length: ["Durée totale des périodes sèches (P < <A> mm/jour; <B> jours consécutifs)",
+        c.i_rain_season_start:      ["Début de la {1}saison de pluie", "Jour", "", 0],
+        c.i_rain_season_end:        ["Fin de la {1}saison de pluie", "Jour", "", 0],
+        c.i_rain_season_length:     ["Durée de la {1}saison de pluie", "Nbr. Jours", "jours", 0],
+        c.i_rain_season_prcptot:    ["Cumul de précipitation pendant la {1}saison de pluie", "Cumul", "mm", 0],
+        c.i_dry_spell_total_length: ["Durée totale des périodes sèches (P < {1} mm/jour; {2} jours consécutifs)",
                                      "Nbr. jours", "jours", 0],
-        c.i_wg_days_above:          ["Nombre de jours avec vent fort (Vmoy ≥ <A> km/h)", "Nbr. jours", "jours", 0],
-        c.i_wx_days_above:          ["Nombre de jours avec vent fort directionel (Vmax ≥ <A> km/h; de <B>±<C>°)",
+        c.i_wg_days_above:          ["Nombre de jours avec vent fort directionnel (Vmoy ≥ {1}; de {3}±{4}°)",
+                                     "Nbr. jours", "jours", 0],
+        c.i_wx_days_above:          ["Nombre de jours avec vent fort (Vmax ≥ {1})",
                                      "Nbr. jours", "jours", 0],
         c.i_drought_code:           ["Code de sécheresse", "Code", "", 0]
     }
@@ -178,48 +183,113 @@ class VarIdx(def_object.Obj):
         return self.code
 
     @property
+    def identifier(
+        self
+    ) -> str:
+
+        """
+        ----------------------------------------
+        Extract identifier.
+
+        The identifier is the number at the end of the code if there are multiple indices with the same name
+        but with different parameters.
+
+        Returns
+        -------
+        str
+            Identifier.
+        ----------------------------------------
+        """
+
+        return self.code.replace(self.name, "").replace("_", "")
+
+    @property
     def desc(
         self,
     ) -> str:
 
         """
         ----------------------------------------
-        Get title.
+        Get description.
 
         Returns
         -------
         str
-            Title.
+            Description.
         ----------------------------------------
         """
 
         desc = dict(code_props())[self.name][0]
 
-        # Assign first parameter.
-        if self.name in [c.i_tng, c.i_tx_days_above, c.i_tn_days_below, c.i_tropical_nights, c.i_wsdi, c.i_cdd,
-                         c.i_cwd, c.i_dry_days, c.i_wet_days, c.i_rnnmm, c.i_dry_spell_total_length,
-                         c.i_wg_days_above, c.i_wx_days_above]:
-            desc = desc.replace("<A>", str(self.params[0]))
+        # Number of parameters.
+        n_param = len(self.params)
 
-        # Assign 2nd parameter.
-        if self.name in [c.i_wsdi, c.i_dry_spell_total_length, c.i_wx_days_above]:
-            if self.name == c.i_prcptot:
-                val = str(self.params[1]) if len(self.params) >= 2 else "1"
-            else:
-                val = str(self.params[1])
-            desc = desc.replace("<B>", val)
+        def format_centile(
+            _param: str,
+            _unit: str
+        ) -> str:
+            is_centile = "p" in _param
+            return _param.replace("p", "") + ("e centile" if is_centile else _unit)
 
-        # Assign 3rd parameter.
-        if self.name in [c.i_wx_days_above, c.i_prcptot]:
-            if self.name == c.i_prcptot:
-                val = str(self.params[2]) if len(self.params) >= 3 else "365"
-            else:
-                val = str(self.params[2])
-            desc = desc.replace("<C>", val)
+        for i in range(1, len(self.params) + 1):
 
-        # Assign 2nd and 3rd parameters.
-        if (self.name == c.i_prcptot) and (len(self.params) >= 2):
-            desc = desc.replace("<B>", "(entre les jours " + str(self.params[0]) + " et " + str(self.params[1]) + ")")
+            param = str(self.params[i - 1])
+            val = ""
+            key = "{" + str(i) + "}"
+
+            # Assign 1st parameter.
+            if (i == 1) and (key in desc):
+                if self.name in [c.i_rain_season_start, c.i_rain_season_end, c.i_rain_season_length,
+                                 c.i_rain_season_prcptot]:
+                    val = self.identifier
+                    if val != "":
+                        val += "ère " if val == "1" else "e "
+                elif self.name in [c.i_heat_wave_max_length, c.i_heat_wave_total_length, c.i_hot_spell_max_length,
+                                   c.i_hot_spell_frequency, c.i_tx_days_above, c.i_tn_days_below, c.i_tropical_nights,
+                                   c.i_wg_days_above, c.i_wx_days_above]:
+                    unit = ""
+                    if self.name in [c.i_heat_wave_max_length, c.i_heat_wave_total_length, c.i_hot_spell_max_length,
+                                     c.i_hot_spell_frequency, c.i_tx_days_above, c.i_tn_days_below,
+                                     c.i_tropical_nights]:
+                        unit = VarIdx(c.v_tasmax).unit
+                    elif self.name in [c.i_wg_days_above, c.i_wx_days_above]:
+                        unit = VarIdx(c.v_sfcwindmax).unit
+                    val = format_centile(param, unit)
+                elif self.name in [c.i_wsdi]:
+                    unit = VarIdx(c.v_tasmax).unit
+                    val = format_centile("90p" if param == "nan" else param, unit)
+                elif param != "nan":
+                    val = param
+                desc = desc.replace(key, val)
+
+            # Assign 2nd parameter.
+            elif (i == 2) and (key in desc):
+                if self.name == c.i_prcptot:
+                    val = param if n_param >= 2 else "1"
+                elif self.name in [c.i_heat_wave_max_length, c.i_heat_wave_total_length]:
+                    unit = VarIdx(c.v_tasmax).unit
+                    val = format_centile(param, unit)
+                elif param != "nan":
+                    val = param
+                desc = desc.replace(key, val)
+
+            # Assign 3rd parameter.
+            elif (i == 3) and (key in desc):
+                if self.name == c.i_prcptot:
+                    val = param if n_param >= 3 else "365"
+                elif param != "nan":
+                    val = param
+                desc = desc.replace(key, val)
+
+            # Assign 4th parameter.
+            if (i == 4) and (key in desc):
+                if param != "nan":
+                    val = param
+                desc = desc.replace(key, val)
+
+        # Special case.
+        if (self.name == c.i_prcptot) and (n_param >= 2):
+            desc += "(entre les jours " + str(self.params[0]) + " et " + str(self.params[1]) + ")"
 
         return desc
 
@@ -555,10 +625,10 @@ class VarIdxs(def_object.Objs):
         # The items are extracted from directory names.
         # ~/<project_code>/<view_code>/*
         if view_code in [c.view_tbl]:
-            p = cntx.d_project + "<view_code>/*.csv"
+            p = cntx.d_project + "<view_code>/*/*.csv"
             p = p.replace("<view_code>/", view_code.split("-")[0] + "*/")
             for p_i in list(glob.glob(p)):
-                code = os.path.basename(p_i).replace(".csv", "")
+                code = os.path.basename(os.path.dirname(p_i))
                 if code not in code_l:
                     code_l.append(code)
 
@@ -628,6 +698,7 @@ class VarIdxs(def_object.Objs):
 
         for item in self._items:
             desc_l.append(item.desc)
+        desc_l.sort()
 
         return desc_l
 
