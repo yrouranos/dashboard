@@ -144,6 +144,10 @@ class Context(def_object.Obj):
 
         super(Context, self).__init__(code, code)
 
+        # Software ---------------------------------
+
+        self.version = ""
+
         # Data ---------------------------------
 
         # Project.
@@ -264,7 +268,10 @@ class Context(def_object.Obj):
                     # Extract value.
                     value = config[section][key]
 
-                    if (key == "projects") and (cntx.projects is not None):
+                    if key == "version":
+                        self.version = value
+
+                    elif (key == "projects") and (cntx.projects is not None):
                         project_l = str_to_arr_2d(value, float)
                         for i in range(len(cntx.projects.items)):
                             for j in range(len(project_l)):

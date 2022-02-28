@@ -126,6 +126,8 @@ def refresh():
     # Projects.
     cntx.projects = Projects("*")
     cntx.load()
+    version = "" if cntx.version == "" else (" (v" + str(cntx.version) + ")")
+    st.sidebar.write("Outil de visualisation de scénarios et d'indices climatiques" + version)
     project_f = st.sidebar.selectbox("Choisir le projet", options=cntx.projects.desc_l)
     project_code = cntx.projects.code_from_desc(project_f) if cntx.projects is not None else ""
     cntx.project = Project(project_code)
