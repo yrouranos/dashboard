@@ -14,24 +14,28 @@ import holoviews as hv
 import math
 import pandas as pd
 import streamlit as st
-from PIL import Image
 
 # Dashboard libraries.
+import cl_auth
+import cl_rcp
+import cl_sim
 import dash_plot
 import dash_utils as du
-import def_rcp
-import def_sim
-from def_constant import const as c
-from def_context import cntx
-from def_delta import Delta, Deltas
-from def_hor import Hor, Hors
-from def_lib import Lib, Libs
-from def_project import Project, Projects
-from def_rcp import RCP, RCPs
-from def_sim import Sim, Sims
-from def_stat import Stat, Stats
-from def_varidx import VarIdx, VarIdxs
-from def_view import View, Views
+from cl_constant import const as c
+from cl_context import cntx
+from cl_delta import Delta, Deltas
+from cl_hor import Hor, Hors
+from cl_lib import Lib, Libs
+from cl_project import Project, Projects
+from cl_rcp import RCP, RCPs
+from cl_sim import Sim, Sims
+from cl_stat import Stat, Stats
+from cl_varidx import VarIdx, VarIdxs
+from cl_view import View, Views
+
+# List of projects accessible to the user.
+# This is initially a string (items separated by semi-columns), then it becomes an array of strings.
+project_l = ""
 
 
 def refresh():
@@ -110,8 +114,10 @@ def refresh():
     --------------------------------------------------------------------------------------------------------------------
     """
 
+    global project_l
+
     # Initialize context.
-    cntx.code = c.platform_streamlit
+    cntx.code = c.PLATFORM_STREAMLIT
     cntx.views = Views()
     cntx.libs = Libs()
     cntx.deltas = Deltas(["False", "True"])
@@ -121,19 +127,31 @@ def refresh():
     cntx.rcps = RCPs()
 
     # Logo.
-    st.sidebar.image(Image.open(cntx.p_logo), width=150)
+    st.sidebar.image(cntx.load_image(p=cntx.p_logo), width=150)
+    st.sidebar.write("Portail de visualisation de scénarios et d'indices climatiques (v" + str(c.VERSION) + ")")
 
     # Projects.
-    cntx.projects = Projects("*")
+    if ";" in project_l:
+        project_l = project_l.split(";")
+    cntx.projects = Projects(project_l)
+
+    # A place holder (ph) is created, but emptied after loading files.
+    # The only way to load files again is to reload the webpage.
+    if (cntx.df_files is None) or ((cntx.df_files is not None) and (len(cntx.df_files) == 0)):
+        ph_files = st.sidebar.empty()
+        with ph_files.form("form_files"):
+            st.write("Chargement en cours...")
+            cntx.load_files()
+        ph_files.empty()
+
+    # Load global configuration file.
     cntx.load()
-    version = "" if cntx.version == "" else (" (v" + str(cntx.version) + ")")
-    st.sidebar.write("Outil de visualisation de scénarios et d'indices climatiques" + version)
+
     project_f = st.sidebar.selectbox("Choisir le projet", options=cntx.projects.desc_l)
     project_code = cntx.projects.code_from_desc(project_f) if cntx.projects is not None else ""
     cntx.project = Project(project_code)
-
-    # TODO.Debug: project.
-    # cntx.project = Project("ci-s")
+    if c.DBG and c.DBG_PROJECT_CODE != "":
+        cntx.project = Project(c.DBG_PROJECT_CODE)
 
     # Load project-specific configuration file.
     cntx.load()
@@ -143,9 +161,8 @@ def refresh():
     view_f = st.sidebar.radio("Choisir la vue", cntx.views.desc_l)
     view_code = cntx.views.code_from_desc(view_f) if cntx.views is not None else ""
     cntx.view = View(view_code)
-
-    # TODO.Debug: view.
-    # cntx.view = View(c.view_tbl)
+    if c.DBG and c.DBG_VIEW_CODE != "":
+        cntx.view = View(c.DBG_VIEW_CODE)
 
     # Plotting libraries.
     cntx.libs = Libs("*")
@@ -153,17 +170,16 @@ def refresh():
         lib_f = st.sidebar.radio("Choisir la librairie visuelle", options=cntx.libs.desc_l)
         lib_code = cntx.libs.code_from_desc(lib_f) if cntx.libs is not None else ""
     else:
-        lib_code = c.lib_hv
-        if cntx.view.code == c.view_tbl:
-            lib_code = c.lib_ply
+        lib_code = c.LIB_HV
+        if cntx.view.code == c.VIEW_TBL:
+            lib_code = c.LIB_PLY
     cntx.lib = Lib(lib_code)
-
-    # TODO.Debug: lib.
-    # cntx.lib = Lib(c.lib_hv)
+    if c.DBG and c.DBG_LIB_CODE != "":
+        cntx.lib = Lib(c.DBG_LIB_CODE)
 
     # Deltas.
     cntx.deltas = Deltas("*")
-    if (cntx.view.code in [c.view_ts, c.view_ts_bias, c.view_tbl, c.view_map]) and ("True" in cntx.deltas.code_l):
+    if (cntx.view.code in [c.VIEW_TS, c.VIEW_TS_BIAS, c.VIEW_TBL, c.VIEW_MAP]) and ("True" in cntx.deltas.code_l):
         st.sidebar.markdown("<style>.sel_title {font-size:14.5px}</style>", unsafe_allow_html=True)
         title = "Afficher les anomalies par rapport à la période " + str(cntx.per_ref[0]) + "-" + str(cntx.per_ref[1])
         st.sidebar.markdown("<p class='sel_title'>" + title + "</p>", unsafe_allow_html=True)
@@ -171,13 +187,12 @@ def refresh():
         cntx.delta = Delta(str(delta_f))
     else:
         cntx.delta = Delta("False")
-
-    # TODO.Debug: delta.
-    # cntx.delta = Delta("True")
+    if c.DBG and c.DBG_DELTA_CODE != "":
+        cntx.delta = Delta(c.DBG_DELTA_CODE)
 
     # Variables and indices.
     cntx.varidxs = VarIdxs("*")
-    if cntx.view.code in [c.view_ts, c.view_ts_bias, c.view_tbl, c.view_map, c.view_cycle]:
+    if cntx.view.code in [c.VIEW_TS, c.VIEW_TS_BIAS, c.VIEW_TBL, c.VIEW_MAP, c.VIEW_CYCLE]:
         vi_f = st.selectbox("Variable ou indice", options=cntx.varidxs.desc_l)
         vi_code = cntx.varidxs.code_from_desc(vi_f) if cntx.varidxs is not None else ""
         cntx.varidx = VarIdx(vi_code)
@@ -194,36 +209,36 @@ def refresh():
             if vi_f[i]:
                 vi_code_sel_l.append(vi_code_l[i])
         cntx.varidxs = VarIdxs(vi_code_sel_l)
-
-    # TODO.Debug: Variable.
-    # cntx.varidx = VarIdx(c.v_tasmax)
+    if c.DBG and c.DBG_VI_CODE != "":
+        cntx.varidx = VarIdx(c.DBG_VI_CODE)
 
     # Horizons.
-    if cntx.view.code in [c.view_tbl, c.view_map, c.view_cycle]:
+    if cntx.view.code in [c.VIEW_TBL, c.VIEW_MAP, c.VIEW_CYCLE]:
         cntx.hors = Hors("*")
         hor_f = st.selectbox("Horizon", options=cntx.hors.code_l)
         cntx.hor = Hor(hor_f)
-
-    # TODO.Debug: horizon.
-    # cntx.hor = Hor([1981, 2010])
+    if c.DBG and c.DBG_HOR_CODE != "":
+        cntx.hor = Hor(c.DBG_HOR_CODE)
 
     # Emission scenarios.
     cntx.rcps = RCPs("*")
-    if cntx.view.code in [c.view_ts, c.view_ts_bias, c.view_map, c.view_cycle, c.view_cluster]:
+    if cntx.view.code in [c.VIEW_TS, c.VIEW_TS_BIAS, c.VIEW_MAP, c.VIEW_CYCLE, c.VIEW_CLUSTER]:
         rcp_l = cntx.rcps.desc_l
-        if cntx.view.code in [c.view_ts, c.view_ts_bias, c.view_cluster]:
-            rcp_l = [dict(def_rcp.code_props())[c.rcpxx][0]] + rcp_l
+        if cntx.view.code in [c.VIEW_TS, c.VIEW_TS_BIAS, c.VIEW_CLUSTER]:
+            rcp_l = [dict(cl_rcp.code_props())[c.RCPXX][0]] + rcp_l
         hor_code_ref = str(cntx.per_ref[0]) + "-" + str(cntx.per_ref[1])
-        if (cntx.view.code in [c.view_map, c.view_cycle]) and (cntx.hor.code == hor_code_ref):
-            rcp_code = c.ref
+        if (cntx.view.code in [c.VIEW_MAP, c.VIEW_CYCLE]) and (cntx.hor.code == hor_code_ref):
+            rcp_code = c.REF
         else:
             rcp_f = st.selectbox("Scénario d'émissions", options=rcp_l)
             rcp_code = cntx.rcps.code_from_desc(rcp_f) if cntx.rcps is not None else ""
         cntx.rcp = RCP(rcp_code)
+    if c.DBG and c.DBG_RCP_CODE != "":
+        cntx.rcp = RCP(c.DBG_RCP_CODE)
 
     # Number of clusters.
     n_cluster = 0
-    if cntx.view.code == c.view_cluster:
+    if cntx.view.code == c.VIEW_CLUSTER:
         n_cluster_min = 1
         n_cluster_max = len(du.get_shared_sims())
         n_cluster_suggested = int(math.ceil(0.2 * float(n_cluster_max)))
@@ -232,35 +247,37 @@ def refresh():
 
     # Statistics.
     cntx.stats = Stats("*")
-    if cntx.view.code == c.view_map:
-        if cntx.rcp.code == c.ref:
-            cntx.stat = Stat(c.stat_mean)
+    if cntx.view.code == c.VIEW_MAP:
+        if cntx.rcp.code == c.REF:
+            cntx.stat = Stat(c.STAT_MEAN)
         else:
             stat_f = st.selectbox("Statistique", options=cntx.stats.desc_l)
             stat_code = cntx.stats.code_from_desc(stat_f) if cntx.stats is not None else ""
             cntx.stat = Stat(stat_code)
+    if c.DBG and c.DBG_STAT_CODE != "":
+        cntx.stat = Stat(c.DBG_STAT_CODE)
 
     # Simulations.
     cntx.sims = Sims("*")
-    if cntx.view.code in [c.view_ts, c.view_ts_bias, c.view_cycle]:
+    if cntx.view.code in [c.VIEW_TS, c.VIEW_TS_BIAS, c.VIEW_CYCLE]:
         sim_l = cntx.sims.desc_l
-        if cntx.view.code in [c.view_ts, c.view_ts_bias]:
-            sim_l = [dict(def_sim.code_desc())[c.simxx]] + sim_l
-        if cntx.rcp.code == c.ref:
-            cntx.sim = Sim(c.ref)
+        if cntx.view.code in [c.VIEW_TS, c.VIEW_TS_BIAS]:
+            sim_l = [dict(cl_sim.code_desc())[c.SIMXX]] + sim_l
+        if cntx.rcp.code == c.REF:
+            cntx.sim = Sim(c.REF)
         else:
             sim_f = st.selectbox("Simulation", options=sim_l)
-            if dict(def_sim.code_desc())[c.simxx] == sim_f:
-                sim_code = c.simxx
+            if dict(cl_sim.code_desc())[c.SIMXX] == sim_f:
+                sim_code = c.SIMXX
             else:
                 sim_code = cntx.sims.code_from_desc(sim_f) if cntx.sims is not None else ""
             cntx.sim = Sim(sim_code)
 
-    # GUI components.
-    if cntx.view.code in [c.view_ts, c.view_ts_bias]:
-        df_rcp = pd.DataFrame(du.load_data(dash_plot.mode_rcp))
-        df_sim = pd.DataFrame(du.load_data(dash_plot.mode_sim))
-        if cntx.view.code == c.view_ts:
+    # View: time series.
+    if cntx.view.code in [c.VIEW_TS, c.VIEW_TS_BIAS]:
+        df_rcp = pd.DataFrame(du.load_data(dash_plot.MODE_RCP))
+        df_sim = pd.DataFrame(du.load_data(dash_plot.MODE_SIM))
+        if cntx.view.code == c.VIEW_TS:
             if cntx.delta.code == "False":
                 st.write("Valeurs ajustées (après ajustement de biais)")
             else:
@@ -270,58 +287,105 @@ def refresh():
                 st.write("Valeurs non ajustées (avant ajustement de biais)")
             else:
                 st.write("Différence entre les valeurs ajustées et les valeurs non ajustées")
-        if cntx.lib.code in [c.lib_alt, c.lib_mat]:
-            st.write(dash_plot.gen_ts(df_rcp, dash_plot.mode_rcp))
-            st.write(dash_plot.gen_ts(df_sim, dash_plot.mode_sim))
+        if cntx.lib.code in [c.LIB_ALT, c.LIB_MAT]:
+            st.write(dash_plot.gen_ts(df_rcp, dash_plot.MODE_RCP))
+            st.write(dash_plot.gen_ts(df_sim, dash_plot.MODE_SIM))
         else:
             if (df_rcp is not None) and len(df_rcp) > 0:
-                st.write(hv.render(dash_plot.gen_ts(df_rcp, dash_plot.mode_rcp)), backend="bokeh")
+                st.write(hv.render(dash_plot.gen_ts(df_rcp, dash_plot.MODE_RCP)), backend="bokeh")
             if (df_sim is not None) and len(df_sim) > 0:
-                st.write(hv.render(dash_plot.gen_ts(df_sim, dash_plot.mode_sim)), backend="bokeh")
-    elif cntx.view.code == c.view_tbl:
+                st.write(hv.render(dash_plot.gen_ts(df_sim, dash_plot.MODE_SIM)), backend="bokeh")
+
+    # View: statistics table.
+    elif cntx.view.code == c.VIEW_TBL:
         st.write(dash_plot.gen_tbl())
-    elif cntx.view.code == c.view_map:
+
+    # View: map.
+    elif cntx.view.code == c.VIEW_MAP:
         df = pd.DataFrame(du.load_data())
-        stats_lower = Stat(c.stat_centile, cntx.opt_map_centiles[0])
-        stats_upper = Stat(c.stat_centile, cntx.opt_map_centiles[len(cntx.opt_map_centiles) - 1])
+        stats_lower = Stat(c.STAT_CENTILE, cntx.opt_map_centiles[0])
+        stats_upper = Stat(c.STAT_CENTILE, cntx.opt_map_centiles[len(cntx.opt_map_centiles) - 1])
         stats = Stats(stats_lower)
         stats.add(stats_upper)
-        range_vals = du.calc_range(stats.centile_as_str_l)
-        if cntx.lib.code == c.lib_mat:
+        range_vals = list(du.calc_range(stats.centile_as_str_l))
+        if cntx.lib.code == c.LIB_MAT:
             st.write(dash_plot.gen_map(df, range_vals))
         else:
             st.write(hv.render(dash_plot.gen_map(df, range_vals)), backend="bokeh")
-    elif cntx.view.code == c.view_cycle:
+
+    # View: annual cycle.
+    elif cntx.view.code == c.VIEW_CYCLE:
         df_ms = pd.DataFrame(du.load_data("MS"))
         if (df_ms is not None) and (len(df_ms) > 0):
             cycle_ms = dash_plot.gen_cycle_ms(df_ms)
-            if cntx.lib.code == c.lib_mat:
+            if cntx.lib.code == c.LIB_MAT:
                 st.write(cycle_ms)
             else:
                 st.write(hv.render(cycle_ms), backend="bokeh")
         df_d = pd.DataFrame(du.load_data("D"))
         if (df_d is not None) and (len(df_d) > 0):
             cycle_d = dash_plot.gen_cycle_d(df_d)
-            if cntx.lib.code == c.lib_mat:
+            if cntx.lib.code == c.LIB_MAT:
                 st.write(cycle_d)
             else:
                 st.write(hv.render(cycle_d), backend="bokeh")
+
+    # View: clustering.
     else:
         st.write(dash_plot.gen_cluster_tbl(n_cluster))
         if cntx.varidxs.count in [1, 2]:
             cluster = dash_plot.gen_cluster_plot(n_cluster)
-            if cntx.lib.code == c.lib_mat:
+            if cntx.lib.code == c.LIB_MAT:
                 st.write(cluster)
             else:
                 st.write(hv.render(cluster), backend="bokeh")
-    if cntx.view.code in [c.view_ts, c.view_tbl]:
+
+    # Reference value.
+    if cntx.view.code in [c.VIEW_TS, c.VIEW_TBL]:
         tbl_ref = str(du.ref_val())
         st.write("Valeur moyenne pour la période de référence : " + tbl_ref)
 
 
-# Refresh GUI.
-refresh()
+# Create authentication instance.
+auth = None
+if auth is None:
+    auth = cl_auth.Auth()
 
-# Test.
-# import dash_test
-# dash_test.run("sn")
+# Debug mode.
+if c.DBG:
+    project_l = [c.DBG_PROJECT_CODE]
+    refresh()
+
+# Authentication page.
+elif (project_l == "") and (cl_auth.force_auth()):
+
+    # A place holder (ph) is created, but removed after a successful authentication.
+    # The only way to go back to the authentication page is to reload the webpage.
+    ph_auth = st.empty()
+    with ph_auth.form("form"):
+
+        # Create form.
+        st.image(cntx.load_image(p=cntx.p_logo), width=150)
+        st.write("Portail de visualisation d'information climatique (v" + str(c.VERSION) + ")")
+        auth.usr = st.text_input("Identifiant")
+        auth.pwd = st.text_input("Mot de passe")
+        submit = st.form_submit_button(label="Soumettre")
+
+        # Load projects.
+        auth.load_projects()
+        project_l = auth.projects
+
+        # Display error message.
+        if (auth.usr != "") and (auth.pwd != "") and (project_l == ""):
+            st.error("Accès refusé!")
+
+    # Remove the placeholder and load main page if the user has access to projects.
+    if project_l != "":
+        ph_auth.empty()
+        refresh()
+
+# Main page.
+else:
+    auth.load_projects()
+    project_l = auth.projects
+    refresh()

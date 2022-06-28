@@ -1,7 +1,6 @@
 .idea/
 .ipynb_checkpoints/
 __pycache__/
-data/ci-c/
-data/ci-s/
-data/ma-tt/
-data/sn-study/
+.streamlit/
+gd.json
+

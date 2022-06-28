@@ -10,18 +10,17 @@
 # ----------------------------------------------------------------------------------------------------------------------
 
 # External libraries.
-import glob
 import numpy as np
 import os
 import pandas as pd
-import simplejson
 import warnings
-from pathlib import Path
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Union
 
 # Dashboard libraries.
-from def_constant import const as c
-from def_context import cntx
+import cl_auth
+import cl_gd
+from cl_constant import const as c
+from cl_context import cntx
 
 warnings.filterwarnings("ignore")
 
@@ -115,10 +114,11 @@ def load_data(
     # Load data.
     p = ""
 
+    project_code = cntx.project.code if cntx.project is not None else ""
     view_code  = cntx.view.code if cntx.view is not None else ""
-    if view_code == c.view_cluster:
-        view_code = c.view_ts
-    delta_code = cntx.delta.code if cntx.delta is not None else False
+    if view_code == c.VIEW_CLUSTER:
+        view_code = c.VIEW_TS
+    delta_code = cntx.delta.code if cntx.delta is not None else "False"
     vi_code    = cntx.varidx.code if cntx.varidx is not None else ""
     vi_name    = cntx.varidx.name if cntx.varidx is not None else ""
     vi_precision = cntx.varidx.precision if cntx.varidx is not None else 0
@@ -127,22 +127,22 @@ def load_data(
     stat_code  = cntx.stat.code if cntx.stat is not None else ""
     sim_code   = cntx.sim.code if cntx.sim is not None else ""
 
-    if view_code == c.view_tbl:
-        p = cntx.d_project + "<view_code>/<vi_code>/<vi_name>.csv"
+    if view_code == c.VIEW_TBL:
+        p = "<view_code>/<vi_code>/<vi_name>.csv"
         p = p.replace("<view_code>", view_code)
         p = p.replace("<vi_code>", vi_code)
         p = p.replace("<vi_name>", vi_name)
 
-    elif view_code in [c.view_ts, c.view_ts_bias]:
-        p = cntx.d_project + "<view_code>/<vi_code>/<vi_name>_<mode>_<delta>.csv"
+    elif view_code in [c.VIEW_TS, c.VIEW_TS_BIAS]:
+        p = "<view_code>/<vi_code>/<vi_name>_<mode>_<delta>.csv"
         p = p.replace("_<mode>", "_" + mode)
         p = p.replace("<view_code>", view_code)
         p = p.replace("<vi_code>", vi_code)
         p = p.replace("<vi_name>", vi_name)
         p = p.replace("_<delta>", "" if delta_code == "False" else "_delta")
 
-    elif view_code == c.view_map:
-        p = cntx.d_project + "<view_code>/<vi_code>/<hor_code>/*<rcp_code>*<stat>_<delta>.csv"
+    elif view_code == c.VIEW_MAP:
+        p = "<view_code>/<vi_code>/<hor_code>/*<rcp_code>*<stat>_<delta>.csv"
         p = p.replace("<view_code>", view_code)
         p = p.replace("<vi_code>", vi_code)
         p = p.replace("<hor_code>", hor_code)
@@ -150,8 +150,8 @@ def load_data(
         p = p.replace("<stat>", stat_code)
         p = p.replace("_<delta>", "" if delta_code == "False" else "_delta")
 
-    elif c.view_cycle in view_code:
-        p = cntx.d_project + "<view_code>/<vi_code>/<hor_code>/*<sim_code>*<rcp_code>*.csv"
+    elif c.VIEW_CYCLE in view_code:
+        p = "<view_code>/<vi_code>/<hor_code>/*<sim_code>*<rcp_code>*.csv"
         view_code += "_" + mode.lower()
         p = p.replace("<view_code>", view_code)
         p = p.replace("<vi_code>", vi_code)
@@ -162,68 +162,39 @@ def load_data(
         elif rcp_code == "":
             p = p.replace("<rcp_code>", "*")
 
-    if (view_code == c.view_map) or (c.view_cycle in view_code):
-        p_l = list(glob.glob(p))
-        if len(p_l) > 0:
-            p = p_l[0]
+    # Base directory.
+    p_base = str(cl_auth.path(project_code))
 
-    if not os.path.exists(p):
-        return None
+    # Select the first path.
+    if cntx.project.drive is None:
+        p = project_code + "/" + p
+        if (view_code == c.VIEW_MAP) or (c.VIEW_CYCLE in view_code):
+            p_l = list(cntx.files(p)[cl_gd.PROP_PATH])
+            if len(p_l) > 0:
+                p = p_l[0]
+        p = p_base + "/" + p
     else:
-        df = pd.read_csv(p)
+        df_filter = cntx.files(project_code + "/" + p)
+        if len(df_filter) > 0:
+            p = list(df_filter[cl_gd.PROP_ITEM_ID])[0]
+
+    # Load file.
+    df = None
+    if cntx.project.drive is None:
+        if os.path.exists(p):
+            df = pd.read_csv(p)
+    else:
+        if p != "":
+            df = pd.DataFrame(cl_gd.GoogleDrive(cntx.project.drive).load_csv(file_id=p))
 
     # Round values.
     if df is not None:
         n_dec = vi_precision
-        if (view_code in [c.view_ts, c.view_ts_bias]) or (c.view_cycle in view_code):
+        if (view_code in [c.VIEW_TS, c.VIEW_TS_BIAS]) or (c.VIEW_CYCLE in view_code):
             for col in df.select_dtypes("float64").columns:
                 df.loc[:, col] = df.copy()[col].round(n_dec).to_numpy()
         else:
             df["val"] = df["val"].round(decimals=n_dec)
-
-    return df
-
-
-def load_geojson(
-    p: str,
-    out_format: str = "vertices-coords"
-) -> Union[pd.DataFrame, Tuple[List[float], any]]:
-
-    """
-    --------------------------------------------------------------------------------------------------------------------
-    Load a geojson file.
-
-    Parameters
-    ----------
-    p: str
-        Path.
-    out_format: str
-        Format = {"vertices-coordinates", "pandas"}
-
-    Returns
-    -------
-    Union[pd.DataFrame, Tuple[List[float]]]
-        Vertices and coordinates, or dataframe.
-    --------------------------------------------------------------------------------------------------------------------
-    """
-
-    # Read geojson file.
-    with open(p) as f:
-        pydata = simplejson.load(f)
-
-    # Extract vertices.
-    coords = pydata["features"][0]["geometry"]["coordinates"][0]
-    vertices = coords[0]
-    if len(vertices) == 2:
-        coords = pydata["features"][0]["geometry"]["coordinates"]
-        vertices = coords[0]
-    if out_format == "vertices":
-        return vertices, coords
-
-    # Create dataframe.
-    df = pd.DataFrame()
-    df["longitude"] = np.array(vertices).T.tolist()[0]
-    df["latitude"] = np.array(vertices).T.tolist()[1]
 
     return df
 
@@ -251,19 +222,16 @@ def calc_range(
     min_val, max_val = np.nan, np.nan
 
     # Codes.
+    project_code = cntx.project.code if cntx.project is not None else ""
     view_code  = cntx.view.code if cntx.view is not None else ""
     vi_code    = cntx.varidx.code if cntx.varidx is not None else ""
     vi_name    = cntx.varidx.name if cntx.varidx is not None else ""
-    delta_code = cntx.delta.code if cntx.delta is not None else False
+    delta_code = cntx.delta.code if cntx.delta is not None else "False"
 
-    if view_code == c.view_map:
-        
-        # Reference file.
-        p_ref = cntx.d_project + "<view>/<vi_code>/*/<vi_name>_ref*_mean.csv"
-        p_ref = p_ref.replace("<view>", view_code)
-        p_ref = p_ref.replace("<vi_code>", vi_code)
-        p_ref = p_ref.replace("<vi_name>", vi_name)
-        p_ref = glob.glob(p_ref)
+    # Base directory.
+    p_base = str(cl_auth.path(project_code))
+
+    if view_code == c.VIEW_MAP:
 
         # Get centiles.
         centile_lower_as_str, centile_upper_as_str = "", ""
@@ -271,26 +239,49 @@ def calc_range(
             centile_lower_as_str = centile_as_str_l[0]
             centile_upper_as_str = centile_as_str_l[len(centile_as_str_l) - 1]
 
-        # RCP files.
-        p_rcp = cntx.d_project + "<view>/<vi_code>/*/<vi_name>_rcp*_<centile>_<delta>.csv"
+        # Determine path or file ID (reference file).
+        p_ref = "<view>/<vi_code>/*/<vi_name>_ref*_mean.csv"
+        p_ref = p_ref.replace("<view>", view_code)
+        p_ref = p_ref.replace("<vi_code>", vi_code)
+        p_ref = p_ref.replace("<vi_name>", vi_name)
+
+        # Determine paths or file IDs (RCP files).
+        p_rcp = "<view>/<vi_code>/*/<vi_name>_rcp*_<centile>_<delta>.csv"
         p_rcp = p_rcp.replace("<view>", view_code)
         p_rcp = p_rcp.replace("<vi_code>", vi_code)
         p_rcp = p_rcp.replace("<vi_name>", vi_name)
         p_rcp = p_rcp.replace("_<delta>", "" if delta_code == "False" else "_delta")
-        p_rcp_centile_lower = glob.glob(p_rcp.replace("<centile>", centile_lower_as_str))
-        p_rcp_centile_upper = glob.glob(p_rcp.replace("<centile>", centile_upper_as_str))
-        p_l = p_rcp_centile_lower + p_rcp_centile_upper
+        p_rcp_centile_lower = [p_rcp.replace("<centile>", centile_lower_as_str)]
+        p_rcp_centile_upper = [p_rcp.replace("<centile>", centile_upper_as_str)]
+        pattern_l = p_rcp_centile_lower + p_rcp_centile_upper
         if delta_code == "False":
-            p_l = p_ref + p_l
+            pattern_l = [p_ref] + pattern_l
 
-        # Find the minimum and maximum values.
-        for p in p_l:
-            if os.path.exists(p):
-                df = pd.read_csv(p)
-                min_vals = list(df["val"]) + [min_val]
-                max_vals = list(df["val"]) + [max_val]
-                min_val = np.nanmin(min_vals)
-                max_val = np.nanmax(max_vals)
+        # Loop through patterns.
+        for pattern_i in pattern_l:
+
+            # List CSV paths.
+            df_filter = cntx.files(project_code + "/" + pattern_i)
+            p_l = list(df_filter[cl_gd.PROP_PATH])\
+                if cntx.project.drive is None else list(df_filter[cl_gd.PROP_ITEM_ID])
+
+            # Loop throught paths.
+            for p_j in p_l:
+
+                # Read CSV file.
+                df = None
+                if cntx.project.drive is None:
+                    if os.path.exists(p_base + p_j):
+                        df = pd.read_csv(p_base + p_j)
+                else:
+                    df = pd.DataFrame(cl_gd.GoogleDrive(cntx.project.drive).load_csv(file_id=p_j))
+
+                # Update range.
+                if len(df) > 0:
+                    min_vals = list(df["val"]) + [min_val]
+                    max_vals = list(df["val"]) + [max_val]
+                    min_val = np.nanmin(min_vals)
+                    max_val = np.nanmax(max_vals)
 
     return [min_val, max_val]
 
@@ -312,14 +303,14 @@ def ref_val(
     val = ""
 
     # Extract from table.
-    if cntx.view.code == c.view_tbl:
+    if cntx.view.code == c.VIEW_TBL:
         df = pd.DataFrame(load_data())
-        val = df[df["rcp"] == c.ref]["val"][0]
+        val = df[df["rcp"] == c.REF]["val"][0]
 
     # Extract from time series.
-    elif cntx.view.code in [c.view_ts, c.view_ts_bias]:
+    elif cntx.view.code in [c.VIEW_TS, c.VIEW_TS_BIAS]:
         df = pd.DataFrame(load_data("rcp"))
-        val = np.nanmean(df[c.ref])
+        val = np.nanmean(df[c.REF])
 
     # Adjust precision and units.
     if df is not None:
@@ -373,42 +364,10 @@ def get_shared_sims(
             if sim not in arr_sim_l[i]:
                 available = False
                 break
-        if available and ((rcp_code == c.rcpxx) or ((rcp_code != c.rcpxx) and (rcp_code in sim))):
+        if available and ((rcp_code == c.RCPXX) or ((rcp_code != c.RCPXX) and (rcp_code in sim))):
             sim_l.append(sim)
 
     return sim_l
-
-
-def list_dir(
-    p: str
-) -> List[str]:
-
-    """
-    --------------------------------------------------------------------------------------------------------------------
-    List sub-directories within a directory.
-    
-    Parameters
-    ----------
-    p: str
-        Path.
-    
-    Returns
-    -------
-    List[str]
-        List of sub-directories.
-    --------------------------------------------------------------------------------------------------------------------
-    """
-    
-    dir_l = []
-    
-    for e in Path(p).iterdir():
-        try:
-            if Path(e).is_dir():
-                dir_l.append(os.path.basename(str(e)))
-        except NotADirectoryError:
-            pass
-    
-    return dir_l
 
 
 def round_values(
@@ -444,10 +403,13 @@ def round_values(
 
     # Round each value in the list.
     for i in range(len(val_rounded_l)):
-        if not np.isnan(val_rounded_l[i]):
-            val_str_l.append(str("{:." + str(n_dec) + "f}").format(float(val_rounded_l[i])))
-        else:
+        val = val_rounded_l[i]
+        if np.isnan(float(val)):
             val_str_l.append("nan")
+        elif n_dec == 0:
+            val_str_l.append(str(round(float(val))))
+        else:
+            val_str_l.append(str("{:." + str(n_dec) + "f}").format(float(val)))
 
     # Extract value if the input is not a list.
     if not (isinstance(val_l, List) or isinstance(val_l, pd.Series)):

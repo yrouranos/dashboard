@@ -17,21 +17,21 @@ import warnings
 from typing import List
 
 # Dashboard libraries.
+import cl_rcp
+import cl_sim
 import dash_plot
 import dash_utils as du
-import def_rcp
-import def_sim
-from def_constant import const as c
-from def_context import cntx
-from def_delta import Delta, Deltas
-from def_hor import Hor, Hors
-from def_lib import Lib, Libs
-from def_project import Project, Projects
-from def_rcp import RCP, RCPs
-from def_sim import Sim, Sims
-from def_stat import Stat, Stats
-from def_varidx import VarIdx, VarIdxs
-from def_view import View, Views
+from cl_constant import const as c
+from cl_context import cntx
+from cl_delta import Delta, Deltas
+from cl_hor import Hor, Hors
+from cl_lib import Lib, Libs
+from cl_project import Project, Projects
+from cl_rcp import RCP, RCPs
+from cl_sim import Sim, Sims
+from cl_stat import Stat, Stats
+from cl_varidx import VarIdx, VarIdxs
+from cl_view import View, Views
 
 warnings.filterwarnings("ignore")
 
@@ -224,7 +224,7 @@ def update_sidebar():
 
     global sidebar
 
-    show_delta_f = cntx.view.code in [c.view_ts, c.view_ts_bias, c.view_tbl, c.view_map]
+    show_delta_f = cntx.view.code in [c.VIEW_TS, c.VIEW_TS_BIAS, c.VIEW_TBL, c.VIEW_MAP]
     sidebar = pn.Column(pn.Column(pn.pane.PNG(cntx.p_logo, height=50)),
                         project_f,
                         view_f,
@@ -256,7 +256,7 @@ def update_tab(
     ref_val = pn.Row("\n\nValeur moyenne pour la période de référence : ", du.ref_val())
 
     # Note related to time series.
-    if cntx.view.code == c.view_ts:
+    if cntx.view.code == c.VIEW_TS:
         if cntx.delta.code == "False":
             ts_note = "Valeurs ajustées (après ajustement de biais)"
         else:
@@ -267,16 +267,16 @@ def update_tab(
         else:
             ts_note = "Différence entre les valeurs ajustées et les valeurs non ajustées"
 
-    if tab_name in "ts":
-        df_rcp = pd.DataFrame(du.load_data(dash_plot.mode_rcp))
-        df_sim = pd.DataFrame(du.load_data(dash_plot.mode_sim))
-        space = pn.pane.Markdown("<br><br><br>" if cntx.lib.code == c.lib_alt else "")
+    if tab_name in c.VIEW_TS:
+        df_rcp = pd.DataFrame(du.load_data(dash_plot.MODE_RCP))
+        df_sim = pd.DataFrame(du.load_data(dash_plot.MODE_SIM))
+        space = pn.pane.Markdown("<br><br><br>" if cntx.lib.code == c.LIB_ALT else "")
         if (df_rcp is not None) and len(df_rcp) > 0:
-            ts_rcp = dash_plot.gen_ts(df_rcp, dash_plot.mode_rcp)
+            ts_rcp = dash_plot.gen_ts(df_rcp, dash_plot.MODE_RCP)
         else:
             ts_rcp = ""
         if (df_sim is not None) and len(df_sim) > 0:
-            ts_sim = dash_plot.gen_ts(df_sim, dash_plot.mode_sim)
+            ts_sim = dash_plot.gen_ts(df_sim, dash_plot.MODE_SIM)
         else:
             ts_sim = ""
         if len(tab_ts) == 0:
@@ -292,7 +292,7 @@ def update_tab(
             tab_ts[0][4] = ts_rcp
             tab_ts[0][5] = ts_sim
 
-    elif tab_name == "tbl":
+    elif tab_name == c.VIEW_TBL:
         tbl = dash_plot.gen_tbl()
         if len(tab_tbl) == 0:
             tab_tbl = pn.Row(pn.Column(varidx_f,
@@ -302,24 +302,24 @@ def update_tab(
         else:
             tab_tbl[0][2][0] = tbl
 
-    elif tab_name == "map":
+    elif tab_name == c.VIEW_MAP:
         show_rcp_f = cntx.hor.code != cntx.per_ref_str
         show_stat_f = cntx.hor.code != cntx.per_ref_str
         df = pd.DataFrame(du.load_data())
-        z_range = du.calc_range()
-        map = dash_plot.gen_map(df, z_range)
+        z_range = du.calc_range(cntx.stats.centile_as_str_l)
+        _map = dash_plot.gen_map(df, z_range)
         if len(tab_map) == 0:
             tab_map = pn.Row(pn.Column(varidx_f,
                                        hor_f,
                                        rcp_f if show_rcp_f else "",
                                        stat_f if show_stat_f else "",
-                                       map))
+                                       _map))
         else:
             tab_map[0][2] = rcp_f if show_rcp_f else ""
             tab_map[0][3] = stat_f if show_stat_f else ""
-            tab_map[0][4] = map
+            tab_map[0][4] = _map
 
-    elif tab_name == "cycle":
+    elif tab_name == c.VIEW_CYCLE:
         show_rcp_f = cntx.hor.code != cntx.per_ref_str
         show_sim_f = cntx.hor.code != cntx.per_ref_str
         df_ms = pd.DataFrame(du.load_data("MS"))
@@ -360,7 +360,7 @@ def update_dash():
         dash[0][3] = lib_f
     else:
         dash[0][3] = ""
-    if cntx.view.code in [c.view_ts, c.view_ts_bias, c.view_tbl, c.view_map]:
+    if cntx.view.code in [c.VIEW_TS, c.VIEW_TS_BIAS, c.VIEW_TBL, c.VIEW_MAP]:
         dash[0][4] = delta_f
     else:
         dash[0][4] = ""
@@ -369,13 +369,13 @@ def update_dash():
     # An error occurs if some information is missing; this is expected when launching the application.
     try:
         update_tab(cntx.view.code.replace("_bias", ""))
-        if cntx.view.code in [c.view_ts, c.view_ts_bias]:
+        if cntx.view.code in [c.VIEW_TS, c.VIEW_TS_BIAS]:
             dash[1][0] = tab_ts
-        elif cntx.view.code == c.view_tbl:
+        elif cntx.view.code == c.VIEW_TBL:
             dash[1][0] = tab_tbl
-        elif cntx.view.code == c.view_map:
+        elif cntx.view.code == c.VIEW_MAP:
             dash[1][0] = tab_map
-        elif cntx.view.code == c.view_cycle:
+        elif cntx.view.code == c.VIEW_CYCLE:
             dash[1][0] = tab_cycle
     except Exception as e:
         pass
@@ -449,7 +449,7 @@ def update_hor():
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    if cntx.view.code in [c.view_tbl, c.view_map, c.view_cycle]:
+    if cntx.view.code in [c.VIEW_TBL, c.VIEW_MAP, c.VIEW_CYCLE]:
         cntx.hors = Hors("*")
         update_f("hor", cntx.hors.desc_l)
 
@@ -464,9 +464,9 @@ def update_rcp():
 
     cntx.rcps = RCPs("*")
     rcp_l = cntx.rcps.desc_l
-    if cntx.view.code in [c.view_ts, c.view_ts_bias]:
-        rcp_l = [dict(def_rcp.code_props())[c.rcpxx][0]] + rcp_l
-    if cntx.view.code in [c.view_ts, c.view_ts_bias, c.view_map, c.view_cycle]:
+    if cntx.view.code in [c.VIEW_TS, c.VIEW_TS_BIAS]:
+        rcp_l = [dict(cl_rcp.code_props())[c.RCPXX][0]] + rcp_l
+    if cntx.view.code in [c.VIEW_TS, c.VIEW_TS_BIAS, c.VIEW_MAP, c.VIEW_CYCLE]:
         update_f("rcp", rcp_l)
 
 
@@ -478,7 +478,7 @@ def update_stat():
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    if cntx.view.code == c.view_map:
+    if cntx.view.code == c.VIEW_MAP:
         cntx.stats = Stats("*")
         update_f("stat", cntx.stats.desc_l)
 
@@ -491,21 +491,21 @@ def update_sim():
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    if cntx.view.code in [c.view_ts, c.view_ts_bias, c.view_cycle]:
+    if cntx.view.code in [c.VIEW_TS, c.VIEW_TS_BIAS, c.VIEW_CYCLE]:
         cntx.sims = Sims("*")
         sim_l = cntx.sims.desc_l
-        if cntx.view.code in [c.view_ts, c.view_ts_bias]:
-            sim_l = [dict(def_sim.code_desc())[c.simxx]] + sim_l
+        if cntx.view.code in [c.VIEW_TS, c.VIEW_TS_BIAS]:
+            sim_l = [dict(cl_sim.code_desc())[c.SIMXX]] + sim_l
         update_f("sim", sim_l)
     if f_code("sim") != "":
-        if dict(def_sim.code_desc())[c.simxx] == f_code("sim"):
-            sim_code = c.simxx
+        if dict(cl_sim.code_desc())[c.SIMXX] == f_code("sim"):
+            sim_code = c.SIMXX
         else:
             sim_code = f_code("sim")
         cntx.sim = Sim(sim_code)
 
 
-def project_updated(event=None):
+def project_updated():
 
     """
     --------------------------------------------------------------------------------------------------------------------
@@ -518,10 +518,10 @@ def project_updated(event=None):
     cntx.load()
 
     update_view()
-    view_updated(event_cascade)
+    view_updated()
 
 
-def view_updated(event=None):
+def view_updated():
 
     """
     --------------------------------------------------------------------------------------------------------------------
@@ -533,11 +533,11 @@ def view_updated(event=None):
 
     update_lib()
     lib_updated(event_cascade)
-    if cntx.view.code in [c.view_ts, c.view_ts_bias, c.view_tbl, c.view_map]:
+    if cntx.view.code in [c.VIEW_TS, c.VIEW_TS_BIAS, c.VIEW_TBL, c.VIEW_MAP]:
         delta_updated(event_cascade)
-    elif cntx.view.code in [c.view_cycle]:
+    elif cntx.view.code in [c.VIEW_CYCLE]:
         update_varidx()
-        varidx_updated(event_cascade)
+        varidx_updated()
 
 
 def lib_updated(event=None):
@@ -564,15 +564,15 @@ def delta_updated(event=None):
 
     cntx.delta = Delta(str(f_code("delta")))
 
-    if cntx.view.code in [c.view_ts, c.view_ts_bias, c.view_tbl, c.view_map]:
+    if cntx.view.code in [c.VIEW_TS, c.VIEW_TS_BIAS, c.VIEW_TBL, c.VIEW_MAP]:
         update_varidx()
-        varidx_updated(event_cascade)
+        varidx_updated()
 
     if event != event_cascade:
         update_dash()
 
 
-def varidx_updated(event=None):
+def varidx_updated():
 
     """
     --------------------------------------------------------------------------------------------------------------------
@@ -583,15 +583,15 @@ def varidx_updated(event=None):
     cntx.varidx = VarIdx(str(f_code("varidx")))
     cntx.stats = Stats("*")
 
-    if cntx.view.code in [c.view_tbl, c.view_map, c.view_cycle]:
+    if cntx.view.code in [c.VIEW_TBL, c.VIEW_MAP, c.VIEW_CYCLE]:
         update_hor()
-        hor_updated(event_cascade)
-    elif cntx.view.code in [c.view_ts, c.view_ts_bias]:
+        hor_updated()
+    elif cntx.view.code in [c.VIEW_TS, c.VIEW_TS_BIAS]:
         update_rcp()
-        rcp_updated(event_cascade)
+        rcp_updated()
 
 
-def hor_updated(event=None):
+def hor_updated():
 
     """
     --------------------------------------------------------------------------------------------------------------------
@@ -601,16 +601,16 @@ def hor_updated(event=None):
 
     cntx.hor = Hor(str(f_code("hor")))
 
-    if cntx.view.code in [c.view_tbl, c.view_map, c.view_cycle]:
-        if cntx.view.code in [c.view_map, c.view_cycle]:
+    if cntx.view.code in [c.VIEW_TBL, c.VIEW_MAP, c.VIEW_CYCLE]:
+        if cntx.view.code in [c.VIEW_MAP, c.VIEW_CYCLE]:
             update_dash()
         update_rcp()
-        rcp_updated(event_cascade)
-        if cntx.view.code in [c.view_tbl]:
+        rcp_updated()
+        if cntx.view.code in [c.VIEW_TBL]:
             update_dash()
 
 
-def rcp_updated(event=None):
+def rcp_updated():
 
     """
     --------------------------------------------------------------------------------------------------------------------
@@ -618,21 +618,21 @@ def rcp_updated(event=None):
     --------------------------------------------------------------------------------------------------------------------
     """
 
-    if dict(def_rcp.code_props())[c.rcpxx][0] == f_code("rcp"):
-        rcp_code = c.rcpxx
+    if dict(cl_rcp.code_props())[c.RCPXX][0] == f_code("rcp"):
+        rcp_code = c.RCPXX
     else:
         rcp_code = f_code("rcp")
     cntx.rcp = RCP(rcp_code)
 
-    if cntx.view.code in [c.view_map]:
+    if cntx.view.code in [c.VIEW_MAP]:
         update_stat()
-        stat_updated(event_cascade)
-    elif cntx.view.code in [c.view_ts, c.view_ts_bias, c.view_cycle]:
+        stat_updated()
+    elif cntx.view.code in [c.VIEW_TS, c.VIEW_TS_BIAS, c.VIEW_CYCLE]:
         update_sim()
-        sim_updated(event_cascade)
+        sim_updated()
 
 
-def stat_updated(event=None):
+def stat_updated():
 
     """
     --------------------------------------------------------------------------------------------------------------------
@@ -645,7 +645,7 @@ def stat_updated(event=None):
     update_dash()
 
 
-def sim_updated(event=None):
+def sim_updated():
 
     """
     --------------------------------------------------------------------------------------------------------------------
@@ -661,7 +661,7 @@ def sim_updated(event=None):
 def main():
 
     # Initialize context.
-    cntx.code    = c.platform_jupyter
+    cntx.code    = c.PLATFORM_JUPYTER
     cntx.views   = Views()
     cntx.libs    = Libs()
     cntx.deltas  = Deltas(["False", "True"])
@@ -672,7 +672,7 @@ def main():
 
     # Initialize GUI.
     update_project()
-    project_updated(event_cascade)
+    project_updated()
     update_delta()
     update_dash()
     # display(dash)
