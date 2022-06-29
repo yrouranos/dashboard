@@ -368,7 +368,7 @@ elif (project_l == "") and (cl_auth.force_auth()):
         st.image(cntx.load_image(p=cntx.p_logo), width=150)
         st.write("Portail de visualisation d'information climatique (v" + str(c.VERSION) + ")")
         auth.usr = st.text_input("Identifiant")
-        auth.pwd = st.text_input("Mot de passe")
+        auth.pwd = st.text_input("Mot de passe", type="password")
         submit = st.form_submit_button(label="Soumettre")
 
         # Load projects.
