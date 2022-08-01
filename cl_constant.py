@@ -13,14 +13,15 @@ class Constant:
     VERSION                  = "1.4.1"
 
     # Views.
-    VIEW_TS                  = "ts"
-    VIEW_TS_BIAS             = "ts_bias"
-    VIEW_TBL                 = "tbl"
-    VIEW_MAP                 = "map"
+    VIEW_CLUSTER             = "cluster"
     VIEW_CYCLE               = "cycle"
     VIEW_CYCLE_MS            = "cycle_ms"
     VIEW_CYCLE_D             = "cycle_d"
-    VIEW_CLUSTER             = "cluster"
+    VIEW_MAP                 = "map"
+    VIEW_TAYLOR              = "taylor"
+    VIEW_TBL                 = "tbl"
+    VIEW_TS                  = "ts"
+    VIEW_TS_BIAS             = "ts_bias"
 
     # Plotting libraries.
     LIB_ALT                  = "alt"

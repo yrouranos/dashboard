@@ -35,10 +35,11 @@ def load_data(
 
     Parameters
     ----------
-    mode : Optional[str]
+    mode: Optional[str]
         Mode.
         ts|ts_bias: mode = {"rcp", "sim"}
         cycle:      mode = {"MS", "D"}
+        taylor:     mode = {"REGRID", "QQMAP"}
 
     Returns
     -------
@@ -162,6 +163,13 @@ def load_data(
         elif rcp_code == "":
             p = p.replace("<rcp_code>", "*")
 
+    elif view_code == c.VIEW_TAYLOR:
+        p = "<view_code>/<vi_code>/<vi_name><mode>.csv"
+        p = p.replace("<view_code>", view_code)
+        p = p.replace("<vi_code>", vi_code)
+        p = p.replace("<vi_name>", vi_name)
+        p = p.replace("<mode>", "_" + mode if mode != "" else "")
+
     # Base directory.
     p_base = str(cl_auth.path(project_code))
 
@@ -193,7 +201,7 @@ def load_data(
         if (view_code in [c.VIEW_TS, c.VIEW_TS_BIAS]) or (c.VIEW_CYCLE in view_code):
             for col in df.select_dtypes("float64").columns:
                 df.loc[:, col] = df.copy()[col].round(n_dec).to_numpy()
-        else:
+        elif view_code != c.VIEW_TAYLOR:
             df["val"] = df["val"].round(decimals=n_dec)
 
     return df

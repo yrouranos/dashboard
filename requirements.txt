@@ -17,5 +17,6 @@ plotly
 requests
 sklearn
 simplejson
+SkillMetrics
 streamlit
 xarray

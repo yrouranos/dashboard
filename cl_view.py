@@ -40,7 +40,8 @@ def code_desc(
         c.VIEW_TBL:     "Tableau",
         c.VIEW_MAP:     "Carte",
         c.VIEW_CYCLE:   "Cycle annuel",
-        c.VIEW_CLUSTER: "Similarité entre les simulations"
+        c.VIEW_CLUSTER: "Similarité entre les simulations",
+        c.VIEW_TAYLOR:  "Diagramme de Taylor"
     }
 
 

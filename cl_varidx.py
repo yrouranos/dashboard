@@ -691,7 +691,7 @@ class VarIdxs(cl_object.Objs):
 
         # The items are extracted from directory names.
         # ~/<project_code>/<view_code>/<varidx_code>/*
-        elif view_code in [c.VIEW_TS, c.VIEW_MAP, c.VIEW_CYCLE, c.VIEW_TS_BIAS, c.VIEW_CLUSTER]:
+        elif view_code in [c.VIEW_TS, c.VIEW_MAP, c.VIEW_CYCLE, c.VIEW_TS_BIAS, c.VIEW_CLUSTER, c.VIEW_TAYLOR]:
 
             pattern = project_code + "/<view_code>/*"
             if view_code == c.VIEW_CYCLE:

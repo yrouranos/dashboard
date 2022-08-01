@@ -27,6 +27,7 @@ import pandas as pd
 import panel as pn
 import plotly.graph_objects as go
 import plotly.io as pio
+import skill_metrics as sm
 import xarray as xr
 from bokeh.models import FixedTicker
 from descartes import PolygonPatch
@@ -45,6 +46,11 @@ from cl_context import cntx
 from cl_rcp import RCP, RCPs
 from cl_sim import Sim
 from cl_varidx import VarIdx
+
+# Skill metrics libraries.
+# import sys
+# sys.path.append("../skill_metrics")
+# from skill_metrics import *
 
 alt.renderers.enable("default")
 pn.extension("vega")
@@ -2180,6 +2186,70 @@ def gen_cluster_plot_mat(
     if leg_type == 1:
         plt.legend()
         ax.legend(leg_lines, leg_labels, loc="upper left", ncol=5, mode="expland", frameon=False, fontsize=fs_labels)
+
+    plt.close(fig)
+
+    return fig
+
+
+def gen_taylor_plot(
+    df: pd.DataFrame
+) -> plt.Figure:
+
+    """
+    --------------------------------------------------------------------------------------------------------------------
+    Generate a Taylor diagram.
+
+    Parameters
+    ----------
+    df: pd.DataFrame
+        Dataframe containing the following columns:
+        - Labels.
+        - Standard deviations.
+        - Centered root mean square deviations.
+        - Correlation coefficients.
+
+    Returns
+    -------
+    plt.Figure
+        Figure
+
+    Note:
+    pip uninstall Flask Jinja2
+    pip install Flask Jinja2==3.0
+    --------------------------------------------------------------------------------------------------------------------
+    """
+
+    # Extract columns.
+    sim_code_l = list(df["sim_code"])
+    sdev_l     = list(df["sdev"])
+    crmsd_l    = list(df["crmsd"])
+    ccoef_l    = list(df["ccoef"])
+
+    # Determine tick marks along the CRMSD axis.
+    tick_crmsd = []
+    for i in [0, 0.25, 0.5, 0.75]:
+        tick_crmsd.append(max(crmsd_l) * i)
+    tick_crmsd = list(adjust_precision(tick_crmsd, n_dec_max=2, output_type="float"))
+
+    # Determine the number of columns (assuming 15 rows).
+    n_columns = math.ceil((len(sim_code_l) - 1) / 15.0)
+
+    # Generated diagram.
+    sm.taylor_diagram(np.array(sdev_l), np.array(crmsd_l), np.array(ccoef_l),
+                      markerLabel=sim_code_l, markerLabelColor="r", markerLegend="on", markerColor="r",
+                      styleOBS="-", colOBS="r", markerobs="o", markerSize=6, tickRMS=tick_crmsd,
+                      tickRMSangle=115, showlabelsRMS="on", titleRMS="on", titleOBS=sim_code_l[0], checkstats="on")
+    fig = plt.gcf()
+
+    # Resize figure and left-align.
+    if min(ccoef_l) >= 0:
+        fig.set_figwidth(7.5 + (n_columns - 1) * 3.75)
+    else:
+        fig.set_figwidth(12.0 + (n_columns - 1) * 3.75)
+    fig.set_figheight(5)
+    fig.axes[0].set_anchor('W')
+    plt.subplots_adjust(left=0.05)
 
     plt.close(fig)
 

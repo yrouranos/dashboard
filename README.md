@@ -29,6 +29,13 @@ Implemented features:
 - added a streamlit-based access control in which users can be associated with one or several projects;
 - added an opption to store the climate data used by the portal on Google Drive (a little bit slow, but usable).
 
+### v1.4.2
+
+Implemented features:
+- added an option to generate Taylor diagrams (see the keywords starting wiith 'opt_taylor'). In the case of climate
+  variables, a first diagram is generated for the simulation (prior to bias adjustement) while a second diagram is 
+  generated for the scenario (after bias adjustment). In the case of climate indices, a single diagram is generated.  
+
 ## Contributing
 
 This is a development project that is being used in production by climate services specialists. If you're interested in

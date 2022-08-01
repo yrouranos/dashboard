@@ -192,7 +192,7 @@ def refresh():
 
     # Variables and indices.
     cntx.varidxs = VarIdxs("*")
-    if cntx.view.code in [c.VIEW_TS, c.VIEW_TS_BIAS, c.VIEW_TBL, c.VIEW_MAP, c.VIEW_CYCLE]:
+    if cntx.view.code in [c.VIEW_TS, c.VIEW_TS_BIAS, c.VIEW_TBL, c.VIEW_MAP, c.VIEW_CYCLE, c.VIEW_TAYLOR]:
         vi_f = st.selectbox("Variable ou indice", options=cntx.varidxs.desc_l)
         vi_code = cntx.varidxs.code_from_desc(vi_f) if cntx.varidxs is not None else ""
         cntx.varidx = VarIdx(vi_code)
@@ -329,6 +329,19 @@ def refresh():
                 st.write(cycle_d)
             else:
                 st.write(hv.render(cycle_d), backend="bokeh")
+
+    # View: Taylor.
+    elif cntx.view.code == c.VIEW_TAYLOR:
+        if cntx.varidx.is_var:
+            df_regrid = pd.DataFrame(du.load_data("regrid"))
+            df_qqmap = pd.DataFrame(du.load_data("qqmap"))
+            st.write("Valeurs non ajustées (avant ajustement de biais)")
+            st.write(dash_plot.gen_taylor_plot(df_regrid))
+            st.write("Valeurs ajustées (après ajustement de biais)")
+            st.write(dash_plot.gen_taylor_plot(df_qqmap))
+        else:
+            df = pd.DataFrame(du.load_data())
+            st.write(dash_plot.gen_taylor_plot(df))
 
     # View: clustering.
     else:
