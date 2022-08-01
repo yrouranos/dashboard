@@ -6,7 +6,7 @@ google-api-python-client
 google-cloud-storage
 holoviews>=1.15.0
 hvplot
-jinja==3.0
+Jinja==3.0
 matplotlib
 mpl-toolkits.clifford
 numpy
