@@ -92,6 +92,7 @@ class Constant:
     ENS_ENACTS               = "enacts"                  # ENACTS.
     ENS_MERRA2               = "merra2"                  # MERRA2.
     ENS_CHIRPS               = "chirps"                  # CHIRPS.
+    ENS_CANSWE               = "canswe"                  # CANSWE.
 
     # Climate variables (CORDEX).
     V_SFTLF                  = "sftlf"                   # Land area fraction.

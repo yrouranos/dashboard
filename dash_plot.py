@@ -555,7 +555,8 @@ def gen_ts_mat(
     ax.set_xticks(range(int(x_range[0]), int(x_range[1]) + 10, 10), minor=False)
     ax.set_xticks(range(int(x_range[0]), int(x_range[1]) + 5, 5), minor=True)
     plt.xlim(x_range[0], x_range[1])
-    plt.ylim(y_range[0], y_range[1])
+    if not np.isnan(y_range[0]) and not np.isnan(y_range[1]):
+        plt.ylim(y_range[0], y_range[1])
 
     # Move reference RCP at the end of the list.
     if (cntx.view.code == c.VIEW_TS) or (cntx.rcp.code not in ["", c.RCPXX]):
